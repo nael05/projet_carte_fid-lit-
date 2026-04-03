@@ -1,27 +1,44 @@
-const db = require('../db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const { PKPass } = require('passkit-generator');
+const fs = require('fs');
+const path = require('path');
+const db = require('../db');
 
 const login = async (req, res) => {
+    const { email, mot_de_passe } = req.body;
+
+    if (!email || !mot_de_passe) {
+        return res.status(400).json({ error: 'Email et mot de passe requis' });
+    }
+
     try {
-        const { email, password } = req.body;
-        const [rows] = await db.execute('SELECT * FROM utilisateurs WHERE email = ?', [email]);
-        
-        if (rows.length === 0) return res.status(401).json({ error: 'Identifiants incorrects' });
+        const query = 'SELECT id, entreprise_id, mot_de_passe_hash, role FROM utilisateurs WHERE email = ?';
+        const [rows] = await db.execute(query, [email]);
 
-        const user = rows[0];
-        const match = await bcrypt.compare(password, user.mot_de_passe_hash);
+        if (rows.length === 0) {
+            return res.status(401).json({ error: 'Identifiants incorrects' });
+        }
 
-        if (!match) return res.status(401).json({ error: 'Identifiants incorrects' });
+        const utilisateur = rows[0];
+        const match = await bcrypt.compare(mot_de_passe, utilisateur.mot_de_passe_hash);
+
+        if (!match) {
+            return res.status(401).json({ error: 'Identifiants incorrects' });
+        }
 
         const token = jwt.sign(
-            { userId: user.id, entrepriseId: user.entreprise_id, role: user.role },
+            { 
+                id: utilisateur.id, 
+                entreprise_id: utilisateur.entreprise_id, 
+                role: utilisateur.role 
+            },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
-        res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
+        res.status(200).json({ token });
     } catch (error) {
         res.status(500).json({ error: 'Erreur serveur' });
     }
@@ -29,11 +46,10 @@ const login = async (req, res) => {
 
 const getClients = async (req, res) => {
     try {
-        const [rows] = await db.execute(
-            'SELECT id, prenom, email, solde_points, date_creation FROM clients_finaux WHERE entreprise_id = ? ORDER BY date_creation DESC',
-            [req.user.entrepriseId]
-        );
-        res.json(rows);
+        const entrepriseId = req.user.entreprise_id;
+        const query = 'SELECT id, prenom, email, solde_points, pass_id, date_creation FROM clients_finaux WHERE entreprise_id = ?';
+        const [rows] = await db.execute(query, [entrepriseId]);
+        res.status(200).json(rows);
     } catch (error) {
         res.status(500).json({ error: 'Erreur serveur' });
     }
@@ -41,61 +57,82 @@ const getClients = async (req, res) => {
 
 const createClient = async (req, res) => {
     try {
-        const { entrepriseId } = req.params;
+        const { entrepriseId } = req.params; 
         const { prenom, email } = req.body;
-        const clientId = uuidv4();
+        
+        if (!prenom || !email) {
+            return res.status(400).json({ error: 'Prenom et email requis' });
+        }
 
-        await db.execute(
-            'INSERT INTO clients_finaux (id, entreprise_id, prenom, email) VALUES (?, ?, ?, ?)',
-            [clientId, entrepriseId, prenom, email]
-        );
+        const id = uuidv4();
+        const query = 'INSERT INTO clients_finaux (id, entreprise_id, prenom, email, solde_points) VALUES (?, ?, ?, ?, 0)';
+        await db.execute(query, [id, entrepriseId, prenom, email]);
 
-        res.status(201).json({ message: 'Client créé', id: clientId });
+        res.status(201).json({ id, prenom, email, solde_points: 0 });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ error: 'Cet email est déjà utilisé pour cette boutique.' });
+            return res.status(409).json({ error: 'Email deja utilise pour cette entreprise' });
         }
         res.status(500).json({ error: 'Erreur serveur' });
     }
 };
 
 const addPoints = async (req, res) => {
+    const { clientId, points } = req.body;
+    const entrepriseId = req.user.entreprise_id;
+    const utilisateurId = req.user.id;
+
+    if (!clientId || !points) {
+        return res.status(400).json({ error: 'Client et points requis' });
+    }
+
+    const connection = await db.getConnection();
+
     try {
-        const { clientId, points } = req.body;
-        const pointValue = parseInt(points, 10);
+        await connection.beginTransaction();
 
-        if (isNaN(pointValue) || pointValue <= 0) return res.status(400).json({ error: 'Nombre de points invalide' });
-
-        const [client] = await db.execute(
-            'SELECT * FROM clients_finaux WHERE id = ? AND entreprise_id = ?',
-            [clientId, req.user.entrepriseId]
+        const [client] = await connection.execute(
+            'SELECT id FROM clients_finaux WHERE id = ? AND entreprise_id = ?',
+            [clientId, entrepriseId]
         );
 
-        if (client.length === 0) return res.status(404).json({ error: "Client introuvable ou n'appartient pas à votre boutique" });
+        if (client.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Client introuvable ou non autorise' });
+        }
 
-        await db.execute('UPDATE clients_finaux SET solde_points = solde_points + ? WHERE id = ?', [pointValue, clientId]);
-        
-        await db.execute(
+        await connection.execute(
+            'UPDATE clients_finaux SET solde_points = solde_points + ? WHERE id = ?',
+            [points, clientId]
+        );
+
+        const scanId = uuidv4();
+        await connection.execute(
             'INSERT INTO scans_historique (id, entreprise_id, client_final_id, utilisateur_id, points_ajoutes) VALUES (?, ?, ?, ?, ?)',
-            [uuidv4(), req.user.entrepriseId, clientId, req.user.userId, pointValue]
+            [scanId, entrepriseId, clientId, utilisateurId, points]
         );
 
-        res.json({ message: `${pointValue} points ajoutés avec succès !` });
+        await connection.commit();
+        res.status(200).json({ message: 'Points ajoutes avec succes' });
     } catch (error) {
-        res.status(500).json({ error: "Erreur lors de l'ajout des points" });
+        await connection.rollback();
+        res.status(500).json({ error: 'Erreur serveur' });
+    } finally {
+        connection.release();
     }
 };
 
 const getBranding = async (req, res) => {
     try {
         const { entrepriseId } = req.params;
-        const [rows] = await db.execute(
-            'SELECT nom, couleur_principale, url_logo FROM entreprises WHERE id = ?',
-            [entrepriseId]
-        );
+        const query = 'SELECT nom, couleur_principale, url_logo FROM entreprises WHERE id = ?';
+        const [results] = await db.execute(query, [entrepriseId]);
 
-        if (rows.length === 0) return res.status(404).json({ error: 'Entreprise introuvable' });
-        res.json(rows[0]);
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Entreprise introuvable' });
+        }
+
+        res.status(200).json(results[0]);
     } catch (error) {
         res.status(500).json({ error: 'Erreur serveur' });
     }
@@ -119,28 +156,58 @@ const generateApplePass = async (req, res) => {
 
         const clientData = rows[0];
 
-        res.status(200).json({
-            status: "MODE_TEST_SANS_APPLE",
-            client: clientData,
-            message: "Pour avoir la vraie carte, il faudra les certificats Apple plus tard.",
-            donnees_test: {
-                nom: clientData.nom,
-                client: clientData.prenom,
-                points: clientData.solde_points,
-                id_qr_code: clientData.client_id
-            }
+        const pass = new PKPass(
+            {
+                'pass.com.votre-app.fidelite': fs.readFileSync(path.join(__dirname, '../certs/signerCert.pem')),
+                'pass.com.votre-app.fidelite': fs.readFileSync(path.join(__dirname, '../certs/signerKey.pem'))
+            },
+            process.env.APPLE_PASS_PASSWORD,
+            fs.readFileSync(path.join(__dirname, '../certs/wwdr.pem'))
+        );
+
+        pass.type = 'storeCard';
+        pass.teamIdentifier = process.env.APPLE_TEAM_ID;
+        pass.passTypeIdentifier = 'pass.com.votre-app.fidelite';
+        pass.organizationName = clientData.nom;
+        pass.description = `Carte de fidelite ${clientData.nom}`;
+        pass.logoText = clientData.nom;
+        pass.backgroundColor = clientData.couleur_principale;
+
+        pass.primaryFields.push({
+            key: 'points',
+            label: 'POINTS',
+            value: clientData.solde_points.toString()
         });
+
+        pass.secondaryFields.push({
+            key: 'client',
+            label: 'CLIENT',
+            value: clientData.prenom
+        });
+
+        pass.barcode = {
+            format: 'PKBarcodeFormatQR',
+            message: clientData.client_id,
+            messageEncoding: 'iso-8859-1'
+        };
+
+        const buffer = await pass.getAsBuffer();
+
+        res.set({
+            'Content-Type': 'application/vnd.apple.pkpass',
+            'Content-Disposition': `attachment; filename="${clientData.nom.replace(/\s+/g, '_')}-fidelite.pkpass"`
+        });
+        res.send(buffer);
     } catch (error) {
         res.status(500).json({ error: 'Erreur serveur' });
     }
 };
 
-// C'est cette partie à la fin qui manquait et qui relie le tout aux routes !
-module.exports = {
-    login,
-    getClients,
-    createClient,
-    addPoints,
-    getBranding,
-    generateApplePass
+module.exports = { 
+    login, 
+    getClients, 
+    createClient, 
+    addPoints, 
+    getBranding, 
+    generateApplePass 
 };

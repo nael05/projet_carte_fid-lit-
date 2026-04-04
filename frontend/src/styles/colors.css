@@ -1,0 +1,8 @@
+/* Couleurs primaires additionnelles */
+:root {
+  --primary: #0052CC;
+  --primary-dark: #003399;
+  --primary-light: #E3F2FD;
+  --neutral: #F8F9FA;
+  --neutral-dark: #E9ECEF;
+}

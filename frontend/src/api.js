@@ -14,12 +14,36 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`
   }
   
-  // 🆕 Ajouter le deviceId pour les vérifications de session
+  // Ajouter le deviceId pour les vérifications de session
   if (deviceId) {
     config.headers['X-Device-Id'] = deviceId
   }
   
   return config
 })
+
+// Handle 401 errors (expired/invalid session)
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Session expirée - nettoyer et rediriger
+      localStorage.removeItem('token')
+      localStorage.removeItem('userRole')
+      localStorage.removeItem('deviceId')
+      localStorage.removeItem('companyId')
+      localStorage.removeItem('companyName')
+      
+      // Rediriger vers login approprié
+      const userRole = localStorage.getItem('userRole')
+      if (userRole === 'admin') {
+        window.location.href = '/master-admin-secret'
+      } else {
+        window.location.href = '/pro/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
 
 export default axiosInstance

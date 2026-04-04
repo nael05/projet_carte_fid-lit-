@@ -16,10 +16,10 @@ function DeviceManager() {
     try {
       setLoading(true)
       const response = await api.get('/pro/sessions')
-      console.log('✅ Sessions chargées:', response.data)
+      console.log('Sessions chargées:', response.data)
       setSessions(response.data || [])
     } catch (err) {
-      console.error('❌ Erreur loading sessions:', err.response?.data || err.message)
+      console.error('Erreur loading sessions:', err.response?.data || err.message)
       setError('Impossible de charger les sessions')
     } finally {
       setLoading(false)
@@ -60,7 +60,7 @@ function DeviceManager() {
 
   return (
     <div className="card">
-      <h2>📱 Gestion des Appareils</h2>
+      <h2>Gestion des Appareils</h2>
       <p style={{ color: '#666', marginBottom: '20px' }}>
         Restez connecté 24h sur chaque appareil. Vous serez déconnecté lors d'une inactivité de 24h.
       </p>
@@ -97,7 +97,7 @@ function DeviceManager() {
                       <strong>{session.device_name?.substring(0, 50)}</strong>
                       {session.isCurrentDevice && (
                         <span style={{ marginLeft: '10px', color: '#4caf50', fontWeight: 'bold' }}>
-                          ✓ Cet appareil
+                          Cet appareil
                         </span>
                       )}
                     </td>
@@ -116,7 +116,7 @@ function DeviceManager() {
                         borderRadius: '3px',
                         fontSize: '11px'
                       }}>
-                        🟢 Actif
+                        Actif
                       </span>
                     </td>
                     <td>
@@ -126,7 +126,7 @@ function DeviceManager() {
                           onClick={() => handleLogoutDevice(session.device_id)}
                           style={{ padding: '6px 12px', fontSize: '12px' }}
                         >
-                          🔓 Déconnecter
+                          Déconnecter
                         </button>
                       )}
                     </td>
@@ -142,7 +142,7 @@ function DeviceManager() {
               onClick={handleLogoutAll}
               style={{ padding: '10px 20px' }}
             >
-              🔐 Déconnecter tous les autres appareils
+              Déconnecter tous les autres appareils
             </button>
           )}
         </>
@@ -156,7 +156,7 @@ function DeviceManager() {
         fontSize: '12px',
         color: '#666'
       }}>
-        <p><strong>💡 Comment ça marche:</strong></p>
+        <p><strong>Comment ça marche:</strong></p>
         <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
           <li>Vous restez connecté <strong>24h après votre dernière activité</strong> sur chaque appareil</li>
           <li>Un nouvel appareil = une nouvelle connexion requise</li>

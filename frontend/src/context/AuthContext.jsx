@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import api from '../api'
 
 const AuthContext = createContext()
@@ -6,29 +6,45 @@ const AuthContext = createContext()
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('token') || null)
   const [user, setUser] = useState(null)
+  const [role, setRole] = useState(localStorage.getItem('userRole') || null)
+  const [loading, setLoading] = useState(true)
   const [isSuspended, setIsSuspended] = useState(false)
-  const [loading, setLoading] = useState(false)
 
-  // Récupérer le token depuis localStorage au chargement
+  // Récupérer token et role au chargement
   useEffect(() => {
     const storedToken = localStorage.getItem('token')
+    const storedRole = localStorage.getItem('userRole')
+    
     if (storedToken) {
       setToken(storedToken)
+      setRole(storedRole || 'pro') // Default to pro if not specified
     }
+    
+    setLoading(false)
   }, [])
 
-  // Sauvegarder le token dans localStorage quand il change
+  // Synchroniser token avec localStorage
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token)
     } else {
       localStorage.removeItem('token')
+      localStorage.removeItem('userRole')
     }
   }, [token])
 
-  // Vérifier le statut de l'entreprise toutes les 30 secondes
+  // Synchroniser role avec localStorage
   useEffect(() => {
-    if (!token) return
+    if (role) {
+      localStorage.setItem('userRole', role)
+    } else {
+      localStorage.removeItem('userRole')
+    }
+  }, [role])
+
+  // Vérifier le statut pour les pro
+  useEffect(() => {
+    if (!token || role !== 'pro') return
 
     const checkStatus = async () => {
       try {
@@ -40,86 +56,57 @@ export function AuthProvider({ children }) {
         }
         setUser(response.data)
       } catch (err) {
-        console.error('Erreur de vérification du statut:', err)
+        console.error('Erreur vérification statut:', err)
       }
     }
 
-    // Vérifier immédiatement
     checkStatus()
+  }, [token, role])
 
-    // Puis vérifier périodiquement
-    const interval = setInterval(checkStatus, 30000) // 30 secondes
-
-    return () => clearInterval(interval)
-  }, [token])
-
-  // Vérifier la visibilité de l'onglet et revalider le token
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // L'onglet redevient visible
-        console.log('Onglet redevenu visible, vérification du token...')
-        if (token) {
-          verifyToken()
-        }
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [token])
-
-  const verifyToken = useCallback(async () => {
-    if (!token) return false
-
-    try {
-      // Faire un appel simple pour vérifier que le token est toujours valide
-      const response = await api.get('/pro/status')
-      if (response.data.statut === 'suspendu') {
-        setIsSuspended(true)
-      } else {
-        setIsSuspended(false)
-      }
-      setUser(response.data)
-      return true
-    } catch (err) {
-      // Token expiré ou invalide
-      logout()
-      return false
-    }
-  }, [token])
-
-  const login = (newToken, userData) => {
+  const login = (newToken, newRole = 'pro') => {
     setToken(newToken)
-    setUser(userData)
-    setIsSuspended(userData?.statut === 'suspendu')
+    setRole(newRole)
   }
 
   const logout = () => {
     setToken(null)
+    setRole(null)
     setUser(null)
     setIsSuspended(false)
-    localStorage.removeItem('token')
+    // Nettoyer les données de session pour la sécurité
+    localStorage.removeItem('deviceId')
+    localStorage.removeItem('companyId')
+    localStorage.removeItem('companyName')
   }
+
+  const isAdmin = () => role === 'admin'
+  const isPro = () => role === 'pro'
+  const isAuthenticated = () => !!token
 
   const value = {
     token,
     user,
-    isSuspended,
+    role,
     loading,
+    isSuspended,
     login,
     logout,
-    verifyToken,
-    isAuthenticated: !!token
+    isAdmin,
+    isPro,
+    isAuthenticated,
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {
-    throw new Error('useAuth doit être utilisé dans AuthProvider')
+    throw new Error('useAuth must be used within AuthProvider')
   }
   return context
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import api from '../api'
+import CustomerCard from '../components/CustomerCard'
 import './JoinWallet.css'
 
 function JoinWallet() {
@@ -10,6 +11,7 @@ function JoinWallet() {
   const [telephone, setTelephone] = useState('')
   const [type_wallet, setTypeWallet] = useState('apple')
   const [company, setCompany] = useState(null)
+  const [customization, setCustomization] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -22,6 +24,15 @@ function JoinWallet() {
     try {
       const response = await api.get(`/companies/${entrepriseId}/info`)
       setCompany(response.data)
+      
+      // Charger la personnalisation de la carte avec le type de loyauté
+      try {
+        const loyaltyType = response.data.loyalty_type || 'points'
+        const customResp = await api.get(`/pro/card-customization/${entrepriseId}?loyaltyType=${loyaltyType}`)
+        setCustomization(customResp.data)
+      } catch (err) {
+        console.log('Pas de personnalisation personnalisée, utiliser les valeurs par défaut')
+      }
     } catch (err) {
       setError('Entreprise non trouvée')
     }
@@ -40,23 +51,30 @@ function JoinWallet() {
         type_wallet
       })
 
-      if (type_wallet === 'apple' && response.data instanceof Blob) {
-        // Télécharger le fichier pkpass
-        const url = window.URL.createObjectURL(response.data)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', `${prenom}-${nom}-loyalty.pkpass`)
-        document.body.appendChild(link)
-        link.click()
-        link.parentNode.removeChild(link)
-        window.URL.revokeObjectURL(url)
+      if (type_wallet === 'apple') {
+        // Télécharger le fichier pkpass pour Apple Wallet
+        if (response.data instanceof Blob) {
+          const url = window.URL.createObjectURL(response.data)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', `${prenom}-${nom}-loyalty.pkpass`)
+          document.body.appendChild(link)
+          link.click()
+          link.parentNode.removeChild(link)
+          window.URL.revokeObjectURL(url)
+        }
+        setSuccess(true)
+      } else if (type_wallet === 'google') {
+        // Google Wallet - Ouvrir le lien de sauvegarde
+        if (response.data?.walletsaveUrl) {
+          window.open(response.data.walletsaveUrl, '_blank')
+        }
         setSuccess(true)
       } else {
-        // Google Wallet
         setSuccess(true)
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur')
+      setError(err.response?.data?.error || 'Erreur créer la carte')
     } finally {
       setLoading(false)
     }
@@ -76,7 +94,7 @@ function JoinWallet() {
     return (
       <div className="join-container">
         <div className="join-card success">
-          <h1>✓ Carte créée !</h1>
+          <h1>Carte créée !</h1>
           <p>Votre carte de fidélité a été ajoutée à votre wallet.</p>
           <p style={{ fontSize: '12px', marginTop: '10px', color: '#666' }}>
             Commencez à accumuler des points à chaque visite !
@@ -88,57 +106,81 @@ function JoinWallet() {
 
   return (
     <div className="join-container">
-      <div className="join-card">
-        <h1>{company.nom}</h1>
-        <p className="subtitle">Créer votre carte de fidélité</p>
+      <div className="join-layout">
+        {/* Form Section */}
+        <div className="join-card">
+          <h1>{company.nom}</h1>
+          <p className="subtitle">Créer votre carte de fidélité</p>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Prénom"
-            value={prenom}
-            onChange={(e) => setPrenom(e.target.value)}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Nom"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            required
-          />
-          <input
-            type="tel"
-            placeholder="Numéro de téléphone"
-            value={telephone}
-            onChange={(e) => setTelephone(e.target.value)}
-            required
-          />
+          <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder="Prénom"
+              value={prenom}
+              onChange={(e) => setPrenom(e.target.value)}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Nom"
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Numéro de téléphone"
+              value={telephone}
+              onChange={(e) => setTelephone(e.target.value)}
+              required
+            />
 
-          <label>Choisir votre wallet :</label>
-          <select
-            value={type_wallet}
-            onChange={(e) => setTypeWallet(e.target.value)}
-          >
-            <option value="apple">🍎 Apple Wallet</option>
-            <option value="google">🔴 Google Wallet</option>
-          </select>
+            <label>Choisir votre wallet :</label>
+            <select
+              value={type_wallet}
+              onChange={(e) => setTypeWallet(e.target.value)}
+            >
+              <option value="apple">Apple Wallet</option>
+              <option value="google">Google Wallet</option>
+            </select>
 
-          {error && <p className="error">{error}</p>}
+            {error && <p className="error">{error}</p>}
 
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={loading}
-          >
-            {loading ? 'Création en cours...' : 'Créer et Ajouter ma carte'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading}
+            >
+              {loading ? 'Création en cours...' : 'Créer et Ajouter ma carte'}
+            </button>
+          </form>
 
-        <div className="reward-info">
-          <h3>Votre récompense :</h3>
-          <p>{company.recompense_definition}</p>
+          <div className="reward-info">
+            <h3>Votre récompense :</h3>
+            <p>{company.recompense_definition}</p>
+          </div>
         </div>
+
+        {/* Card Preview Section */}
+        {customization && (
+          <div className="card-preview-section">
+            <h3>Aperçu de votre carte</h3>
+            <CustomerCard
+              client={{
+                prenom: prenom || 'Prénom',
+                nom: nom || 'Nom',
+                telephone: telephone || '---',
+                points: 0,
+                stamps_collected: 0,
+                stamps_total: 10,
+                type_wallet: type_wallet
+              }}
+              loyaltyType={company.loyalty_type === 'stamps' ? 'stamps' : 'points'}
+              customization={customization}
+              companyName={company.nom}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

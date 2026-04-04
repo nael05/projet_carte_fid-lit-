@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Grid, Users, Home as HomeIcon } from '../icons/Icons'
 import './Home.css'
 
 function Home() {
@@ -8,23 +9,25 @@ function Home() {
   return (
     <div className="home-container">
       <header className="home-header">
-        <h1>🎟️ Loyalty Cards SaaS</h1>
+        <h1>Loyalty Cards SaaS</h1>
         <p>Plateforme B2B de gestion de cartes de fidélité dématérialisées</p>
       </header>
 
       <div className="home-content">
-        {/* Finance Role */}
+        {/* Admin Role */}
         <div className="interface-card admin-card">
-          <div className="card-icon">👨‍💼</div>
+          <div className="card-icon">
+            <Grid size={28} />
+          </div>
           <h2>Master Admin</h2>
           <p className="card-description">
             Gérez les entreprises de votre SaaS
           </p>
           <ul className="card-features">
-            <li>✓ Créer une entreprise</li>
-            <li>✓ Générer mots de passe</li>
-            <li>✓ Suspendre/Réactiver</li>
-            <li>✓ Supprimer (cascade)</li>
+            <li>Créer une entreprise</li>
+            <li>Générer mots de passe</li>
+            <li>Suspendre/Réactiver</li>
+            <li>Supprimer (cascade)</li>
           </ul>
           <div className="card-footer">
             <small>Interface: Propriétaire du SaaS</small>
@@ -33,46 +36,50 @@ function Home() {
             onClick={() => navigate('/master-admin-secret')}
             className="btn-primary"
           >
-            Accéder →
+            Accéder
           </button>
         </div>
 
-        {/* Commerce Role */}
+        {/* Pro Role */}
         <div className="interface-card pro-card">
-          <div className="card-icon">🏪</div>
+          <div className="card-icon">
+            <Users size={28} />
+          </div>
           <h2>Compte Pro</h2>
           <p className="card-description">
             Gérez vos clients et leurs points
           </p>
           <ul className="card-features">
-            <li>✓ Scanner QR codes</li>
-            <li>✓ Ajouter des points</li>
-            <li>✓ Voir tous les clients</li>
-            <li>✓ Configurer récompenses</li>
+            <li>Scanner QR codes</li>
+            <li>Ajouter des points</li>
+            <li>Voir tous les clients</li>
+            <li>Configurer récompenses</li>
           </ul>
           <div className="card-footer">
             <small>Interface: Commerçants / Propriétaires de magasin</small>
           </div>
           <button
             onClick={() => navigate('/pro/login')}
-            className="btn-primary-pro"
+            className="btn-primary"
           >
-            Se Connecter →
+            Se Connecter
           </button>
         </div>
 
         {/* Client Public Role */}
         <div className="interface-card client-card">
-          <div className="card-icon">📱</div>
+          <div className="card-icon">
+            <HomeIcon size={28} />
+          </div>
           <h2>Client Public</h2>
           <p className="card-description">
             Créer votre carte de fidélité
           </p>
           <ul className="card-features">
-            <li>✓ Scanner QR au comptoir</li>
-            <li>✓ Créer sa carte</li>
-            <li>✓ Ajouter au Wallet</li>
-            <li>✓ Suivre les points</li>
+            <li>Scanner QR au comptoir</li>
+            <li>Créer sa carte</li>
+            <li>Ajouter au Wallet</li>
+            <li>Suivre les points</li>
           </ul>
           <div className="card-footer">
             <small>Interface: Clients (accès public)</small>
@@ -84,7 +91,7 @@ function Home() {
       {/* Info Section */}
       <div className="home-info">
         <div className="info-box">
-          <h3>📊 Structure du Système</h3>
+          <h3>Structure du Système</h3>
           <p>
             Ce SaaS fonctionne avec 3 niveaux d'accès totalement isolés:
           </p>
@@ -96,18 +103,18 @@ function Home() {
         </div>
 
         <div className="info-box">
-          <h3>🔐 Sécurité</h3>
+          <h3>Sécurité</h3>
           <ul>
-            <li>✅ Isolation complète des données par entreprise</li>
-            <li>✅ JWT + RBAC (Role-Based Access Control)</li>
-            <li>✅ Hachage bcryptjs pour les mots de passe</li>
-            <li>✅ Authentification obligatoire pour les pros</li>
+            <li>Isolation complète des données par entreprise</li>
+            <li>JWT + RBAC (Role-Based Access Control)</li>
+            <li>Hachage bcryptjs pour les mots de passe</li>
+            <li>Authentification obligatoire pour les pros</li>
           </ul>
         </div>
       </div>
 
       <footer className="home-footer">
-        <p>🚀 Loyalty Cards SaaS v1.0.0</p>
+        <p>Loyalty Cards SaaS v1.0.0</p>
         <p>Backend: http://localhost:5000 | Frontend: http://localhost:3000</p>
       </footer>
     </div>
@@ -122,9 +129,9 @@ function DemoClientAccess() {
     return (
       <button
         onClick={() => setShowForm(true)}
-        className="btn-primary-client"
+        className="btn-primary"
       >
-        Créer une Carte →
+        Créer une Carte
       </button>
     )
   }

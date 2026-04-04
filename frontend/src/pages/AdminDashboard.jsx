@@ -1,33 +1,52 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import api from '../api'
 import './Dashboard.css'
+import './AdminDashboard.css'
 
 function AdminDashboard() {
-  const [nom, setNom] = useState('')
-  const [email, setEmail] = useState('')
-  const [created, setCreated] = useState(null)
-  const [error, setError] = useState('')
   const [enterprises, setEnterprises] = useState([])
   const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('tous')
+  const [newCompanyCredentials, setNewCompanyCredentials] = useState(null) // Modal
+  
+  // Form data
+  const [formData, setFormData] = useState({
+    nom: '',
+    email: '',
+    loyalty_type: 'points'
+  })
+
   const navigate = useNavigate()
+  const { logout, token } = useAuth()
 
   useEffect(() => {
-    if (!localStorage.getItem('token')) {
+    if (!token) {
       navigate('/master-admin-secret')
-    } else {
-      loadEnterprises()
+      return
     }
-  }, [navigate])
+    loadEnterprises()
+  }, [token, navigate])
 
   const loadEnterprises = async () => {
     try {
       setLoading(true)
+      setError('')
       const response = await api.get('/admin/enterprises')
-      console.log('✅ Entreprises chargées:', response.data)
       setEnterprises(response.data || [])
     } catch (err) {
-      console.error('❌ Erreur chargement entreprises:', err.response?.status, err.response?.data || err.message)
+      setError('⚠️ Erreur lors du chargement des entreprises')
+      console.error(err)
+      if (err.response?.status === 401) {
+        logout()
+        navigate('/master-admin-secret')
+      }
     } finally {
       setLoading(false)
     }
@@ -36,190 +55,343 @@ function AdminDashboard() {
   const handleCreateCompany = async (e) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
+    setSubmitting(true)
 
     try {
-      const response = await api.post('/admin/create-company', { nom, email })
-      setCreated(response.data)
-      setNom('')
-      setEmail('')
-      // Recharger la liste
-      setTimeout(() => loadEnterprises(), 1000)
+      const response = await api.post('/admin/create-company', {
+        nom: formData.nom,
+        email: formData.email,
+        loyalty_type: formData.loyalty_type
+      })
+      
+      // Afficher le modal avec les credentials
+      setNewCompanyCredentials({
+        companyId: response.data.companyId,
+        email: response.data.email,
+        temporaryPassword: response.data.temporaryPassword,
+        loyalty_type: response.data.loyalty_type,
+        nom: formData.nom
+      })
+
+      setSuccess('✅ Entreprise créée avec succès!')
+      setFormData({ nom: '', email: '', loyalty_type: 'points' })
+      setShowCreateForm(false)
+      
+      setTimeout(() => {
+        loadEnterprises()
+        setSuccess('')
+      }, 1500)
+    } catch (err) {
+      setError(err.response?.data?.error || '❌ Erreur lors de la création')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleSuspend = async (companyId) => {
+    if (!window.confirm('🔒 Suspendre cette entreprise?')) return
+
+    try {
+      await api.put(`/admin/suspend-company/${companyId}`)
+      setSuccess('✅ Entreprise suspendue')
+      loadEnterprises()
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur')
     }
   }
 
-  const handleSuspend = async (companyId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir suspendre cette entreprise ?')) {
-      return
-    }
-
-    try {
-      console.log('🔍 Suspension - Envoi de:', { url: `/admin/suspend-company/${companyId}`, companyId })
-      const response = await api.put(`/admin/suspend-company/${companyId}`)
-      console.log('✅ Réponse suspension:', response.data)
-      alert(response.data.message || 'Entreprise suspendue')
-      loadEnterprises()
-    } catch (err) {
-      console.error('❌ Erreur suspension:', err.response?.status, err.response?.data || err.message)
-      alert(err.response?.data?.error || 'Erreur lors de la suspension')
-    }
-  }
-
   const handleReactivate = async (companyId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir réactiver cette entreprise ?')) {
-      return
-    }
+    if (!window.confirm('🔓 Réactiver cette entreprise?')) return
 
     try {
       await api.put(`/admin/reactivate-company/${companyId}`)
-      alert('Entreprise réactivée')
+      setSuccess('✅ Entreprise réactivée')
       loadEnterprises()
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur')
+      setError(err.response?.data?.error || 'Erreur')
     }
   }
 
   const handleDelete = async (companyId) => {
-    if (!window.confirm('⚠️ ATTENTION: Cette action supprimera définitivement cette entreprise ET tous ses clients en cascade!\n\nÊtes-vous VRAIMENT sûr ?')) {
-      return
-    }
+    if (!window.confirm('⚠️ ATTENTION: Suppression définitive!\n\nCette action supprimera l\'entreprise ET tous ses clients.\nÊtes-vous sûr?')) return
 
     try {
       await api.delete(`/admin/delete-company/${companyId}`)
-      alert('Entreprise supprimée (suppression en cascade des clients)')
+      setSuccess('✅ Entreprise supprimée')
       loadEnterprises()
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur')
+      setError(err.response?.data?.error || 'Erreur')
     }
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    logout()
     navigate('/master-admin-secret')
   }
 
+  // Filtrage
+  const filteredEnterprises = enterprises.filter(ent => {
+    const matchesSearch = ent.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         ent.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'tous' || ent.statut === filterStatus
+    return matchesSearch && matchesStatus
+  })
+
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Administration Master</h1>
-        <button className="btn-secondary" onClick={handleLogout}>Déconnexion</button>
-      </div>
+      {/* Modal Credentials */}
+      {newCompanyCredentials && (
+        <div className="modal-overlay" onClick={() => setNewCompanyCredentials(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setNewCompanyCredentials(null)}>✕</button>
+            <div className="modal-header">
+              <h2>🎉 Entreprise créée!</h2>
+              <p className="modal-company-name">{newCompanyCredentials.nom}</p>
+            </div>
+            
+            <div className="modal-body">
+              <p className="modal-instruction">Partagez ces identifiants avec l'entreprise:</p>
+              
+              <div className="credentials-box">
+                <div className="credential-item">
+                  <label>Email (identifiant)</label>
+                  <div className="credential-value">
+                    <span>{newCompanyCredentials.email}</span>
+                    <button onClick={() => navigator.clipboard.writeText(newCompanyCredentials.email)} className="copy-btn">Copier</button>
+                  </div>
+                </div>
+                
+                <div className="credential-item">
+                  <label>Mot de passe temporaire</label>
+                  <div className="credential-value">
+                    <span className="password-display">{newCompanyCredentials.temporaryPassword}</span>
+                    <button onClick={() => navigator.clipboard.writeText(newCompanyCredentials.temporaryPassword)} className="copy-btn">Copier</button>
+                  </div>
+                </div>
 
-      <div className="dashboard-content">
-        {/* Section Création */}
-        <div className="card">
-          <h2>✏️ Créer une Nouvelle Entreprise</h2>
-          <form onSubmit={handleCreateCompany}>
-            <input
-              type="text"
-              placeholder="Nom de l'entreprise"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            {error && <p className="error">{error}</p>}
-            <button type="submit" className="btn-primary">Créer</button>
-          </form>
+                <div className="credential-item">
+                  <label>Type de fidélité</label>
+                  <span>{newCompanyCredentials.loyalty_type === 'points' ? '⭐ Points' : '📝 Timbres'}</span>
+                </div>
+              </div>
+
+              <div className="modal-warning">
+                <p>⚠️ L'entreprise devra changer ce mot de passe lors de sa première connexion.</p>
+              </div>
+
+              <div className="modal-link">
+                <p>📍 Lien de connexion pro:</p>
+                <a href="/pro/login" target="_blank" rel="noopener noreferrer" className="login-link">
+                  Accéder à la connexion pro
+                </a>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button onClick={() => setNewCompanyCredentials(null)} className="btn-primary">
+                ✅ Fermer
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-        {created && (
-          <div className="card success">
-            <h3>✓ Entreprise créée avec succès</h3>
-            <p><strong>ID :</strong> {created.companyId}</p>
-            <p><strong>Email :</strong> {created.email}</p>
-            <p><strong>Mot de passe temporaire :</strong> <code>{created.temporaryPassword}</code></p>
-            <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-              L'entreprise devra changer ce mot de passe à la première connexion.
-            </p>
+      {/* Sidebar */}
+      <aside className="dashboard-sidebar">
+        <div className="sidebar-header">
+          <h2>🎯</h2>
+          <h3>LoyaltyCore Admin</h3>
+        </div>
+        
+        <nav className="sidebar-nav">
+          <div className="nav-item active">
+            <span className="nav-icon">📊</span>
+            <span>Tableau de bord</span>
+          </div>
+        </nav>
+
+        <div className="sidebar-footer">
+          <button onClick={handleLogout} className="btn-logout">
+            Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="dashboard-main">
+        <header className="dashboard-header">
+          <div className="header-content">
+            <h1>Gestion des Entreprises</h1>
+            <p className="header-subtitle">Gérez tous les commerces et leurs comptes de fidélité</p>
+          </div>
+          <button 
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="btn-primary"
+          >
+            {showCreateForm ? '✕ Annuler' : '+ Nouvelle entreprise'}
+          </button>
+        </header>
+
+        {/* Messages */}
+        {error && <div className="alert alert-error">{error}</div>}
+        {success && <div className="alert alert-success">{success}</div>}
+
+        {/* Create Form */}
+        {showCreateForm && (
+          <div className="create-form-section">
+            <h2>Créer une nouvelle entreprise</h2>
+            <form onSubmit={handleCreateCompany} className="create-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Nom de l'entreprise</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Café La Pause"
+                    value={formData.nom}
+                    onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    placeholder="contact@cafe.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Type de fidélité</label>
+                  <select
+                    value={formData.loyalty_type}
+                    onChange={(e) => setFormData({...formData, loyalty_type: e.target.value})}
+                  >
+                    <option value="points">Points</option>
+                    <option value="stamps">Timbres/Stamps</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" className="btn-primary" disabled={submitting}>
+                {submitting ? '⏳ Création...' : '✅ Créer l\'entreprise'}
+              </button>
+            </form>
           </div>
         )}
 
-        {/* Section Gestion des Entreprises */}
-        <div className="card">
-          <h2>🏢 Gérer les Entreprises</h2>
-          
-          {loading ? (
-            <p style={{ textAlign: 'center', color: '#999' }}>Chargement...</p>
-          ) : enterprises.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#999' }}>Aucune entreprise créée</p>
-          ) : (
-            <div className="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nom</th>
-                    <th>Email</th>
-                    <th>Statut</th>
-                    <th>Créée le</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {enterprises.map((enterprise) => (
-                    <tr key={enterprise.id}>
-                      <td><strong>{enterprise.nom}</strong></td>
-                      <td>{enterprise.email}</td>
-                      <td>
-                        <span className={`status-badge ${enterprise.statut}`}>
-                          {enterprise.statut === 'actif' ? '🟢 Actif' : '🔴 Suspendu'}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '12px', color: '#999' }}>
-                        {new Date(enterprise.created_at).toLocaleDateString('fr-FR')}
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          {enterprise.statut === 'actif' ? (
-                            <button
-                              className="btn-warning"
-                              onClick={() => handleSuspend(enterprise.id)}
-                              title="Suspendre cette entreprise"
-                            >
-                              ⏸️ Suspendre
-                            </button>
-                          ) : (
-                            <button
-                              className="btn-success"
-                              onClick={() => handleReactivate(enterprise.id)}
-                              title="Réactiver cette entreprise"
-                            >
-                              ✓ Réactiver
-                            </button>
-                          )}
-                          <button
-                            className="btn-danger"
-                            onClick={() => handleDelete(enterprise.id)}
-                            title="Supprimer définitivement (cascade)"
-                          >
-                            🗑️ Supprimer
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* Search & Filter */}
+        <div className="search-filter-section">
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="🔍 Rechercher par nom ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
 
-          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '4px' }}>
-            <p><strong>📊 Statut des Entreprises:</strong></p>
-            <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
-              <li><strong>🟢 Actif:</strong> L'entreprise peut se connecter et utiliser le service</li>
-              <li><strong>🔴 Suspendu:</strong> L'entreprise est bloquée (ses clients ne peuvent pas ajouter de points)</li>
-              <li><strong>🗑️ Supprimer:</strong> ⚠️ Supprime l'entreprise ET tous ses clients (IRRÉVERSIBLE)</li>
-            </ul>
+          <div className="filter-buttons">
+            <button
+              className={`filter-btn${filterStatus === 'tous' ? ' active' : ''}`}
+              onClick={() => setFilterStatus('tous')}
+            >
+              Tous ({enterprises.length})
+            </button>
+            <button
+              className={`filter-btn${filterStatus === 'actif' ? ' active' : ''}`}
+              onClick={() => setFilterStatus('actif')}
+            >
+              Actifs ({enterprises.filter(e => e.statut === 'actif').length})
+            </button>
+            <button
+              className={`filter-btn${filterStatus === 'suspendu' ? ' active' : ''}`}
+              onClick={() => setFilterStatus('suspendu')}
+            >
+              Suspendus ({enterprises.filter(e => e.statut === 'suspendu').length})
+            </button>
           </div>
         </div>
-      </div>
+
+        {/* Enterprises List */}
+        <div className="enterprises-section">
+          {loading ? (
+            <div className="loading">
+              <div className="spinner"></div>
+              <p>Chargement des entreprises...</p>
+            </div>
+          ) : filteredEnterprises.length === 0 ? (
+            <div className="empty-state">
+              <p>😴 Aucune entreprise trouvée</p>
+            </div>
+          ) : (
+            <div className="enterprises-grid">
+              {filteredEnterprises.map((enterprise) => (
+                <div key={enterprise.id} className={`enterprise-card status-${enterprise.statut}`}>
+                  <div className="card-header">
+                    <h3>{enterprise.nom}</h3>
+                    <span className={`status-badge status-${enterprise.statut}`}>
+                      {enterprise.statut === 'actif' ? '✅ Actif' : '🔒 Suspendu'}
+                    </span>
+                  </div>
+
+                  <div className="card-body">
+                    <div className="info-row">
+                      <span className="label">Email:</span>
+                      <span className="value">{enterprise.email}</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="label">Fidélité:</span>
+                      <span className="value">
+                        {enterprise.loyalty_type === 'points' ? '⭐ Points' : '📝 Timbres'}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="label">Créée:</span>
+                      <span className="value">
+                        {new Date(enterprise.created_at).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="card-actions">
+                    {enterprise.statut === 'actif' ? (
+                      <button
+                        onClick={() => handleSuspend(enterprise.id)}
+                        className="btn-secondary btn-small"
+                        title="Suspendre cette entreprise"
+                      >
+                        🔒 Suspendre
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleReactivate(enterprise.id)}
+                        className="btn-success btn-small"
+                        title="Réactiver cette entreprise"
+                      >
+                        🔓 Réactiver
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(enterprise.id)}
+                      className="btn-danger btn-small"
+                      title="Supprimer définitivement"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   )
 }

@@ -1,0 +1,452 @@
+/* ============================================================
+   COMPOSANT CARD CUSTOMIZER
+   ============================================================ */
+
+.card-customizer {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.customizer-header {
+  margin-bottom: var(--space-8);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: var(--space-6);
+}
+
+.customizer-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+  border: none;
+  padding: 0;
+}
+
+.customizer-header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ============================================================
+   STATUS MESSAGE
+   ============================================================ */
+
+.status-message {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideDown 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.status-message.success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-left: 4px solid var(--success-border);
+}
+
+.status-message.error {
+  background: var(--error-bg);
+  color: var(--error-text);
+  border-left: 4px solid var(--error-border);
+}
+
+/* ============================================================
+   LAYOUT DUAL (Controls + Preview)
+   ============================================================ */
+
+.customizer-layout {
+  display: grid;
+  grid-template-columns: 1fr 450px;
+  gap: var(--space-8);
+  align-items: flex-start;
+}
+
+.control-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-sm);
+}
+
+.preview-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: var(--space-8);
+}
+
+.preview-header {
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: var(--space-4);
+}
+
+.preview-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.preview-header small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ============================================================
+   ONGLETS DU CUSTOMIZER
+   ============================================================ */
+
+.tabs-nav {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tab-btn {
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: slideUp 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   GROUPES DE CONTRÔLES
+   ============================================================ */
+
+.wallet-section {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.wallet-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.wallet-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.control-group {
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.control-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.control-group small {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  display: block;
+  margin-top: -var(--space-1);
+}
+
+.text-input {
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+textarea.text-input {
+  height: auto;
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* ============================================================
+   SÉLECTEURS DE COULEUR
+   ============================================================ */
+
+.color-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+}
+
+.color-group label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.color-input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.color-picker {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.color-picker:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+.color-value {
+  font-family: 'Monaco', monospace;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  background: var(--bg-subtle);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   APERÇU DE LA CARTE
+   ============================================================ */
+
+.card-preview {
+  width: 100%;
+  aspect-ratio: 1 / 1.6;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  margin-bottom: var(--space-4);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.preview-top {
+  margin-bottom: var(--space-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.preview-card-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.preview-header-text {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.preview-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.preview-qr {
+  width: 50px;
+  height: 50px;
+  background: white;
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 1px;
+  padding: 2px;
+  margin: 0 auto;
+}
+
+.preview-qr-square {
+  background: #111827;
+  border-radius: 1px;
+}
+
+.preview-barcode {
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: var(--space-2);
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.preview-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: var(--space-3);
+  text-align: center;
+  font-size: 12px;
+}
+
+.preview-subtitle {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.preview-info {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ============================================================
+   BOUTONS D'ACTION
+   ============================================================ */
+
+.action-buttons {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-light);
+}
+
+.action-buttons .btn-primary,
+.action-buttons .btn-secondary {
+  flex: 1;
+  padding: 10px 16px;
+}
+
+/* ============================================================
+   APPLE WALLET PLACEHOLDER
+   ============================================================ */
+
+.apple-wallet-placeholder {
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--warning-text);
+  font-size: 13px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1200px) {
+  .customizer-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .preview-section {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .control-panel,
+  .preview-section {
+    padding: var(--space-6);
+  }
+
+  .wallet-section {
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-4);
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .customizer-header {
+    padding-bottom: var(--space-4);
+  }
+
+  .customizer-header h2 {
+    font-size: 20px;
+  }
+
+  .control-panel {
+    padding: var(--space-4);
+  }
+
+  .tabs-nav {
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: var(--space-4);
+  }
+
+  .tab-btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: 13px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .card-preview {
+    aspect-ratio: auto;
+    min-height: 300px;
+  }
+}

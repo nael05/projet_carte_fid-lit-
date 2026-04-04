@@ -1,32 +1,40 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Scanner from './pages/Scanner';
-import CreationCarte from './pages/CreationCarte';
+import React from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import Home from './pages/Home'
+import AdminLogin from './pages/AdminLogin'
+import AdminDashboard from './pages/AdminDashboard'
+import ProLogin from './pages/ProLogin'
+import ProResetPassword from './pages/ProResetPassword'
+import ProDashboard from './pages/ProDashboard'
+import JoinWallet from './pages/JoinWallet'
 
-const PrivateRoute = ({ children }) => {
-    const token = localStorage.getItem('token');
-    return token ? children : <Navigate to="/login" />;
-};
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Home */}
+          <Route path="/" element={<Home />} />
 
-const App = () => {
-    return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/join/:entrepriseId" element={<CreationCarte />} />
-                <Route 
-                    path="/scanner" 
-                    element={
-                        <PrivateRoute>
-                            <Scanner />
-                        </PrivateRoute>
-                    } 
-                />
-                <Route path="*" element={<Navigate to="/login" />} />
-            </Routes>
-        </Router>
-    );
-};
+          {/* Master Admin */}
+          <Route path="/master-admin-secret" element={<AdminLogin />} />
+          <Route path="/master-admin-secret/dashboard" element={<AdminDashboard />} />
 
-export default App;
+          {/* Pro */}
+          <Route path="/pro/login" element={<ProLogin />} />
+          <Route path="/pro/reset-password" element={<ProResetPassword />} />
+          <Route path="/pro/dashboard" element={<ProDashboard />} />
+
+          {/* Public */}
+          <Route path="/join/:entrepriseId" element={<JoinWallet />} />
+
+          {/* Default redirect */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  )
+}
+
+export default App

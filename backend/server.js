@@ -1,19 +1,22 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const apiRoutes = require('./routes/apiRoutes');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import apiRoutes from './routes/apiRoutes.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
-app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
 app.use('/api', apiRoutes);
 
-const PORT = process.env.PORT || 3000;
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK' });
+});
 
 app.listen(PORT, () => {
-    console.log(`✅ Serveur démarré sur http://localhost:${PORT}`);
+  console.log(`Backend démarré sur http://localhost:${PORT}`);
 });

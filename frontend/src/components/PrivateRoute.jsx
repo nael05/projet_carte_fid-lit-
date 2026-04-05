@@ -26,7 +26,7 @@ export function PrivateAdminRoute({ element }) {
 }
 
 export function PrivateProRoute({ element }) {
-  const { isAuthenticated, isPro, loading } = useAuth()
+  const { isAuthenticated, isPro, loading, mustChangePassword } = useAuth()
 
   if (loading) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>Chargement...</div>
@@ -38,6 +38,13 @@ export function PrivateProRoute({ element }) {
 
   if (!isPro()) {
     return <Navigate to="/" replace />
+  }
+
+  // 🔐 Forcer le changement de mot de passe si must_change_password = true
+  // Sauf si on est déjà sur la page de changement de mot de passe
+  if (mustChangePassword === true && window.location.pathname !== '/pro/reset-password') {
+    console.warn('⚠️ Changement de mot de passe obligatoire - Redirection...')
+    return <Navigate to="/pro/reset-password" state={{ firstTime: true }} replace />
   }
 
   return element

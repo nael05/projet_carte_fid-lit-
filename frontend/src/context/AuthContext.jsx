@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(localStorage.getItem('userRole') || null)
   const [loading, setLoading] = useState(true)
   const [isSuspended, setIsSuspended] = useState(false)
+  const [mustChangePassword, setMustChangePassword] = useState(false)
 
   // Récupérer token et role au chargement
   useEffect(() => {
@@ -78,9 +79,14 @@ export function AuthProvider({ children }) {
     }
   }, [token, role, loading])
 
-  const login = (newToken, newRole = 'pro') => {
+  const login = (newToken, newRole = 'pro', mustChange = false) => {
     setToken(newToken)
     setRole(newRole)
+    setMustChangePassword(Boolean(mustChange))  // 🔐 Stocker le flag changePassword
+  }
+
+  const updateMustChangePassword = (value) => {
+    setMustChangePassword(Boolean(value))  // 🔐 Mettre à jour le flag
   }
 
   const logout = () => {
@@ -88,6 +94,7 @@ export function AuthProvider({ children }) {
     setRole(null)
     setUser(null)
     setIsSuspended(false)
+    setMustChangePassword(false)  // 🔐 Réinitialiser le flag
     // Nettoyer les données de session pour la sécurité
     localStorage.removeItem('deviceId')
     localStorage.removeItem('companyId')
@@ -105,8 +112,10 @@ export function AuthProvider({ children }) {
     role,
     loading,
     isSuspended,
+    mustChangePassword,  // 🔐 Flag pour forcer le changement de mot de passe
     login,
     logout,
+    updateMustChangePassword,  // 🔐 Fonction pour mettre à jour le flag
     isAdmin,
     isPro,
     isAuthenticated,

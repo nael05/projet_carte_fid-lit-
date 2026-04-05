@@ -45,56 +45,49 @@ function AdminLogin() {
       
       <div className="auth-card login-card">
         <div className="login-header">
-          <div className="logo-icon">🔐</div>
-          <h1>Acces Admin</h1>
+          <h1>Accès Admin</h1>
           <p className="subtitle">Gestion des entreprises</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form login-form">
           <div className="form-group">
             <label htmlFor="identifiant">Identifiant</label>
-            <div className="input-wrapper">
-              <input
-                id="identifiant"
-                type="text"
-                placeholder="Entrez votre identifiant"
-                value={identifiant}
-                onChange={(e) => setIdentifiant(e.target.value)}
-                disabled={loading}
-                required
-                autoComplete="username"
-              />
-              <span className="input-icon">👤</span>
-            </div>
+            <input
+              id="identifiant"
+              type="text"
+              placeholder="Entrez votre identifiant"
+              value={identifiant}
+              onChange={(e) => setIdentifiant(e.target.value)}
+              disabled={loading}
+              required
+              autoComplete="username"
+            />
           </div>
 
           <div className="form-group">
             <label htmlFor="password">Mot de passe</label>
-            <div className="input-wrapper">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Entrez votre mot de passe"
-                value={mot_de_passe}
-                onChange={(e) => setMotDePasse(e.target.value)}
-                disabled={loading}
-                required
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex="-1"
-              >
-                {showPassword ? '🔓' : '🔒'}
-              </button>
-            </div>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Entrez votre mot de passe"
+              value={mot_de_passe}
+              onChange={(e) => setMotDePasse(e.target.value)}
+              disabled={loading}
+              required
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex="-1"
+            >
+              {showPassword ? 'Masquer' : 'Afficher'}
+            </button>
           </div>
 
           {error && (
             <div className="error-alert">
-              <span className="error-icon">⚠️</span>
               <span>{error}</span>
             </div>
           )}

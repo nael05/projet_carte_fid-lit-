@@ -77,27 +77,6 @@ export const updateLoyaltyConfig = async (req, res) => {
           push_notifications_enabled, empresaId
         ]
       );
-
-      // Mettre à jour aussi la table entreprises
-      await pool.query(
-        `UPDATE entreprises SET 
-          loyalty_type = COALESCE(?, loyalty_type),
-          points_per_purchase = COALESCE(?, points_per_purchase),
-          points_for_reward = COALESCE(?, points_for_reward),
-          stamps_count = COALESCE(?, stamps_count),
-          stamps_per_purchase = COALESCE(?, stamps_per_purchase),
-          stamps_for_reward = COALESCE(?, stamps_for_reward),
-          apple_wallet_key = COALESCE(?, apple_wallet_key),
-          google_wallet_key = COALESCE(?, google_wallet_key),
-          push_notifications_enabled = COALESCE(?, push_notifications_enabled)
-         WHERE id = ?`,
-        [
-          loyalty_type, points_per_purchase, points_for_reward,
-          stamps_count, stamps_per_purchase, stamps_for_reward,
-          apple_wallet_key, google_wallet_key,
-          push_notifications_enabled, empresaId
-        ]
-      );
     } else {
       // Créer
       const configId = uuidv4();
@@ -115,22 +94,6 @@ export const updateLoyaltyConfig = async (req, res) => {
           reward_title || 'Récompense', reward_description || '',
           apple_wallet_key || '', google_wallet_key || '',
           push_notifications_enabled !== false
-        ]
-      );
-
-      // Mettre à jour aussi la table entreprises
-      await pool.query(
-        `UPDATE entreprises SET 
-          loyalty_type = ?, points_per_purchase = ?, points_for_reward = ?,
-          stamps_count = ?, stamps_per_purchase = ?, stamps_for_reward = ?,
-          apple_wallet_key = ?, google_wallet_key = ?, push_notifications_enabled = ?
-         WHERE id = ?`,
-        [
-          loyalty_type || 'points',
-          points_per_purchase || 1, points_for_reward || 10,
-          stamps_count || 10, stamps_per_purchase || 1, stamps_for_reward || 10,
-          apple_wallet_key || '', google_wallet_key || '',
-          push_notifications_enabled !== false, empresaId
         ]
       );
     }
@@ -466,7 +429,7 @@ export const getLoyaltyStats = async (req, res) => {
     if (loyaltyType === 'points') {
       const [pointsStats] = await pool.query(
         `SELECT 
-          COUNT(DISTINCT client_id) as totalClients,
+          COUNT(*) as totalClients,
           AVG(points) as avgPoints,
           MAX(points) as maxPoints,
           SUM(points) as totalPoints
@@ -476,23 +439,20 @@ export const getLoyaltyStats = async (req, res) => {
 
       stats = {
         ...stats,
-        ...pointsStats[0]
+        ...(pointsStats[0] || {})
       };
     } else {
+      // Pour les stamps, on compte juste les clients
       const [stampsStats] = await pool.query(
         `SELECT 
-          COUNT(DISTINCT client_id) as totalClients,
-          AVG(stamps_collected) as avgStamps,
-          MAX(stamps_collected) as maxStamps,
-          SUM(stamps_collected) as totalStamps,
-          SUM(stamps_redeemed) as totalRedeemed
-         FROM customer_stamps WHERE entreprise_id = ?`,
+          COUNT(*) as totalClients
+         FROM clients WHERE entreprise_id = ?`,
         [empresaId]
       );
 
       stats = {
         ...stats,
-        ...stampsStats[0]
+        ...(stampsStats[0] || {})
       };
     }
 

@@ -57,49 +57,67 @@ function ProLogin() {
     setLoading(true)
 
     try {
+      console.log('📤 Tentative de connexion...')
       const response = await api.post('/pro/login', {
         email,
         mot_de_passe: password
       })
 
+      console.log('✅ Connexion réussie:', response.data)
+
       if (response.data.token) {
-        // Save token and login
-        login(response.data.token, 'pro')
+        // Sauvegarder le token et se connecter
+        // ⚠️ IMPORTANT: Passer mustChangePassword au contexte
+        login(response.data.token, 'pro', response.data.mustChangePassword)
         
-        // Store company info
+        // Sauvegarder les informations de l'entreprise
         if (response.data.companyId) {
           localStorage.setItem('companyId', response.data.companyId)
           localStorage.setItem('companyName', response.data.nom)
+          console.log('💾 Infos entreprise sauvegardées:', response.data.nom)
         }
 
-        // 🔐 Store device ID for session management
+        // 🔐 Sauvegarder l'ID d'appareil pour la gestion des sessions
         if (response.data.deviceId) {
           localStorage.setItem('deviceId', response.data.deviceId)
+          console.log('💾 Device ID sauvegardé')
         }
         
-        // Store for remember me
+        // Remember me
         if (rememberMe) {
           localStorage.setItem('rememberedEmail', email)
+          console.log('💾 Email mémorisé')
         } else {
           localStorage.removeItem('rememberedEmail')
         }
 
-        // Check if password must be changed
-        if (response.data.mustChangePassword) {
+        // 🔐 Vérifier si le changement de mot de passe est obligatoire
+        // mustChangePassword doit TOUJOURS être un boolean
+        const mustChange = response.data.mustChangePassword === true
+        
+        if (mustChange) {
+          console.log('⚠️ Première connexion - Changement de mot de passe obligatoire')
           navigate('/pro/reset-password', { 
-            state: { email, firstTime: true } 
+            state: { 
+              email, 
+              firstTime: true,
+              fromLogin: true
+            } 
           })
         } else {
+          console.log('✅ Redirection vers le dashboard')
           navigate('/pro/dashboard')
         }
       }
     } catch (err) {
-      console.error('Login error:', err)
+      console.error('❌ Erreur de connexion:', err)
       
       if (err.response?.status === 401) {
         setError('❌ Email ou mot de passe incorrect')
       } else if (err.response?.status === 403) {
         setError('🔒 Votre compte a été suspendu')
+      } else if (err.response?.status === 500) {
+        setError('❌ Erreur serveur - Veuillez réessayer')
       } else {
         setError(err.response?.data?.error || '❌ Erreur de connexion')
       }
@@ -122,10 +140,6 @@ function ProLogin() {
         <div className="pro-login-form-content">
           {/* Header */}
           <div className="pro-login-header">
-            <div className="pro-login-logo">
-              <span className="logo-emoji">📊</span>
-              <span className="logo-text">LoyaltyCore Pro</span>
-            </div>
             <h1>Connexion Entreprise</h1>
             <p className="pro-login-subtitle">
               Accédez à votre espace de gestion de fidélité
@@ -144,46 +158,38 @@ function ProLogin() {
             {/* Email Input */}
             <div className="pro-form-group">
               <label htmlFor="email">Email</label>
-              <div className="pro-input-wrapper">
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="contact@entreprise.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                  required
-                  autoFocus
-                />
-                <span className="pro-input-icon">✉️</span>
-              </div>
+              <input
+                id="email"
+                type="email"
+                placeholder="contact@entreprise.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                required
+                autoFocus
+              />
             </div>
 
             {/* Password Input */}
             <div className="pro-form-group">
-              <div className="pro-password-header">
-                <label htmlFor="password">Mot de passe</label>
-                <button
-                  type="button"
-                  className="pro-toggle-password"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                >
-                  {showPassword ? '👁️ Masquer' : '👁️‍🗨️ Afficher'}
-                </button>
-              </div>
-              <div className="pro-input-wrapper">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  required
-                />
-                <span className="pro-input-icon">🔐</span>
-              </div>
+              <label htmlFor="password">Mot de passe</label>
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                required
+              />
+              <button
+                type="button"
+                className="pro-toggle-password"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? 'Masquer' : 'Afficher'}
+              </button>
             </div>
 
             {/* Remember me */}
@@ -210,33 +216,16 @@ function ProLogin() {
                   Connexion en cours...
                 </>
               ) : (
-                '🚀 Se connecter'
+                'Se connecter'
               )}
             </button>
           </form>
 
-          {/* Info Box */}
-          <div className="pro-info-box">
-            <p className="pro-info-title">💡 Premier accès?</p>
-            <p className="pro-info-text">
-              Utilisez les identifiants temporaires reçus de votre administrateur. 
-              Vous devrez changer le mot de passe à la première connexion.
-            </p>
-          </div>
-
-          {/* Footer Links */}
-          <div className="pro-login-footer">
-            <p>
-              Espace admin?{' '}
-              <button
-                type="button"
-                onClick={() => navigate('/master-admin-secret')}
-                className="pro-link-button"
-              >
-                Se connecter ici
-              </button>
-            </p>
-          </div>
+          {/* Info Text */}
+          <p className="auth-card .info-text" style={{ fontSize: '12px', marginTop: 'var(--space-4)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+            Utilisez les identifiants temporaires reçus de votre administrateur.<br/>
+            Vous devrez changer le mot de passe à la première connexion.
+          </p>
         </div>
       </div>
     </div>

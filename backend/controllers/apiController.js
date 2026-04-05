@@ -7,6 +7,7 @@ import { PKPass } from 'passkit-generator';
 import * as fs from 'fs';
 import * as path from 'path';
 import googleWalletManager from '../utils/googleWalletManager.js';
+import { validatePassword, validatePasswordChange } from '../utils/passwordValidator.js';
 
 // ===== MASTER ADMIN CONTROLLERS =====
 
@@ -204,6 +205,13 @@ export const proLogin = async (req, res) => {
     const deviceFingerprint = generateDeviceFingerprint(req);
     const deviceName = req.headers['user-agent']?.substring(0, 100) || 'Unknown Device';
     
+    // 🔐 Convertir must_change_password en boolean strict
+    const mustChangePassword = Boolean(company.must_change_password);
+    if (mustChangePassword) {
+      console.log(`⚠️ Première connexion de l'entreprise: ${company.nom} (${company.id})`);
+      console.log(`   → Changement de mot de passe obligatoire`);
+    }
+    
     // Créer la session (valide 24h) - optionnel, ne bloque pas le login
     try {
       await createSession(company.id, deviceFingerprint, deviceName, token, '24h');
@@ -217,7 +225,7 @@ export const proLogin = async (req, res) => {
     res.json({
       token,
       deviceId: deviceFingerprint,
-      mustChangePassword: company.must_change_password,
+      mustChangePassword,  // ← TOUJOURS boolean
       companyId: company.id,
       nom: company.nom,
       email: company.email,
@@ -234,22 +242,72 @@ export const changePassword = async (req, res) => {
   const { newPassword } = req.body;
   const empresaId = req.user.id;
 
-  if (!newPassword || newPassword.length < 6) {
-    return res.status(400).json({ error: 'Mot de passe trop court (min 6 caractères)' });
-  }
-
   try {
+    // Vérifier que le champ newPassword existe
+    if (!newPassword) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe est requis' });
+    }
+
+    // Récupérer l'entreprise actuelle
+    const [rows] = await pool.query(
+      'SELECT mot_de_passe, must_change_password FROM entreprises WHERE id = ?',
+      [empresaId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Entreprise non trouvée' });
+    }
+
+    const company = rows[0];
+
+    // 🔐 Vérification 1: Valider la complexité du nouveau mot de passe
+    const complexityCheck = validatePassword(newPassword);
+    if (!complexityCheck.isValid) {
+      return res.status(400).json({
+        error: 'Exigences du mot de passe non respectées',
+        details: complexityCheck.errors
+      });
+    }
+
+    // 🔐 Vérification 2: S'assurer que le nouveau mot de passe est différent de l'ancien
+    // (Important pour éviter que l'utilisateur garde le même mot de passe temporaire)
+    const isSamePassword = await bcrypt.compare(newPassword, company.mot_de_passe);
+    if (isSamePassword) {
+      return res.status(400).json({
+        error: 'Le nouveau mot de passe doit être différent de l\'ancien mot de passe'
+      });
+    }
+
+    // 🔐 Vérification 3: Hash du nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await pool.query(
+    // 🔐 Vérification 4: Invalider toutes les sessions existantes (sauf le token courant)
+    // Optionnel: DELETE des sessions ou ajouter une version de session
+    // await pool.query(
+    //   'DELETE FROM sessions WHERE entreprise_id = ? AND token != ?',
+    //   [empresaId, req.headers.authorization.split(' ')[1]]
+    // );
+
+    // UPDATE: changer le mot de passe et mettre must_change_password à FALSE
+    const [updateResult] = await pool.query(
       'UPDATE entreprises SET mot_de_passe = ?, must_change_password = FALSE WHERE id = ?',
       [hashedPassword, empresaId]
     );
 
-    res.json({ success: true, message: 'Mot de passe changé' });
+    if (updateResult.affectedRows === 0) {
+      return res.status(500).json({ error: 'Impossible de mettre à jour le mot de passe' });
+    }
+
+    console.log(`✅ Mot de passe changé pour l'entreprise: ${empresaId}`);
+
+    res.json({
+      success: true,
+      message: 'Mot de passe changé avec succès',
+      mustChangePassword: false
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('❌ Erreur changePassword:', err.message, err.stack);
+    res.status(500).json({ error: 'Erreur serveur: ' + err.message });
   }
 };
 

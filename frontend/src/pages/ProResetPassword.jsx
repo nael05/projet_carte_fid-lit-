@@ -16,7 +16,7 @@ function ProResetPassword() {
   
   const navigate = useNavigate()
   const location = useLocation()
-  const { token } = useAuth()
+  const { token, updateMustChangePassword } = useAuth()
 
   // Vérifier que l'user peut accéder à cette page
   useEffect(() => {
@@ -38,35 +38,56 @@ function ProResetPassword() {
     setLoading(true)
 
     try {
-      // Validation des correspondances
+      // ✅ Validation 1: Les mots de passe correspondent
       if (newPassword !== confirmPassword) {
         setError('❌ Les mots de passe ne correspondent pas')
         setLoading(false)
         return
       }
 
-      // Validation de la complexité
-      const validation = validatePassword(newPassword)
-      if (!validation.isValid) {
-        setError(`❌ Les exigences du mot de passe:\\n${validation.errors.join(', ')}`)
+      // ✅ Validation 2: Les champs ne sont pas vides
+      if (!newPassword || !confirmPassword) {
+        setError('❌ Veuillez remplir tous les champs')
         setLoading(false)
         return
       }
 
-      // Envoyer la requête
+      // ✅ Validation 3: Complexité du mot de passe
+      const validation = validatePassword(newPassword)
+      if (!validation.isValid) {
+        setError(`❌ Exigences du mot de passe:\n${validation.errors.join('\n')}`)
+        setLoading(false)
+        return
+      }
+
+      // 📤 Envoyer la requête au backend
+      console.log('📤 Envoi du changement de mot de passe...')
       await api.put('/pro/change-password', { newPassword })
+      
+      console.log('✅ Mot de passe changé avec succès')
+      
+      // 🔐 Réinitialiser le flag mustChangePassword
+      updateMustChangePassword(false)
+      
       setSuccess(true)
       
+      // Redirection après 2 secondes
       setTimeout(() => {
         navigate('/pro/dashboard')
-      }, 1500)
+      }, 2000)
     } catch (err) {
-      console.error('Change password error:', err)
+      console.error('❌ Erreur change password:', err)
+      
       if (err.response?.status === 401) {
         setError('❌ Session expirée. Reconnexion requise.')
         setTimeout(() => navigate('/pro/login'), 2000)
+      } else if (err.response?.data?.error) {
+        // Afficher les erreurs détaillées du backend
+        const errorMsg = err.response.data.error
+        const details = err.response.data.details
+        setError(`❌ ${errorMsg}${details ? '\n' + details.join('\n') : ''}`)
       } else {
-        setError(err.response?.data?.error || '❌ Erreur lors du changement de mot de passe')
+        setError('❌ Erreur lors du changement de mot de passe')
       }
     } finally {
       setLoading(false)
@@ -77,9 +98,9 @@ function ProResetPassword() {
     return (
       <div className="auth-container">
         <div className="auth-card">
-          <h1>Mot de passe changé</h1>
-          <p style={{ textAlign: 'center', color: '#388e3c' }}>
-            Redirection en cours...
+          <h2>Mot de passe changé</h2>
+          <p style={{ textAlign: 'center', color: '#065F46', margin: '0' }}>
+            Redirection vers le tableau de bord...
           </p>
         </div>
       </div>
@@ -89,16 +110,17 @@ function ProResetPassword() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>🔒 Sécuriser votre compte</h1>
-        <p style={{ textAlign: 'center', color: '#d32f2f', marginBottom: '20px', fontWeight: '600' }}>
-          Première connexion détectée !<br/>
-          <span style={{ fontSize: '13px', color: '#666', fontWeight: '400' }}>Veuillez créer un nouveau mot de passe sécurisé</span>
+        <h2>Sécuriser votre compte</h2>
+        <p style={{ textAlign: 'center', fontSize: '14px', marginBottom: '32px', lineHeight: '1.5' }}>
+          Première connexion détectée ! Veuillez créer un nouveau mot de passe sécurisé.
         </p>
-        <form onSubmit={handleSubmit}>
-          <div style={{ position: 'relative', marginBottom: '15px' }}>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="newPassword">Nouveau mot de passe</label>
             <input
+              id="newPassword"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Nouveau mot de passe"
+              placeholder="Entrez un mot de passe sécurisé"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={loading}
@@ -107,26 +129,19 @@ function ProResetPassword() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px'
-              }}
+              className="toggle-password"
               tabIndex={-1}
             >
-              {showPassword ? '👁️' : '👁️‍🗨️'}
+              {showPassword ? 'Masquer' : 'Afficher'}
             </button>
           </div>
 
-          <div style={{ position: 'relative', marginBottom: '15px' }}>
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
             <input
+              id="confirmPassword"
               type={showConfirm ? 'text' : 'password'}
-              placeholder="Confirmer le mot de passe"
+              placeholder="Confirmez votre mot de passe"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
@@ -135,36 +150,31 @@ function ProResetPassword() {
             <button
               type="button"
               onClick={() => setShowConfirm(!showConfirm)}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px'
-              }}
+              className="toggle-password"
               tabIndex={-1}
             >
-              {showConfirm ? '👁️' : '👁️‍🗨️'}
+              {showConfirm ? 'Masquer' : 'Afficher'}
             </button>
           </div>
 
-          {error && <p className="error">{error}</p>}
+          {error && (
+            <div className="error">
+              {error}
+            </div>
+          )}
           
           {/* Password strength indicator */}
           {newPassword && (
-            <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
-              <p>Critères du mot de passe:</p>
-              <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                <li style={{ color: newPassword.length >= 6 ? '#388e3c' : '#999' }}>
+            <div style={{ fontSize: '12px', color: '#4B5563', marginBottom: '12px' }}>
+              <p style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: '#4B5563' }}>Critères du mot de passe:</p>
+              <ul style={{ margin: '0', paddingLeft: '20px', listStyle: 'none' }}>
+                <li style={{ color: newPassword.length >= 6 ? '#065F46' : '#9CA3AF', fontSize: '13px' }}>
                   {newPassword.length >= 6 ? '✓' : '○'} Au moins 6 caractères
                 </li>
-                <li style={{ color: /(?=.*[A-Z])/.test(newPassword) ? '#388e3c' : '#999' }}>
+                <li style={{ color: /(?=.*[A-Z])/.test(newPassword) ? '#065F46' : '#9CA3AF', fontSize: '13px' }}>
                   {/(?=.*[A-Z])/.test(newPassword) ? '✓' : '○'} Une majuscule
                 </li>
-                <li style={{ color: /(?=.*[0-9!@#$%^&*])/.test(newPassword) ? '#388e3c' : '#999' }}>
+                <li style={{ color: /(?=.*[0-9!@#$%^&*])/.test(newPassword) ? '#065F46' : '#9CA3AF', fontSize: '13px' }}>
                   {/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? '✓' : '○'} Un chiffre ou caractère spécial
                 </li>
               </ul>
@@ -172,7 +182,14 @@ function ProResetPassword() {
           )}
           
           <button type="submit" className="btn-primary" disabled={loading || !newPassword || !confirmPassword}>
-            {loading ? 'En cours...' : 'Changer le mot de passe'}
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                En cours...
+              </>
+            ) : (
+              'Changer le mot de passe'
+            )}
           </button>
         </form>
       </div>

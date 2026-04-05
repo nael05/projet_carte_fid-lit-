@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import jwt from 'jsonwebtoken';
+import { getValidAccessToken } from './googleOAuth.js';
 
 class GoogleWalletManager {
   constructor() {
@@ -9,6 +10,8 @@ class GoogleWalletManager {
     this.credentials = null;
     this.accessToken = null;
     this.tokenExpiry = null;
+    // Issuer ID from Google Pay Console
+    this.issuerId = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023110060';
     this.loadCredentials();
   }
 
@@ -29,54 +32,22 @@ class GoogleWalletManager {
   }
 
   async getAccessToken() {
-    // Si on a déjà un token valide, le réutiliser
-    if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
-      return this.accessToken;
+    // Utiliser le token OAuth au lieu du JWT Service Account
+    // Cela contourne les problèmes de permissions Issuer
+    const token = await getValidAccessToken();
+    
+    if (!token) {
+      throw new Error('Token OAuth non disponible. Lance: npm run setup-oauth');
     }
 
-    if (!this.credentials) {
-      throw new Error('Google Wallet credentials not loaded');
-    }
-
-    try {
-      const payload = {
-        iss: this.credentials.client_email,
-        sub: this.credentials.client_email,
-        aud: this.credentials.token_uri,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 3600, // Valide 1h
-      };
-
-      const token = jwt.sign(payload, this.credentials.private_key, { algorithm: 'RS256' });
-
-      const response = await fetch(this.credentials.token_uri, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-          assertion: token,
-        }).toString(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Token request failed: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // Renouveler 1min avant expiration
-
-      return this.accessToken;
-    } catch (err) {
-      console.error('❌ Erreur obtention access token Google:', err.message);
-      throw err;
-    }
+    return token;
   }
 
   async createWalletPass(clientData, customization, loyaltyType) {
     try {
       const token = await this.getAccessToken();
-      const issuerId = this.credentials.client_email.split('@')[0];
+      // Utiliser l'Issuer ID configuré
+      const issuerId = this.issuerId;
       
       // Utiliser le Class ID personnalisé ou générer un par défaut
       const baseClassId = customization?.wallet_class_id || `loyalty_${loyaltyType}`;

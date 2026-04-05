@@ -68,8 +68,8 @@ export const createCompany = async (req, res) => {
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     await pool.query(
-      'INSERT INTO entreprises (id, nom, email, mot_de_passe, temporary_password, must_change_password, statut, loyalty_type) VALUES (?, ?, ?, ?, ?, TRUE, "actif", ?)',
-      [companyId, nom, email, hashedPassword, tempPassword, loyalty_type]
+      'INSERT INTO entreprises (id, nom, email, mot_de_passe, temporary_password, must_change_password, statut, loyalty_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [companyId, nom, email, hashedPassword, tempPassword, true, 'actif', loyalty_type]
     );
 
     // Créer la configuration de fidélité initiale

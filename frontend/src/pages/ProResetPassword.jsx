@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { validatePassword } from '../utils/passwordValidator'
 import api from '../api'
 import './Auth.css'
 
@@ -37,24 +38,18 @@ function ProResetPassword() {
     setLoading(true)
 
     try {
-      // Validation
+      // Validation des correspondances
       if (newPassword !== confirmPassword) {
-        setError('Les mots de passe ne correspondent pas')
+        setError('❌ Les mots de passe ne correspondent pas')
+        setLoading(false)
         return
       }
 
-      if (newPassword.length < 6) {
-        setError('Le mot de passe doit contenir au moins 6 caractères')
-        return
-      }
-
-      if (!/(?=.*[A-Z])/.test(newPassword)) {
-        setError('Le mot de passe doit contenir une majuscule')
-        return
-      }
-
-      if (!/(?=.*[0-9!@#$%^&*])/.test(newPassword)) {
-        setError('Le mot de passe doit contenir un chiffre ou un caractère spécial')
+      // Validation de la complexité
+      const validation = validatePassword(newPassword)
+      if (!validation.isValid) {
+        setError(`❌ Les exigences du mot de passe:\\n${validation.errors.join(', ')}`)
+        setLoading(false)
         return
       }
 
@@ -68,10 +63,10 @@ function ProResetPassword() {
     } catch (err) {
       console.error('Change password error:', err)
       if (err.response?.status === 401) {
-        setError('Session expirée. Reconnexion requise.')
+        setError('❌ Session expirée. Reconnexion requise.')
         setTimeout(() => navigate('/pro/login'), 2000)
       } else {
-        setError(err.response?.data?.error || 'Erreur lors du changement de mot de passe')
+        setError(err.response?.data?.error || '❌ Erreur lors du changement de mot de passe')
       }
     } finally {
       setLoading(false)

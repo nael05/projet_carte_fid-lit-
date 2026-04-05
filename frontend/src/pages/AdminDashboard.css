@@ -280,6 +280,17 @@
   box-shadow: 0 2px 8px rgba(0, 82, 204, 0.15);
 }
 
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary:disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.25);
+}
+
 .search-filter-section {
   margin: 0 0 32px 0;
   display: flex;
@@ -919,6 +930,7 @@
   min-width: 120px;
 }
 
+@media (max-width: 480px) {
   .search-filter-section {
     flex-direction: column;
     margin: 16px 20px;

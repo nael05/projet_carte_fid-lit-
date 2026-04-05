@@ -56,6 +56,25 @@ function AdminDashboard() {
     e.preventDefault()
     setError('')
     setSuccess('')
+    
+    // Validation
+    if (!formData.nom || !formData.nom.trim()) {
+      setError('❌ Le nom de l\'entreprise est requis')
+      return
+    }
+    
+    if (!formData.email || !formData.email.trim()) {
+      setError('❌ L\'email est requis')
+      return
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setError('❌ Email invalide')
+      return
+    }
+    
     setSubmitting(true)
 
     try {
@@ -94,10 +113,11 @@ function AdminDashboard() {
 
     try {
       await api.put(`/admin/suspend-company/${companyId}`)
-      setSuccess('✅ Entreprise suspendue')
+      setSuccess('✅ Entreprise suspendue avec succès')
       loadEnterprises()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur')
+      const errorMsg = err.response?.data?.error || 'Erreur lors de la suspension'
+      setError(`❌ Impossible de suspendre: ${errorMsg}`)
     }
   }
 
@@ -106,10 +126,11 @@ function AdminDashboard() {
 
     try {
       await api.put(`/admin/reactivate-company/${companyId}`)
-      setSuccess('✅ Entreprise réactivée')
+      setSuccess('✅ Entreprise réactivée avec succès')
       loadEnterprises()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur')
+      const errorMsg = err.response?.data?.error || 'Erreur lors de la réactivation'
+      setError(`❌ Impossible de réactiver: ${errorMsg}`)
     }
   }
 
@@ -118,10 +139,11 @@ function AdminDashboard() {
 
     try {
       await api.delete(`/admin/delete-company/${companyId}`)
-      setSuccess('✅ Entreprise supprimée')
+      setSuccess('✅ Entreprise supprimée avec succès')
       loadEnterprises()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur')
+      const errorMsg = err.response?.data?.error || 'Erreur lors de la suppression'
+      setError(`❌ Impossible de supprimer: ${errorMsg}`)
     }
   }
 

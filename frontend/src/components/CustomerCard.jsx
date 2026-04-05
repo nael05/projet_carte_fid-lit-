@@ -112,12 +112,12 @@ const CustomerCard = ({
                   </div>
                 </div>
                 <div className="stat-divider" style={{ color: textColor, opacity: 0.3 }}>|</div>
-                <div className="stat-box">
-                  <div className="stat-label">Prochaine récompense</div>
-                  <div style={{ fontSize: '12px' }}>
-                    {client?.points ? `${(client.points % 100) || 100}/100` : '0/100'}
-                  </div>
-                </div>
+          <div className="stat-box">
+            <div className="stat-label">Prochaine récompense</div>
+            <div style={{ fontSize: '12px' }}>
+              {client?.points ? `${client.points % 100}/100` : '0/100'}
+            </div>
+          </div>
               </>
             ) : (
               <>

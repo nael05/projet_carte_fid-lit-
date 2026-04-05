@@ -7,6 +7,7 @@ import DeviceManager from './DeviceManager'
 import LoyaltySettings from './LoyaltySettings'
 import PushNotifications from './PushNotifications'
 import CardCustomizer from '../components/CardCustomizer'
+import CustomerCard from '../components/CustomerCard'
 import './Dashboard.css'
 
 function ProDashboard() {

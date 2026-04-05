@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
@@ -13,23 +13,43 @@ function ProLogin() {
   const [rememberMe, setRememberMe] = useState(false)
 
   const navigate = useNavigate()
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, loading: authLoading, role } = useAuth()
+  const redirectedRef = useRef(false)
 
-  // Redirect if already logged in
+  // Redirect if already logged in AND is Pro (only once)
   useEffect(() => {
-    if (isAuthenticated) {
+    // Ne rediriger QUE si:
+    // 1. AuthContext a fini de charger
+    // 2. L'utilisateur est vraiment authentifié
+    // 3. Son rôle est 'pro' (pas 'admin')
+    // 4. On n'a pas déjà redirigé
+    if (authLoading) return
+    
+    if (isAuthenticated && role === 'pro' && !redirectedRef.current) {
+      redirectedRef.current = true
       navigate('/pro/dashboard')
     }
-  }, [isAuthenticated, navigate])
+  }, [authLoading, isAuthenticated, role, navigate])
 
-  // Load remembered email
+  // Load remembered email & clean bad auth data (une seule fois au mount)
   useEffect(() => {
+    // Nettoyer les données d'authentification invalides au chargement de cette page
+    // Si on a des données stockées, elles font bugger la redirection
+    const currentRole = localStorage.getItem('userRole')
+    if (currentRole && currentRole !== 'pro') {
+      // On est sur la page Pro/Login mais avec un rôle admin/autre
+      // Nettoyer pour éviter les redirections infinies
+      localStorage.removeItem('token')
+      localStorage.removeItem('userRole')
+      localStorage.removeItem('deviceId')
+    }
+
     const remembered = localStorage.getItem('rememberedEmail')
     if (remembered) {
       setEmail(remembered)
       setRememberMe(true)
     }
-  }, [])
+  }, []) // ✅ Array vide = une seule fois au montage
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -37,7 +57,7 @@ function ProLogin() {
     setLoading(true)
 
     try {
-      const response = await api.post('/api/pro/login', {
+      const response = await api.post('/pro/login', {
         email,
         mot_de_passe: password
       })

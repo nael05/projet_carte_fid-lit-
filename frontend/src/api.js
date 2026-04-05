@@ -28,6 +28,9 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Session expirée - nettoyer et rediriger
+      // Stocker le role AVANT de le supprimer
+      const userRole = localStorage.getItem('userRole')
+      
       localStorage.removeItem('token')
       localStorage.removeItem('userRole')
       localStorage.removeItem('deviceId')
@@ -35,7 +38,6 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('companyName')
       
       // Rediriger vers login approprié
-      const userRole = localStorage.getItem('userRole')
       if (userRole === 'admin') {
         window.location.href = '/master-admin-secret'
       } else {

@@ -155,6 +155,14 @@ function AdminDashboard() {
               
               <div className="credentials-box">
                 <div className="credential-item">
+                  <label>ID de l'entreprise</label>
+                  <div className="credential-value">
+                    <span className="id-display">{newCompanyCredentials.companyId}</span>
+                    <button onClick={() => navigator.clipboard.writeText(newCompanyCredentials.companyId)} className="copy-btn">Copier</button>
+                  </div>
+                </div>
+
+                <div className="credential-item">
                   <label>Email (identifiant)</label>
                   <div className="credential-value">
                     <span>{newCompanyCredentials.email}</span>
@@ -343,9 +351,19 @@ function AdminDashboard() {
 
                   <div className="card-body">
                     <div className="info-row">
+                      <span className="label">ID:</span>
+                      <span className="value id-text">{enterprise.id}</span>
+                    </div>
+                    <div className="info-row">
                       <span className="label">Email:</span>
                       <span className="value">{enterprise.email}</span>
                     </div>
+                    {enterprise.temporary_password && (
+                      <div className="info-row temp-password-row">
+                        <span className="label">🔑 Mot de passe temp:</span>
+                        <span className="value password-value">{enterprise.temporary_password}</span>
+                      </div>
+                    )}
                     <div className="info-row">
                       <span className="label">Fidélité:</span>
                       <span className="value">

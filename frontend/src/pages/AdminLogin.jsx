@@ -15,7 +15,7 @@ function AdminLogin() {
   const { login, isAuthenticated, isAdmin } = useAuth()
 
   useEffect(() => {
-    if (isAuthenticated() && isAdmin()) {
+    if (isAuthenticated && isAdmin()) {
       navigate('/master-admin-secret/dashboard')
     }
   }, [isAuthenticated, isAdmin, navigate])

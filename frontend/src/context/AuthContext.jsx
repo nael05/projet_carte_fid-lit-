@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  // Synchroniser token avec localStorage
+  // Synchroniser token with localStorage
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token)
@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
     }
   }, [token])
 
-  // Synchroniser role avec localStorage
+  // Synchroniser role with localStorage
   useEffect(() => {
     if (role) {
       localStorage.setItem('userRole', role)
@@ -42,26 +42,41 @@ export function AuthProvider({ children }) {
     }
   }, [role])
 
-  // Vérifier le statut pour les pro
+  // Vérifier le statut pour les pro (une seule fois après authentification)
   useEffect(() => {
-    if (!token || role !== 'pro') return
+    if (!token || role !== 'pro' || loading) return
+
+    // Utiliser une ref pour ne faire ça qu'une fois
+    let isMounted = true
 
     const checkStatus = async () => {
       try {
         const response = await api.get('/pro/status')
-        if (response.data.statut === 'suspendu') {
-          setIsSuspended(true)
-        } else {
+        if (isMounted) {
+          if (response.data.statut === 'suspendu') {
+            setIsSuspended(true)
+          } else {
+            setIsSuspended(false)
+          }
+          setUser(response.data)
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error('Erreur vérification statut:', err)
+          // Ne pas bloquer l'application en cas d'erreur
           setIsSuspended(false)
         }
-        setUser(response.data)
-      } catch (err) {
-        console.error('Erreur vérification statut:', err)
       }
     }
 
-    checkStatus()
-  }, [token, role])
+    // Laisser un délai d'une seconde après authentification avant de vérifier le statut
+    const timer = setTimeout(checkStatus, 1000)
+
+    return () => {
+      isMounted = false
+      clearTimeout(timer)
+    }
+  }, [token, role, loading])
 
   const login = (newToken, newRole = 'pro') => {
     setToken(newToken)
@@ -81,7 +96,8 @@ export function AuthProvider({ children }) {
 
   const isAdmin = () => role === 'admin'
   const isPro = () => role === 'pro'
-  const isAuthenticated = () => !!token
+  // isAuthenticated est maintenant une valeur booléenne, pas une fonction
+  const isAuthenticated = !!token
 
   const value = {
     token,

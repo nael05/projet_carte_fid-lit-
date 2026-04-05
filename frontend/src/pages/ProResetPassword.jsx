@@ -94,9 +94,10 @@ function ProResetPassword() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>Changer le mot de passe</h1>
-        <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
-          Veuillez créer un nouveau mot de passe sécurisé
+        <h1>🔒 Sécuriser votre compte</h1>
+        <p style={{ textAlign: 'center', color: '#d32f2f', marginBottom: '20px', fontWeight: '600' }}>
+          Première connexion détectée !<br/>
+          <span style={{ fontSize: '13px', color: '#666', fontWeight: '400' }}>Veuillez créer un nouveau mot de passe sécurisé</span>
         </p>
         <form onSubmit={handleSubmit}>
           <div style={{ position: 'relative', marginBottom: '15px' }}>

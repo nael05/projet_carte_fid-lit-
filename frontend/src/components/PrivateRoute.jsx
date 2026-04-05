@@ -14,7 +14,7 @@ export function PrivateAdminRoute({ element }) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>Chargement...</div>
   }
 
-  if (!isAuthenticated()) {
+  if (!isAuthenticated) {
     return <Navigate to="/master-admin-secret" replace />
   }
 
@@ -32,7 +32,7 @@ export function PrivateProRoute({ element }) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>Chargement...</div>
   }
 
-  if (!isAuthenticated()) {
+  if (!isAuthenticated) {
     return <Navigate to="/pro/login" replace />
   }
 

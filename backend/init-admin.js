@@ -1,11 +1,14 @@
 import mysql from 'mysql2/promise.js';
 import bcryptjs from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const initDatabase = async () => {
   try {
-    // Configuration
-    const masterPassword = 'AdminPassword123!';
+    // Configuration - Utiliser le mot de passe depuis .env ou générer un aléatoire
+    const masterPassword = process.env.ADMIN_PASSWORD || (Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10));
     const adminId = uuidv4();
     const passwordHash = await bcryptjs.hash(masterPassword, 10);
 

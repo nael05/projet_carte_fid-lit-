@@ -7,7 +7,7 @@ Write-Host "🚀 Démarrage des tests..." -ForegroundColor Green
 Write-Host ""
 
 $API_URL = "http://localhost:5000/api"
-$FRONTEND_URL = "http://localhost:3001"
+$FRONTEND_URL = "http://localhost:3000"
 
 # Color helpers
 function Success { param([string]$msg); Write-Host "OK: $msg" -ForegroundColor Green }

@@ -41,7 +41,7 @@ export const adminLogin = async (req, res) => {
 export const getEnterprises = async (req, res) => {
   try {
     const [enterprises] = await pool.query(
-      'SELECT id, nom, email, statut, created_at FROM entreprises ORDER BY created_at DESC'
+      'SELECT id, nom, email, statut, loyalty_type, temporary_password, must_change_password, created_at FROM entreprises ORDER BY created_at DESC'
     );
 
     res.json(enterprises);
@@ -68,8 +68,8 @@ export const createCompany = async (req, res) => {
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     await pool.query(
-      'INSERT INTO entreprises (id, nom, email, mot_de_passe, must_change_password, statut, loyalty_type) VALUES (?, ?, ?, ?, TRUE, "actif", ?)',
-      [companyId, nom, email, hashedPassword, loyalty_type]
+      'INSERT INTO entreprises (id, nom, email, mot_de_passe, temporary_password, must_change_password, statut, loyalty_type) VALUES (?, ?, ?, ?, ?, TRUE, "actif", ?)',
+      [companyId, nom, email, hashedPassword, tempPassword, loyalty_type]
     );
 
     // Créer la configuration de fidélité initiale
@@ -200,26 +200,29 @@ export const proLogin = async (req, res) => {
 
     const token = generateToken(company.id, 'pro');
     
-    // 🆕 Générer une empreinte d'appareil unique
+    // Générer une empreinte d'appareil unique
     const deviceFingerprint = generateDeviceFingerprint(req);
     const deviceName = req.headers['user-agent']?.substring(0, 100) || 'Unknown Device';
     
-    // 🆕 Créer la session (valide 24h)
+    // Créer la session (valide 24h) - optionnel, ne bloque pas le login
     try {
       await createSession(company.id, deviceFingerprint, deviceName, token, '24h');
       console.log('✅ Session créée pour:', company.id);
     } catch (sessionErr) {
-      console.error('⚠️ Erreur création session:', sessionErr.message);
-      // Continue anyway - session est optionnelle pour le login
+      console.error('⚠️ Erreur création session (non bloquant):', sessionErr.message);
+      // La session est optionnelle - on continue quand même
     }
 
+    // Retourner les informations de connexion
     res.json({
       token,
-      deviceId: deviceFingerprint,  // ← Retourne le deviceId au frontend
+      deviceId: deviceFingerprint,
       mustChangePassword: company.must_change_password,
       companyId: company.id,
       nom: company.nom,
-      statut: company.statut
+      email: company.email,
+      statut: company.statut,
+      loyaltyType: company.loyalty_type || 'points'
     });
   } catch (err) {
     console.error('❌ Erreur proLogin:', err.message, err.stack);
@@ -255,10 +258,14 @@ export const getProInfo = async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT id, nom, email, recompense_definition, loyalty_type, 
-              points_per_purchase, points_for_reward,
-              stamps_count, stamps_per_purchase, stamps_for_reward
-       FROM entreprises WHERE id = ?`,
+      `SELECT e.id, e.nom, e.email, e.recompense_definition, e.loyalty_type,
+              lc.points_per_purchase, lc.points_for_reward,
+              lc.stamps_count, lc.stamps_per_purchase, lc.stamps_for_reward,
+              lc.reward_title, lc.reward_description,
+              lc.push_notifications_enabled
+       FROM entreprises e
+       LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
+       WHERE e.id = ?`,
       [empresaId]
     );
 

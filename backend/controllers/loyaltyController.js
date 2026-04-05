@@ -319,13 +319,17 @@ export const sendPushNotification = async (req, res) => {
     );
 
     // Déterminer les clients cibles
-    let clientQuery = 'SELECT id FROM clients WHERE entreprise_id = ?';
+    let clientQuery = `
+      SELECT c.id FROM clients c
+      LEFT JOIN customer_stamps cs ON c.id = cs.client_id
+      WHERE c.entreprise_id = ?
+    `;
     let params = [empresaId];
 
     if (target_segment === 'active') {
-      clientQuery += ' AND points > 0 OR stamps_collected > 0';
+      clientQuery += ' AND (c.points > 0 OR COALESCE(cs.stamps_collected, 0) > 0)';
     } else if (target_segment === 'inactive') {
-      clientQuery += ' AND points = 0 AND (stamps_collected IS NULL OR stamps_collected = 0)';
+      clientQuery += ' AND (c.points = 0 OR c.points IS NULL) AND (COALESCE(cs.stamps_collected, 0) = 0)';
     }
 
     const [clients] = await pool.query(clientQuery, params);

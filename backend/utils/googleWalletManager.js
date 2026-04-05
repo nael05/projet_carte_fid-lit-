@@ -243,7 +243,7 @@ class GoogleWalletManager {
       const jwtPayload = {
         iss: this.credentials.client_email,
         aud: 'google',
-        origins: ['localhost:5000', 'localhost:3000', process.env.FRONTEND_URL || 'localhost:3000'],
+        origins: ['http://localhost:5000', 'http://localhost:3000', process.env.FRONTEND_URL || 'http://localhost:3000'],
         typ: 'savetowallet',
         payload: {
           genericObjects: [walletObject],

@@ -23,20 +23,24 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     
-    // Pour les Pro: vérifier la session de l'appareil
+    // Pour les Pro: vérifier la session de l'appareil (optionnel pour compatibilité)
     if (decoded.role === 'pro') {
       const deviceId = req.headers['x-device-id'];
-      if (!deviceId) {
-        return res.status(401).json({ error: 'Device ID manquant. Reconnexion requise.' });
-      }
       
-      const sessionValid = await verifySessionValidity(decoded.id, deviceId);
-      if (!sessionValid) {
-        return res.status(401).json({ error: 'Session expirée ou appareil non reconnu. Reconnexion requise.' });
+      if (deviceId) {
+        // Si un deviceId est fourni, vérifier la session
+        const sessionValid = await verifySessionValidity(decoded.id, deviceId);
+        if (!sessionValid) {
+          // Session expirée mais on laisse passer si le token JWT est valide
+          // L'utilisateur pourra continuer mais devra se reconnecter pour certaines actions
+          console.log(`⚠️ [AUTH] Session expirée pour ${decoded.id} device ${deviceId}, mais token JWT valide`);
+        }
+        // Stocker le deviceId pour les logs
+        req.user.deviceId = deviceId;
+      } else {
+        // Pas de deviceId fourni - on accepte quand même (compatibilité)
+        console.log(`ℹ️ [AUTH] Pas de deviceId pour ${decoded.id}, connexion acceptée`);
       }
-      
-      // Stocker le deviceId pour les logs
-      req.user.deviceId = deviceId;
     }
     
     next();

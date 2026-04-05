@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS entreprises (
     nom VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     mot_de_passe VARCHAR(255) NOT NULL,
+    temporary_password VARCHAR(255),
     statut ENUM('actif', 'suspendu') DEFAULT 'actif',
     loyalty_type ENUM('points', 'stamps') DEFAULT 'points',
     recompense_definition VARCHAR(255) DEFAULT 'Une surprise vous attend !',
@@ -99,12 +100,35 @@ CREATE TABLE IF NOT EXISTS card_customization (
     id VARCHAR(36) PRIMARY KEY,
     company_id VARCHAR(36) NOT NULL,
     loyalty_type ENUM('points', 'stamps') NOT NULL,
+    -- Couleurs (noms cohérents avec le code)
+    card_background_color VARCHAR(7) DEFAULT '#1f2937',
+    card_text_color VARCHAR(7) DEFAULT '#ffffff',
+    card_accent_color VARCHAR(7) DEFAULT '#3b82f6',
+    card_border_radius INT DEFAULT 12,
+    -- Anciens champs (gardés pour compatibilité)
     primary_color VARCHAR(7) DEFAULT '#2563eb',
     secondary_color VARCHAR(7) DEFAULT '#1e40af',
     accent_color VARCHAR(7) DEFAULT '#dbeafe',
     text_color VARCHAR(7) DEFAULT '#111827',
-    logo_url TEXT,
-    background_pattern VARCHAR(50) DEFAULT 'solid',
+    -- Personnalisation
+    card_logo_url TEXT,
+    card_pattern VARCHAR(50) DEFAULT 'solid',
+    font_family VARCHAR(100) DEFAULT 'Arial',
+    show_company_name BOOLEAN DEFAULT TRUE,
+    show_loyalty_type BOOLEAN DEFAULT TRUE,
+    custom_message TEXT,
+    card_design_template VARCHAR(50) DEFAULT 'classic',
+    gradient_start VARCHAR(7),
+    gradient_end VARCHAR(7),
+    background_image_url TEXT,
+    -- Google Wallet
+    wallet_class_id VARCHAR(100) DEFAULT '',
+    wallet_card_title VARCHAR(100) DEFAULT '',
+    wallet_header_text TEXT,
+    wallet_subtitle_text TEXT,
+    wallet_barcode_text_template VARCHAR(100) DEFAULT 'ID: {clientId}',
+    wallet_description_text TEXT,
+    -- Anciens champs Wallet
     card_title VARCHAR(100),
     card_subtitle VARCHAR(100),
     footer_text VARCHAR(100),
@@ -149,7 +173,8 @@ CREATE TABLE IF NOT EXISTS transaction_history (
     id VARCHAR(36) PRIMARY KEY,
     client_id VARCHAR(36) NOT NULL,
     entreprise_id VARCHAR(36) NOT NULL,
-    type ENUM('add_points', 'redeem_points', 'add_stamps', 'redeem_stamps', 'reward_unlocked'),
+    -- Types cohérents avec le code (points_added, stamps_added, etc.)
+    type ENUM('points_added', 'redeem_points', 'stamps_added', 'stamps_redeemed', 'reward_claimed', 'reward_unlocked'),
     points_change INT,
     stamps_change INT,
     description VARCHAR(255),
@@ -174,15 +199,30 @@ CREATE TABLE IF NOT EXISTS push_notifications_sent (
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     status ENUM('draft', 'sent', 'scheduled') DEFAULT 'draft',
-    client_count INT,
+    recipients_count INT DEFAULT 0,
     sent_count INT DEFAULT 0,
     failure_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     sent_at TIMESTAMP NULL,
+    scheduled_at TIMESTAMP NULL,
     FOREIGN KEY (entreprise_id) REFERENCES entreprises(id) ON DELETE CASCADE,
     INDEX idx_entreprise (entreprise_id),
     INDEX idx_status (status),
     INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table de liaison pour les notifications push vers les clients
+CREATE TABLE IF NOT EXISTS client_push_notifications (
+    id VARCHAR(36) PRIMARY KEY,
+    client_id VARCHAR(36) NOT NULL,
+    notification_id VARCHAR(36) NOT NULL,
+    status ENUM('pending', 'sent', 'delivered', 'failed') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+    FOREIGN KEY (notification_id) REFERENCES push_notifications_sent(id) ON DELETE CASCADE,
+    INDEX idx_client (client_id),
+    INDEX idx_notification (notification_id),
+    INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =========================================================================

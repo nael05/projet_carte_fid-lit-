@@ -48,6 +48,7 @@ router.put('/pro/card-customization/:empresaId', verifyToken, isPro, apiControll
 
 // Public Client Routes
 router.get('/companies/:companyId/info', apiController.getCompanyInfo);
+router.get('/companies/:companyId/card-customization', apiController.getCardCustomization);
 router.post('/join/:entrepriseId', apiController.registerClientAndGeneratePass);
 router.get('/companies/:companyId/info', apiController.getCompanyInfo);
 

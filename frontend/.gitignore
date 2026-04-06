@@ -7,3 +7,5 @@ yarn-debug.log*
 yarn-error.log*
 .env.local
 .env.*.local
+.env
+backend/.env:25

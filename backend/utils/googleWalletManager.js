@@ -2,7 +2,6 @@
 import fs from 'fs';
 import path from 'path';
 import jwt from 'jsonwebtoken';
-import { getValidAccessToken } from './googleOAuth.js';
 
 class GoogleWalletManager {
   constructor() {
@@ -32,15 +31,40 @@ class GoogleWalletManager {
   }
 
   async getAccessToken() {
-    // Utiliser le token OAuth au lieu du JWT Service Account
-    // Cela contourne les problèmes de permissions Issuer
-    const token = await getValidAccessToken();
+    // Générer un JWT directement du service account
+    // Pas besoin d'attendre OAuth qui ne se synchronise pas
+    const now = Math.floor(Date.now() / 1000);
     
-    if (!token) {
-      throw new Error('Token OAuth non disponible. Lance: npm run setup-oauth');
+    const jwtPayload = {
+      iss: this.credentials.client_email,
+      scope: 'https://www.googleapis.com/auth/wallet_object.issuer',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600, // 1 heure
+      iat: now
+    };
+
+    const token = jwt.sign(jwtPayload, this.credentials.private_key, {
+      algorithm: 'RS256',
+      header: { kid: this.credentials.private_key_id }
+    });
+
+    // Échanger le JWT pour un access token
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: token
+      }).toString()
+    });
+
+    const data = await response.json();
+    
+    if (!data.access_token) {
+      throw new Error(`Google OAuth error: ${JSON.stringify(data)}`);
     }
 
-    return token;
+    return data.access_token;
   }
 
   async createWalletPass(clientData, customization, loyaltyType) {
@@ -62,7 +86,8 @@ class GoogleWalletManager {
       const walletClass = {
         id: classId,
         issuerName: clientData.companyName,
-        reviewStatus: 'UNDER_REVIEW',
+        title: customization?.wallet_card_title || `${clientData.companyName} - Carte de Fidélité`,
+        reviewStatus: 'ACTIVE',
         passConstraints: {
           nfcConstraint: [],
           screenshotEligibility: 'ELIGIBLE',
@@ -93,6 +118,18 @@ class GoogleWalletManager {
       const walletObject = {
         id: objectId,
         classId: classId,
+        card_title: {
+          defaultValue: {
+            language: 'fr',
+            value: customization?.wallet_card_title || `${clientData.companyName} - Carte de Fidélité`,
+          },
+        },
+        header: {
+          defaultValue: {
+            language: 'fr',
+            value: customization?.wallet_header_text || `Bienvenue à ${clientData.companyName}`,
+          },
+        },
         genericData: {
           title: {
             defaultValue: {
@@ -113,14 +150,6 @@ class GoogleWalletManager {
               value: clientData.companyName,
             },
           },
-          header: customization?.wallet_header_text
-            ? {
-                defaultValue: {
-                  language: 'fr',
-                  value: customization.wallet_header_text,
-                },
-              }
-            : undefined,
           description: customization?.wallet_description_text
             ? {
                 defaultValue: {
@@ -171,7 +200,6 @@ class GoogleWalletManager {
       };
 
       // Supprimer les propriétés undefined
-      if (!walletObject.genericData.header) delete walletObject.genericData.header;
       if (!walletObject.genericData.description) delete walletObject.genericData.description;
       if (!walletObject.genericData.heroImage) delete walletObject.genericData.heroImage;
 

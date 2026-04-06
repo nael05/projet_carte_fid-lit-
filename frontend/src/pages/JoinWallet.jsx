@@ -25,10 +25,9 @@ function JoinWallet() {
       const response = await api.get(`/companies/${entrepriseId}/info`)
       setCompany(response.data)
       
-      // Charger la personnalisation de la carte avec le type de loyauté
+      // Charger la personnalisation de la carte (route publique)
       try {
-        const loyaltyType = response.data.loyalty_type || 'points'
-        const customResp = await api.get(`/pro/card-customization/${entrepriseId}?loyaltyType=${loyaltyType}`)
+        const customResp = await api.get(`/companies/${entrepriseId}/card-customization?loyaltyType=${response.data.loyalty_type || 'points'}`)
         setCustomization(customResp.data)
       } catch (err) {
         console.log('Pas de personnalisation personnalisée, utiliser les valeurs par défaut')

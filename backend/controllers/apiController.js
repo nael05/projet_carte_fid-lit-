@@ -808,11 +808,15 @@ export const registerClientAndGeneratePass = async (req, res) => {
         res.send(buffer);
       } catch (passErr) {
         console.error('Erreur génération pass Apple:', passErr);
-        // Retourner quand même le clientId même si la génération échoue
-        res.status(500).json({
-          error: 'Erreur génération pass (certificats manquants)',
+        // Client créé avec succès, juste la génération du pass échoue
+        // Certificats Apple manquants - retourner fallback
+        res.status(200).json({
+          success: true,
           clientId,
-          message: 'Client créé mais pass ne peut pas être généré sans les certificats Apple'
+          message: 'Client créé avec succès',
+          fallbackMessage: 'Certificats Apple Wallet manquants - créez-la manuellement',
+          walletsaveFallback: true,
+          errorDetails: `Certificats manquants: ${passErr.message}`
         });
       }
     } else if (type_wallet === 'google') {
@@ -842,11 +846,16 @@ export const registerClientAndGeneratePass = async (req, res) => {
         });
       } catch (googleErr) {
         console.error('Erreur génération Google Wallet:', googleErr.message);
-        res.status(500).json({
-          error: 'Erreur génération Google Wallet',
+        // Client créé avec succès, juste la génération du pass échoue
+        // Retourner 200 avec fallback plutôt que 500
+        res.status(200).json({
+          success: true,
           clientId,
-          message: `Client créé mais erreur génération pass: ${googleErr.message}`,
-          fallbackMessage: 'Vous pouvez créer la carte manuellement dans Google Wallet'
+          walletsaveUrl: null,
+          message: 'Client créé avec succès',
+          fallbackMessage: 'Erreur génération pass Google Wallet - créez-la manuellement',
+          walletsaveFallback: true,
+          errorDetails: googleErr.message
         });
       }
     }

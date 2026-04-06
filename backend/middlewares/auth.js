@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { verifySessionValidity } from '../utils/sessionManager.js';
+import logger from '../utils/logger.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key_change_in_production';
 
@@ -23,7 +24,7 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     
-    // Pour les Pro: vérifier la session de l'appareil (optionnel pour compatibilité)
+    // Pour les Pro: vérifier la session de l'appareil
     if (decoded.role === 'pro') {
       const deviceId = req.headers['x-device-id'];
       
@@ -31,26 +32,23 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
         // Si un deviceId est fourni, vérifier la session
         const sessionValid = await verifySessionValidity(decoded.id, deviceId);
         if (!sessionValid) {
-          // Session expirée mais on laisse passer si le token JWT est valide
-          // L'utilisateur pourra continuer mais devra se reconnecter pour certaines actions
-          console.log(`⚠️ [AUTH] Session expirée pour ${decoded.id} device ${deviceId}, mais token JWT valide`);
+          logger.debug('Session expired but JWT valid', { role: 'pro' });
         }
         // Stocker le deviceId pour les logs
         req.user.deviceId = deviceId;
-      } else {
-        // Pas de deviceId fourni - on accepte quand même (compatibilité)
-        console.log(`ℹ️ [AUTH] Pas de deviceId pour ${decoded.id}, connexion acceptée`);
       }
     }
     
     next();
   } catch (err) {
+    logger.warn('Invalid token attempt', { error: err.message });
     return res.status(401).json({ error: 'Token invalide ou expiré' });
   }
 });
 
 export const isAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
+    logger.warn('Unauthorized admin access attempt', { userId: req.user?.id });
     return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
   }
   next();
@@ -58,6 +56,7 @@ export const isAdmin = (req, res, next) => {
 
 export const isPro = (req, res, next) => {
   if (req.user.role !== 'pro') {
+    logger.warn('Unauthorized pro access attempt', { userId: req.user?.id });
     return res.status(403).json({ error: 'Accès réservé aux professionnels' });
   }
   next();

@@ -8,6 +8,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import googleWalletManager from '../utils/googleWalletManager.js';
 import { validatePassword, validatePasswordChange } from '../utils/passwordValidator.js';
+import logger from '../utils/logger.js';
+import { validateLoginInput, validateJoinWalletInput } from '../utils/inputValidator.js';
 
 // ===== MASTER ADMIN CONTROLLERS =====
 
@@ -21,6 +23,7 @@ export const adminLogin = async (req, res) => {
     );
 
     if (rows.length === 0) {
+      logger.warn('Failed admin login attempt - invalid identifiant');
       return res.status(401).json({ error: 'Identifiants incorrects' });
     }
 
@@ -28,13 +31,15 @@ export const adminLogin = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(mot_de_passe, admin.mot_de_passe);
 
     if (!isPasswordValid) {
+      logger.warn('Failed admin login attempt - invalid password');
       return res.status(401).json({ error: 'Identifiants incorrects' });
     }
 
     const token = generateToken(admin.id, 'admin');
+    logger.info('Admin login successful');
     res.json({ token, message: 'Connecté' });
   } catch (err) {
-    console.error(err);
+    logger.error('Admin login error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -47,7 +52,7 @@ export const getEnterprises = async (req, res) => {
 
     res.json(enterprises);
   } catch (err) {
-    console.error(err);
+    logger.error('Get enterprises error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -97,7 +102,7 @@ export const createCompany = async (req, res) => {
       message: `Entreprise créée avec succès (Mode: ${loyalty_type})`
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Create company error', { error: err.message });
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ error: 'Email déjà utilisé' });
     }
@@ -109,26 +114,23 @@ export const suspendCompany = async (req, res) => {
   const { companyId } = req.params;
 
   try {
-    console.log('🔴 [SUSPEND] Demande reçue pour companyId:', companyId);
-    console.log('🔴 [SUSPEND] Admin ID:', req.user?.id, 'Role:', req.user?.role);
+    logger.info('Company suspension request received');
 
     const [result] = await pool.query(
       'UPDATE entreprises SET statut = "suspendu" WHERE id = ?',
       [companyId]
     );
 
-    console.log('🔴 [SUSPEND] Résultat UPDATE:', { affectedRows: result.affectedRows });
-
     if (result.affectedRows === 0) {
-      console.log('🔴 [SUSPEND] ❌ Entreprise non trouvée avec ID:', companyId);
+      logger.warn('Company not found for suspension');
       return res.status(404).json({ error: 'Entreprise non trouvée' });
     }
 
-    console.log('🔴 [SUSPEND] ✅ Entreprise suspendue avec succès');
+    logger.info('Company suspended successfully');
     res.json({ success: true, message: 'Entreprise suspendue' });
   } catch (err) {
-    console.error('🔴 [SUSPEND] ❌ Erreur SQL:', err.message);
-    res.status(500).json({ error: 'Erreur serveur: ' + err.message });
+    logger.error('Company suspension error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 
@@ -145,9 +147,10 @@ export const reactivateCompany = async (req, res) => {
       return res.status(404).json({ error: 'Entreprise non trouvée' });
     }
 
+    logger.info('Company reactivated successfully');
     res.json({ success: true, message: 'Entreprise réactivée' });
   } catch (err) {
-    console.error(err);
+    logger.error('Reactivate company error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -156,6 +159,18 @@ export const deleteCompany = async (req, res) => {
   const { companyId } = req.params;
 
   try {
+    // Vérifier qu'il n'y a pas de clients actifs
+    const [clientRows] = await pool.query(
+      'SELECT COUNT(*) as count FROM clients WHERE entreprise_id = ?',
+      [companyId]
+    );
+
+    if (clientRows[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Impossible de supprimer: des clients existent' 
+      });
+    }
+
     const [result] = await pool.query(
       'DELETE FROM entreprises WHERE id = ?',
       [companyId]
@@ -165,9 +180,10 @@ export const deleteCompany = async (req, res) => {
       return res.status(404).json({ error: 'Entreprise non trouvée' });
     }
 
-    res.json({ success: true, message: 'Entreprise supprimée (suppression en cascade des clients)' });
+    logger.info('Company deleted successfully');
+    res.json({ success: true, message: 'Entreprise supprimée' });
   } catch (err) {
-    console.error(err);
+    logger.error('Delete company error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -208,17 +224,16 @@ export const proLogin = async (req, res) => {
     // 🔐 Convertir must_change_password en boolean strict
     const mustChangePassword = Boolean(company.must_change_password);
     if (mustChangePassword) {
-      console.log(`⚠️ Première connexion de l'entreprise: ${company.nom} (${company.id})`);
-      console.log(`   → Changement de mot de passe obligatoire`);
+      logger.info('First login - password change required');
     }
     
-    // Créer la session (valide 24h) - optionnel, ne bloque pas le login
+    // Créer la session (valide 24h) - OBLIGATOIRE, bloque le login
     try {
       await createSession(company.id, deviceFingerprint, deviceName, token, '24h');
-      console.log('✅ Session créée pour:', company.id);
+      logger.debug('Session created successfully');
     } catch (sessionErr) {
-      console.error('⚠️ Erreur création session (non bloquant):', sessionErr.message);
-      // La session est optionnelle - on continue quand même
+      logger.error('Session creation failed', { error: sessionErr.message });
+      return res.status(500).json({ error: 'Unable to create session' });
     }
 
     // Retourner les informations de connexion
@@ -233,8 +248,8 @@ export const proLogin = async (req, res) => {
       loyaltyType: company.loyalty_type || 'points'
     });
   } catch (err) {
-    console.error('❌ Erreur proLogin:', err.message, err.stack);
-    res.status(500).json({ error: 'Erreur serveur: ' + err.message });
+    logger.error('Pro login error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 
@@ -298,7 +313,7 @@ export const changePassword = async (req, res) => {
       return res.status(500).json({ error: 'Impossible de mettre à jour le mot de passe' });
     }
 
-    console.log(`✅ Mot de passe changé pour l'entreprise: ${empresaId}`);
+    logger.info('Password changed successfully');
 
     res.json({
       success: true,
@@ -306,8 +321,8 @@ export const changePassword = async (req, res) => {
       mustChangePassword: false
     });
   } catch (err) {
-    console.error('❌ Erreur changePassword:', err.message, err.stack);
-    res.status(500).json({ error: 'Erreur serveur: ' + err.message });
+    logger.error('Password change error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 
@@ -353,12 +368,8 @@ export const getProStatus = async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
-
-// 🆕 Récupérer toutes les sessions actives de l'entreprise
+    logger.error('Get pro status error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' }); actives de l'entreprise
 export const getProSessions = async (req, res) => {
   const empresaId = req.user.id;
 
@@ -403,7 +414,7 @@ export const logoutProDevice = async (req, res) => {
 
     res.json({ success: true, message: 'Déconnexion de l\'appareil réussie' });
   } catch (err) {
-    console.error(err);
+    logger.error('Logout pro device error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -430,7 +441,7 @@ export const logoutProAll = async (req, res) => {
       devicesRemoved: result.affectedRows
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Logout pro all error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -468,7 +479,7 @@ export const getClients = async (req, res) => {
       res.json(rows);
     }
   } catch (err) {
-    console.error(err);
+    logger.error('Get clients error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -614,7 +625,7 @@ export const handleScan = async (req, res) => {
 
     res.json(response);
   } catch (err) {
-    console.error(err);
+    logger.error('Handle scan error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -648,7 +659,7 @@ export const adjustPoints = async (req, res) => {
 
     res.json({ success: true, newPoints, message: 'Points ajustés' });
   } catch (err) {
-    console.error(err);
+    logger.error('Adjust points error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -669,7 +680,7 @@ export const updateReward = async (req, res) => {
 
     res.json({ success: true, message: 'Récompense mise à jour' });
   } catch (err) {
-    console.error(err);
+    logger.error('Update reward error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

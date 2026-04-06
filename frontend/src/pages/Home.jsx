@@ -123,7 +123,32 @@ function Home() {
 
 function DemoClientAccess() {
   const [showForm, setShowForm] = React.useState(false)
-  const [demoId, setDemoId] = React.useState('')
+  const [selectedId, setSelectedId] = React.useState('')
+  const [enterprises, setEnterprises] = React.useState([])
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState('')
+
+  React.useEffect(() => {
+    if (showForm && enterprises.length === 0) {
+      fetchEnterprises()
+    }
+  }, [showForm])
+
+  const fetchEnterprises = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/public/enterprises')
+      const data = await response.json()
+      setEnterprises(data || [])
+      if (data.length > 0) {
+        setSelectedId(data[0].id)
+      }
+    } catch (err) {
+      setError('Erreur lors de la récupération des entreprises')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (!showForm) {
     return (
@@ -139,28 +164,67 @@ function DemoClientAccess() {
   return (
     <form onSubmit={(e) => {
       e.preventDefault()
-      if (demoId.trim()) {
-        window.location.href = `/join/${demoId}`
+      if (selectedId.trim()) {
+        window.location.href = `/join/${selectedId}`
       }
     }} className="demo-form">
-      <input
-        type="text"
-        placeholder="ID entreprise (ex: UUID)"
-        value={demoId}
-        onChange={(e) => setDemoId(e.target.value)}
-        required
-      />
-      <button type="submit" className="btn-small">Aller</button>
-      <button
-        type="button"
-        className="btn-small-cancel"
-        onClick={() => {
-          setShowForm(false)
-          setDemoId('')
-        }}
-      >
-        Annuler
-      </button>
+      {error && <p style={{ color: '#ef4444', marginBottom: '10px' }}>{error}</p>}
+      
+      {loading ? (
+        <p>Chargement des entreprises...</p>
+      ) : enterprises.length > 0 ? (
+        <>
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            required
+            style={{
+              padding: '10px',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              width: '100%',
+              marginBottom: '10px',
+              fontFamily: 'inherit',
+              fontSize: '14px'
+            }}
+          >
+            {enterprises.map((ent) => (
+              <option key={ent.id} value={ent.id}>
+                {ent.nom}
+              </option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="submit" className="btn-small">Aller</button>
+            <button
+              type="button"
+              className="btn-small-cancel"
+              onClick={() => {
+                setShowForm(false)
+                setSelectedId('')
+                setError('')
+              }}
+            >
+              Annuler
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p style={{ color: '#6b7280', marginBottom: '10px' }}>Aucune entreprise disponible</p>
+          <button
+            type="button"
+            className="btn-small-cancel"
+            onClick={() => {
+              setShowForm(false)
+              setSelectedId('')
+              setError('')
+            }}
+          >
+            Retour
+          </button>
+        </>
+      )}
     </form>
   )
 }

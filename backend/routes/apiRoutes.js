@@ -50,7 +50,11 @@ router.get('/pro/loyalty/stats', verifyToken, isPro, loyaltyController.getLoyalt
 router.get('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.getCardCustomization);
 router.put('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.updateCardCustomization);
 
+// ===== Apple Wallet Routes =====
+router.post('/wallet/apple', verifyToken, loyaltyController.createAppleWalletPass);
+
 // ===== Public Client Routes =====
+router.get('/public/enterprises', apiController.getPublicEnterprises);
 router.get('/companies/:companyId/info', apiController.getCompanyInfo);
 router.get('/companies/:companyId/card-customization', apiController.getCardCustomization);
 router.post('/join/:entrepriseId', apiController.registerClientAndGeneratePass);

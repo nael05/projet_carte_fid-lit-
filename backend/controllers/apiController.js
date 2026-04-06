@@ -7,6 +7,7 @@ import { PKPass } from 'passkit-generator';
 import * as fs from 'fs';
 import * as path from 'path';
 import googleWalletManager from '../utils/googleWalletManager.js';
+import { generateAppleWalletPass } from '../utils/appleWalletGenerator.js';
 import { validatePassword, validatePasswordChange } from '../utils/passwordValidator.js';
 import logger from '../utils/logger.js';
 import { validateLoginInput, validateJoinWalletInput } from '../utils/inputValidator.js';
@@ -53,6 +54,19 @@ export const getEnterprises = async (req, res) => {
     res.json(enterprises);
   } catch (err) {
     logger.error('Get enterprises error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const getPublicEnterprises = async (req, res) => {
+  try {
+    const [enterprises] = await pool.query(
+      'SELECT id, nom FROM entreprises WHERE statut = "actif" ORDER BY nom ASC'
+    );
+
+    res.json(enterprises);
+  } catch (err) {
+    logger.error('Get public enterprises error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -348,7 +362,7 @@ export const getProInfo = async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
-    console.error(err);
+    logger.error('Get pro info error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -369,7 +383,11 @@ export const getProStatus = async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     logger.error('Get pro status error', { error: err.message });
-    res.status(500).json({ error: 'Erreur serveur' }); actives de l'entreprise
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// Enumerates active sessions of the enterprise
 export const getProSessions = async (req, res) => {
   const empresaId = req.user.id;
 
@@ -388,7 +406,7 @@ export const getProSessions = async (req, res) => {
       expiresIn: s.expires_at
     })));
   } catch (err) {
-    console.error(err);
+    logger.error('Register client error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -709,7 +727,7 @@ export const getCompanyInfo = async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
-    console.error(err);
+    logger.error('Get company info error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -750,6 +768,8 @@ export const registerClientAndGeneratePass = async (req, res) => {
       'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, points, type_wallet) VALUES (?, ?, ?, ?, ?, 0, ?)',
       [clientId, entrepriseId, nom, prenom, telephone, type_wallet]
     );
+    
+    logger.info(`✅ Client créé: ${clientId} - ${prenom} ${nom}`);
 
     // Charger la customization de la carte pour ce type de loyauté
     const [customization] = await pool.query(
@@ -767,67 +787,31 @@ export const registerClientAndGeneratePass = async (req, res) => {
     // Générer le pass (pkpass pour Apple Wallet)
     if (type_wallet === 'apple') {
       try {
-        const pass = new PKPass(
-          {
-            model: path.join(process.cwd(), 'passes/loyalty.pass'),
-            certificates: {
-              wwdr: fs.readFileSync(path.join(process.cwd(), 'certs/wwdr.pem')),
-              signingCert: fs.readFileSync(path.join(process.cwd(), 'certs/signingCert.p12')),
-              signingKey: fs.readFileSync(path.join(process.cwd(), 'certs/signingKey.key'))
-            },
-            signingKeyPassphrase: process.env.APPLE_CERT_PASSWORD || 'password'
-          },
-          {
-            serialNumber: clientId,
-            description: `${companyName} - Carte de Fidélité`,
-            formatVersion: 1,
-            organizationName: companyName,
-            passTypeIdentifier: `pass.com.example.loyalty.${clientId}`,
-            teamIdentifier: process.env.APPLE_TEAM_ID || 'TEAMID',
-            barcodes: [
-              {
-                format: 'PKBarcodeFormatQR',
-                message: clientId,
-                messageEncoding: 'iso-8859-1'
-              }
-            ],
-            backgroundColor: cardConfig.card_background_color || '#1f2937',
-            foregroundColor: cardConfig.card_text_color || '#ffffff',
-            stripColor: cardConfig.card_accent_color || '#3b82f6',
-            generic: {
-              primaryFields: [
-                {
-                  key: 'loyalty',
-                  label: loyaltyType === 'points' ? 'Points' : 'Tampons',
-                  value: '0'
-                }
-              ],
-              secondaryFields: [
-                {
-                  key: 'name',
-                  label: 'Titulaire',
-                  value: `${prenom} ${nom}`
-                }
-              ]
-            }
-          }
-        );
+        // Utiliser le nouveau module appleWalletGenerator
+        const passBuffer = await generateAppleWalletPass({
+          id: clientId,
+          firstName: prenom,
+          lastName: nom,
+          email: telephone,
+          points: 0,
+          cardNumber: clientId
+        });
 
-        const buffer = pass.getAsBuffer();
         res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
         res.setHeader('Content-Disposition', `attachment; filename="${prenom}-${nom}-loyalty.pkpass"`);
-        res.send(buffer);
+        res.send(passBuffer);
+        
+        logger.info('Apple Wallet pass généré via registerClientAndGeneratePass', { clientId });
       } catch (passErr) {
-        console.error('Erreur génération pass Apple:', passErr);
+        logger.error('Apple pass generation error', { error: passErr.message });
         // Client créé avec succès, juste la génération du pass échoue
-        // Certificats Apple manquants - retourner fallback
         res.status(200).json({
           success: true,
           clientId,
           message: 'Client créé avec succès',
-          fallbackMessage: 'Certificats Apple Wallet manquants - créez-la manuellement',
+          fallbackMessage: 'Erreur génération pass Apple Wallet',
           walletsaveFallback: true,
-          errorDetails: `Certificats manquants: ${passErr.message}`
+          errorDetails: passErr.message
         });
       }
     } else if (type_wallet === 'google') {
@@ -847,7 +831,7 @@ export const registerClientAndGeneratePass = async (req, res) => {
         res.json({
           success: true,
           clientId,
-          walletsaveUrl: walletData.saveUrl,
+          saveUrl: walletData.saveUrl,
           message: 'Pass Google Wallet généré avec succès',
           walletPass: {
             classId: walletData.classId,
@@ -856,13 +840,13 @@ export const registerClientAndGeneratePass = async (req, res) => {
           }
         });
       } catch (googleErr) {
-        console.error('Erreur génération Google Wallet:', googleErr.message);
+        logger.error('Google Wallet generation error', { error: googleErr.message });
         // Client créé avec succès, juste la génération du pass échoue
         // Retourner 200 avec fallback plutôt que 500
         res.status(200).json({
           success: true,
           clientId,
-          walletsaveUrl: null,
+          saveUrl: null,
           message: 'Client créé avec succès',
           fallbackMessage: 'Erreur génération pass Google Wallet - créez-la manuellement',
           walletsaveFallback: true,
@@ -871,7 +855,7 @@ export const registerClientAndGeneratePass = async (req, res) => {
       }
     }
   } catch (err) {
-    console.error(err);
+    logger.error('Register client error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -920,7 +904,7 @@ export const getCardCustomization = async (req, res) => {
 
     res.json(customization[0]);
   } catch (err) {
-    console.error('Erreur chargement personnalisation:', err);
+    logger.error('Load card customization error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -1043,7 +1027,7 @@ export const updateCardCustomization = async (req, res) => {
       message: `Personnalisation ${loyaltyType} mise à jour avec succès`
     });
   } catch (err) {
-    console.error('Erreur mise à jour personnalisation:', err);
+    logger.error('Update card customization error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

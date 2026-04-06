@@ -13,12 +13,25 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ===== SECURITY MIDDLEWARES =====
-app.use(helmet());
+// Helmet config - désactiver hsts en développement local
+app.use(helmet({
+  hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000 } : false,
+  contentSecurityPolicy: false, // Laisser CORS gérer
+}));
 
 // CORS configuré correctement (liste blanche)
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  : [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173',
+      'http://192.168.1.7:3000',
+      'http://192.168.1.7:5173',
+      /^http:\/\/192\.168\.\d+\.\d+:300[0-9]$/ // Accepter toutes les IPs locales
+    ];
+
 
 app.use(cors({
   origin: (origin, callback) => {

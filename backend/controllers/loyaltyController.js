@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../db.js';
+import logger from '../utils/logger.js';
+import { generateAppleWalletPass } from '../utils/appleWalletGenerator.js';
 
 // ===== LOYALTY CONFIGURATION CONTROLLERS =====
 
@@ -21,7 +23,7 @@ export const getLoyaltyConfig = async (req, res) => {
 
     res.json(config[0]);
   } catch (err) {
-    console.error(err);
+    logger.error('Get loyalty config error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -100,7 +102,7 @@ export const updateLoyaltyConfig = async (req, res) => {
 
     res.json({ success: true, message: 'Configuration de fidélité mise à jour' });
   } catch (err) {
-    console.error(err);
+    logger.error('Update loyalty config error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur: ' + err.message });
   }
 };
@@ -172,7 +174,7 @@ export const addStamps = async (req, res) => {
       message: `${stamps_to_add} tampon(s) ajouté(s)`
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Add stamps error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -239,7 +241,7 @@ export const claimStampReward = async (req, res) => {
       message: 'Récompense réclamée avec succès!'
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Claim stamp reward error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -328,7 +330,7 @@ export const sendPushNotification = async (req, res) => {
       message: `Notification ${schedule_for ? 'programmée' : 'envoyée'} à ${pushNotifications.length} client(s)`
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Send push notification error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur: ' + err.message });
   }
 };
@@ -361,7 +363,7 @@ export const getPushNotificationHistory = async (req, res) => {
       offset: parseInt(offset)
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Get push notification history error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -397,8 +399,118 @@ export const getPushNotificationDetails = async (req, res) => {
       recipientStats: recipients
     });
   } catch (err) {
-    console.error(err);
+    logger.error('Get push notification details error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// ===== APPLE WALLET CONTROLLER =====
+
+/**
+ * Créer et télécharger un pass Apple Wallet
+ * 
+ * Endpoint: POST /api/wallet/apple
+ * Authentification: JWT Token requis
+ * 
+ * Body:
+ * {
+ *   "clientId": "string (UUID)",
+ *   "entrepriseId": "string (UUID)"
+ * }
+ * 
+ * Réponse: Fichier .pkpass binaire
+ */
+export const createAppleWalletPass = async (req, res) => {
+  const { clientId, entrepriseId } = req.body;
+
+  // Validation des paramètres
+  if (!clientId || !entrepriseId) {
+    return res.status(400).json({
+      error: 'Paramètres manquants',
+      required: ['clientId', 'entrepriseId']
+    });
+  }
+
+  try {
+    logger.info('📱 Demande de génération Apple Wallet Pass', {
+      clientId,
+      entrepriseId,
+      requestedBy: req.user?.id
+    });
+
+    // Vérifier que le client appartient à l'entreprise et récupérer ses infos
+    const [clients] = await pool.query(
+      `SELECT 
+        id, 
+        CONCAT(COALESCE(prenom, ''), ' ', COALESCE(nom, '')) as fullName,
+        prenom as firstName,
+        nom as lastName,
+        email, 
+        points, 
+        card_number as cardNumber
+       FROM clients 
+       WHERE id = ? AND entreprise_id = ?`,
+      [clientId, entrepriseId]
+    );
+
+    if (clients.length === 0) {
+      return res.status(404).json({
+        error: 'Client non trouvé',
+        details: `Aucun client trouvé avec l'ID ${clientId} dans l'entreprise ${entrepriseId}`
+      });
+    }
+
+    const clientData = clients[0];
+
+    // Préparer les données pour la génération du pass
+    const passData = {
+      id: clientData.id,
+      firstName: clientData.firstName || 'Client',
+      lastName: clientData.lastName || '',
+      email: clientData.email || 'contact@fidelyz.com',
+      points: clientData.points || 0,
+      cardNumber: clientData.cardNumber || clientData.id
+    };
+
+    logger.debug('📋 Données du client préparées', { passData });
+
+    // Générer le pass via le module dédié
+    const passBuffer = await generateAppleWalletPass(passData);
+
+    // Configurer la réponse HTTP
+    const filename = `fidelyz-${clientData.id}.pkpass`;
+    res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', passBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
+    // Envoyer le pass
+    res.send(passBuffer);
+
+    logger.info('✅ Apple Wallet Pass généré et envoyé avec succès', {
+      clientId: clientData.id,
+      filename,
+      fileSize: passBuffer.length + ' bytes',
+      Email: clientData.email
+    });
+
+  } catch (error) {
+    // Logging détaillé de l'erreur
+    logger.error('❌ Erreur lors de la génération Apple Wallet Pass', {
+      clientId,
+      entrepriseId,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+
+    // Retourner un message d'erreur approprié
+    const statusCode = error.message.includes('non trouvé') ? 404 : 500;
+    res.status(statusCode).json({
+      error: 'Impossible de générer le pass Apple Wallet',
+      message: error.message,
+      ...(process.env.NODE_ENV === 'development' && { details: error.stack })
+    });
   }
 };
 
@@ -458,7 +570,7 @@ export const getLoyaltyStats = async (req, res) => {
 
     res.json(stats);
   } catch (err) {
-    console.error(err);
+    logger.error('Get loyalty stats error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

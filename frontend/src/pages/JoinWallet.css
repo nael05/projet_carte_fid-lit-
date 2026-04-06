@@ -155,6 +155,78 @@
 }
 
 /* ============================================================
+   WALLET BUTTONS
+   ============================================================ */
+
+.wallet-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: var(--space-8) 0;
+}
+
+.wallet-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 56px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  color: white;
+  padding: 0 var(--space-4);
+}
+
+.wallet-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wallet-btn img {
+  width: 24px;
+  height: 24px;
+}
+
+.apple-wallet {
+  background: #000;
+}
+
+.apple-wallet:hover:not(:disabled) {
+  background: #1a1a1a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.google-wallet {
+  background: linear-gradient(135deg, #4285F4 0%, #34A853 50%, #EA4335 100%);
+}
+
+.google-wallet:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+}
+
+.info {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+}
+
+.btn-secondary {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+  background: var(--border-light);
+}
+
+/* ============================================================
    PAGE DE SUCCÈS
    ============================================================ */
 

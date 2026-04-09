@@ -142,7 +142,15 @@ function DemoClientAccess() {
     try {
       const response = await api.get('/public/enterprises')
       console.log('Enterprises loaded:', response.data)
-      setEnterprises(response.data || [])
+      
+      // Handle both array and object response formats
+      let data = response.data
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        // If it's an object with a "value" property, use that
+        data = data.value || []
+      }
+      
+      setEnterprises(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Error loading enterprises:', err)
       setError('⚠️ Erreur lors du chargement des entreprises. Vérifiez que le serveur est actif.')

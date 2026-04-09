@@ -26,23 +26,27 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : [
       'http://localhost:3000',
       'http://localhost:3001',
+      'http://localhost:3002',
       'http://localhost:5000',
       'http://localhost:5173',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002',
       'http://127.0.0.1:5000',
       'http://127.0.0.1:5173',
       'http://192.168.1.7:3000',
       'http://192.168.1.7:3001',
+      'http://192.168.1.7:3002',
       'http://192.168.1.7:5000',
       'http://192.168.1.7:5173',
       /^http:\/\/192\.168\.\d+\.\d+:(300[0-9]|5[0-9]{3})$/ // Accepter toutes les IPs locales (ports 3000-3009 et 5000-5999)
     ];
 
+const ipRangeRegex = /^http:\/\/192\.168\.\d+\.\d+:(300[0-9]|5[0-9]{3})$/;
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || ipRangeRegex.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'), false);

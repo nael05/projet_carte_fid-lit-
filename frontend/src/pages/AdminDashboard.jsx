@@ -41,11 +41,17 @@ function AdminDashboard() {
       const response = await api.get('/admin/enterprises')
       console.log('Enterprises loaded:', response.data)
       
-      // S'assurer que c'est un array
-      const data = Array.isArray(response.data) ? response.data : []
-      setEnterprises(data)
+      // Handle both array and object response formats
+      let data = response.data
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        // If it's an object with a "value" property, use that
+        data = data.value || []
+      }
       
-      if (data.length === 0) {
+      const enterprises = Array.isArray(data) ? data : []
+      setEnterprises(enterprises)
+      
+      if (enterprises.length === 0) {
         console.warn('Aucune entreprise trouvée')
       }
     } catch (err) {

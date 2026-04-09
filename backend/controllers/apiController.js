@@ -1,5 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
 import { generateToken } from '../middlewares/auth.js';
 import { createSession, generateDeviceFingerprint } from '../utils/sessionManager.js';
 import pool from '../db.js';
@@ -546,7 +549,7 @@ export const handleScan = async (req, res) => {
       const transactionId = uuidv4();
       await pool.query(
         `INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description)
-         VALUES (?, ?, ?, 'points_added', ?, ?)`,
+         VALUES (?, ?, ?, 'add_points', ?, ?)`,
         [transactionId, clientId, empresaId, pointsToAdd, `${pointsToAdd} point(s) ajouté(s)`]
       );
 
@@ -571,7 +574,7 @@ export const handleScan = async (req, res) => {
         const rewardTransactionId = uuidv4();
         await pool.query(
           `INSERT INTO transaction_history (id, client_id, entreprise_id, type, description)
-           VALUES (?, ?, ?, 'reward_claimed', ?)`,
+           VALUES (?, ?, ?, 'reward_unlocked', ?)`,
           [rewardTransactionId, clientId, empresaId, 'Récompense atteinte']
         );
       }
@@ -605,7 +608,7 @@ export const handleScan = async (req, res) => {
       const transactionId = uuidv4();
       await pool.query(
         `INSERT INTO transaction_history (id, client_id, entreprise_id, type, stamps_change, description)
-         VALUES (?, ?, ?, 'stamps_added', ?, ?)`,
+         VALUES (?, ?, ?, 'add_stamps', ?, ?)`,
         [transactionId, clientId, empresaId, stampsToAdd, `${stampsToAdd} tampon(s) ajouté(s)`]
       );
 
@@ -811,26 +814,15 @@ export const getCardCustomization = async (req, res) => {
     if (customization.length === 0) {
       // Retourner les paramètres par défaut si aucune personnalisation
       return res.json({
-        card_background_color: '#1f2937',
-        card_text_color: '#ffffff',
-        card_accent_color: '#3b82f6',
-        card_border_radius: 12,
-        card_logo_url: null,
-        card_pattern: 'solid',
-        font_family: 'Arial',
-        show_company_name: true,
-        show_loyalty_type: true,
-        custom_message: '',
-        card_design_template: 'classic',
-        gradient_start: null,
-        gradient_end: null,
-        background_image_url: null,
-        wallet_class_id: '',
-        wallet_card_title: '',
-        wallet_header_text: '',
-        wallet_subtitle_text: '',
-        wallet_barcode_text_template: 'ID: {clientId}',
-        wallet_description_text: ''
+        primary_color: '#1f2937',
+        text_color: '#ffffff',
+        accent_color: '#3b82f6',
+        secondary_color: '#374151',
+        logo_url: null,
+        background_pattern: 'solid',
+        card_title: '',
+        card_subtitle: '',
+        footer_text: ''
       });
     }
 
@@ -845,27 +837,13 @@ export const updateCardCustomization = async (req, res) => {
   const { empresaId } = req.params;
   const { loyaltyType } = req.query;
   const {
-    card_background_color,
-    card_text_color,
-    card_accent_color,
-    card_border_radius,
-    card_logo_url,
-    card_pattern,
-    font_family,
-    show_company_name,
-    show_loyalty_type,
-    custom_message,
-    card_design_template,
-    gradient_start,
-    gradient_end,
-    background_image_url,
-    // Google Wallet fields
-    wallet_class_id,
-    wallet_card_title,
-    wallet_header_text,
-    wallet_subtitle_text,
-    wallet_barcode_text_template,
-    wallet_description_text
+    primary_color,
+    text_color,
+    accent_color,
+    secondary_color,
+    logo_url,
+    card_subtitle,
+    card_title
   } = req.body;
 
   try {
@@ -883,71 +861,36 @@ export const updateCardCustomization = async (req, res) => {
       // Créer une nouvelle entrée
       await pool.query(
         `INSERT INTO card_customization 
-         (company_id, loyalty_type, card_background_color, card_text_color, card_accent_color, 
-          card_border_radius, card_logo_url, card_pattern, font_family, 
-          show_company_name, show_loyalty_type, custom_message, card_design_template,
-          gradient_start, gradient_end, background_image_url,
-          wallet_class_id, wallet_card_title, wallet_header_text, wallet_subtitle_text,
-          wallet_barcode_text_template, wallet_description_text)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (company_id, loyalty_type, primary_color, text_color, accent_color, secondary_color,
+          logo_url, card_subtitle, card_title)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           empresaId,
           loyaltyType,
-          card_background_color || '#1f2937',
-          card_text_color || '#ffffff',
-          card_accent_color || '#3b82f6',
-          card_border_radius || 12,
-          card_logo_url,
-          card_pattern || 'solid',
-          font_family || 'Arial',
-          show_company_name !== false,
-          show_loyalty_type !== false,
-          custom_message || '',
-          card_design_template || 'classic',
-          gradient_start,
-          gradient_end,
-          background_image_url,
-          wallet_class_id || '',
-          wallet_card_title || '',
-          wallet_header_text || '',
-          wallet_subtitle_text || '',
-          wallet_barcode_text_template || 'ID: {clientId}',
-          wallet_description_text || ''
+          primary_color || '#1f2937',
+          text_color || '#ffffff',
+          accent_color || '#3b82f6',
+          secondary_color || '#374151',
+          logo_url || null,
+          card_subtitle || '',
+          card_title || ''
         ]
       );
     } else {
       // Mettre à jour l'entrée existante
       await pool.query(
         `UPDATE card_customization SET 
-         card_background_color = ?, card_text_color = ?, card_accent_color = ?,
-         card_border_radius = ?, card_logo_url = ?, card_pattern = ?, font_family = ?,
-         show_company_name = ?, show_loyalty_type = ?, custom_message = ?,
-         card_design_template = ?, gradient_start = ?, gradient_end = ?,
-         background_image_url = ?, wallet_class_id = ?, wallet_card_title = ?,
-         wallet_header_text = ?, wallet_subtitle_text = ?, wallet_barcode_text_template = ?,
-         wallet_description_text = ?, updated_at = NOW()
+         primary_color = ?, text_color = ?, accent_color = ?, secondary_color = ?,
+         logo_url = ?, card_subtitle = ?, card_title = ?, updated_at = NOW()
          WHERE company_id = ? AND loyalty_type = ?`,
         [
-          card_background_color || '#1f2937',
-          card_text_color || '#ffffff',
-          card_accent_color || '#3b82f6',
-          card_border_radius || 12,
-          card_logo_url,
-          card_pattern || 'solid',
-          font_family || 'Arial',
-          show_company_name !== false,
-          show_loyalty_type !== false,
-          custom_message || '',
-          card_design_template || 'classic',
-          gradient_start,
-          gradient_end,
-          background_image_url,
-          wallet_class_id || '',
-          wallet_card_title || '',
-          wallet_header_text || '',
-          wallet_subtitle_text || '',
-          wallet_barcode_text_template || 'ID: {clientId}',
-          wallet_description_text || '',
+          primary_color || '#1f2937',
+          text_color || '#ffffff',
+          accent_color || '#3b82f6',
+          secondary_color || '#374151',
+          logo_url || null,
+          card_subtitle || '',
+          card_title || '',
           empresaId,
           loyaltyType
         ]
@@ -960,6 +903,44 @@ export const updateCardCustomization = async (req, res) => {
     });
   } catch (err) {
     logger.error('Update card customization error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const uploadLogo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier uploadé' });
+    }
+    
+    // Apple Wallet strict format: max 160px width AND max 50px height for 1x logo
+    const tempPath = req.file.path;
+    const finalFilename = req.file.filename + '-resized.png';
+    const finalPath = path.join(req.file.destination, finalFilename);
+    
+    await sharp(tempPath)
+      .resize({ width: 160, height: 50, fit: 'inside', withoutEnlargement: true })
+      .png()
+      .toFile(finalPath);
+      
+    // Supprimer le fichier original non redimensionné
+    fs.unlinkSync(tempPath);
+
+    // Fallback safe au cas où req.protocol/req.get('host') serait trompeur derrière un proxy localtunnel
+    // Mais on essaie quand mème de construire l'URL asbolue:
+    let domain = req.get('host');
+    let protocol = 'http';
+    if (domain && domain.includes('loca.lt')) {
+      protocol = 'https';
+    } else {
+      protocol = req.protocol;
+    }
+    
+    const fileUrl = `${protocol}://${domain}/uploads/${finalFilename}`;
+    
+    res.json({ success: true, url: fileUrl });
+  } catch (err) {
+    logger.error('Upload logo error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

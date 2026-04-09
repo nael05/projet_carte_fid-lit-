@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Html5QrcodeScanner } from 'html5-qrcode'
+import { QRCodeSVG } from 'qrcode.react'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import WalletAddModal from '../components/WalletAddModal'
+import CardCustomizer from '../components/CardCustomizer'
 import './Dashboard.css'
 import './ProDashboard.css'
 
@@ -253,6 +255,18 @@ function ProDashboard() {
           >
             Clients
           </button>
+          <button
+            className={`tab ${activeTab === 'register' ? 'active' : ''}`}
+            onClick={() => setActiveTab('register')}
+          >
+            Lien d'Inscription
+          </button>
+          <button
+            className={`tab ${activeTab === 'design' ? 'active' : ''}`}
+            onClick={() => setActiveTab('design')}
+          >
+            Design de la Carte
+          </button>
         </div>
 
         {/* Scanner Tab */}
@@ -354,6 +368,50 @@ function ProDashboard() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Register Tab */}
+        <div className={`tab-content ${activeTab === 'register' ? 'active' : ''}`}>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h2>Recruter vos clients</h2>
+            <p style={{ marginBottom: '20px', color: '#666' }}>
+              Faites scanner ce QR Code à vos clients pour qu'ils s'inscrivent et téléchargent leur carte Apple Wallet personnalisée à votre entreprise !
+            </p>
+            
+            <div style={{ background: 'white', padding: '20px', display: 'inline-block', borderRadius: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
+              {proInfo ? (
+                <QRCodeSVG value={`${window.location.origin}/join/${proInfo.id}`} size={250} level="H" includeMargin={true} />
+              ) : (
+                <div style={{ width: 250, height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: '10px' }}>Chargement...</div>
+              )}
+            </div>
+
+            <div>
+              <p style={{ marginBottom: '10px', fontWeight: 'bold' }}>Ou partagez ce lien d'inscription :</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={proInfo ? `${window.location.origin}/join/${proInfo.id}` : ''} 
+                  style={{ padding: '10px', width: '350px', borderRadius: '5px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#334155' }}
+                />
+                <button 
+                  className="btn-primary" 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/join/${proInfo.id}`)
+                    alert('Lien copié dans le presse-papier !')
+                  }}
+                >
+                  Copier
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card Design Tab */}
+        <div className={`tab-content ${activeTab === 'design' ? 'active' : ''}`}>
+          <CardCustomizer proInfo={proInfo} />
         </div>
 
         {/* Loyalty Config Tab */}

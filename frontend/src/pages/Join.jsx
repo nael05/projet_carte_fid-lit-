@@ -118,43 +118,13 @@ function Join() {
         return
       }
 
-      setSuccess('✅ Client créé ! Génération de la passe Apple Wallet...')
+      setSuccess('✅ Inscription réussie ! Redirection vers Apple Wallet...')
 
-      // Étape 2: Créer la passe Apple Wallet
-      try {
-        const walletResponse = await api.post(`/app/wallet/create`, {
-          clientId: clientId,
-          empresaId: empresaId
-        })
-
-        console.log('Wallet response:', walletResponse.data)
-
-        if (walletResponse.data.passUrl) {
-          setSuccess('✅ Passe créée ! Redirection vers Apple Wallet...')
-          // Rediriger vers le lien Apple Wallet après 2s
-          setTimeout(() => {
-            window.location.href = walletResponse.data.passUrl
-          }, 2000)
-        } else if (walletResponse.data.pkPassUrl) {
-          setSuccess('✅ Passe créée ! Redirection vers Apple Wallet...')
-          setTimeout(() => {
-            window.location.href = walletResponse.data.pkPassUrl
-          }, 2000)
-        } else {
-          // Si pas de URL directe, afficher un message
-          setSuccess('✅ Carte créée avec succès !')
-          setTimeout(() => {
-            navigate('/')
-          }, 2000)
-        }
-      } catch (walletErr) {
-        console.error('Wallet creation error:', walletErr)
-        // Même si la passe échoue, le client est créé
-        setSuccess('✅ Carte créée avec succès ! Vous pouvez fermer cette page.')
-        setTimeout(() => {
-          navigate('/')
-        }, 2000)
-      }
+      // Redirection automatique via GET vers la route téléchargement natif
+      setTimeout(() => {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        window.location.href = `${apiUrl}/app/wallet/client-download/${clientId}`;
+      }, 1500)
     } catch (err) {
       console.error('Registration error:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de la création de la carte'

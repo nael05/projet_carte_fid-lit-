@@ -1,3 +1,5 @@
+import multer from 'multer';
+import path from 'path';
 import express from 'express';
 import * as apiController from '../controllers/apiController.js';
 import * as loyaltyController from '../controllers/loyaltyController.js';
@@ -7,6 +9,24 @@ import { verifyToken, isAdmin, isPro } from '../middlewares/auth.js';
 import { loginLimiter, apiLimiter } from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    cb(null, req.user?.id + '-' + Date.now() + ext)
+  }
+});
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Seules les images sont autorisées'));
+  }
+});
 
 // ===== GLOBAL RATE LIMITER =====
 router.use(apiLimiter);
@@ -54,6 +74,7 @@ router.get('/pro/loyalty/stats', verifyToken, isPro, loyaltyController.getLoyalt
 // ===== Card Customization Routes =====
 router.get('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.getCardCustomization);
 router.put('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.updateCardCustomization);
+router.post('/pro/upload-logo', verifyToken, isPro, upload.single('logo'), apiController.uploadLogo);
 
 // ===== APPLE WALLET ROUTES =====
 // Import et utilisation des routes Apple Wallet (contient les endpoints frontend + Apple Web Service)

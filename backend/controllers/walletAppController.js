@@ -32,16 +32,20 @@ export const createWalletPass = async (req, res) => {
 
     // 1️⃣ Récupérer le client + entreprise + customization
     const [clientRows] = await db.query(
-      `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.stamps_collected,
+      `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, cs.stamps_collected,
               e.id as company_id, e.nom as company_name, e.loyalty_type,
-              cc.apple_logo_url, cc.apple_icon_url, cc.apple_background_color,
-              cc.apple_text_color, cc.apple_label_color, cc.apple_pass_description,
-              cc.apple_organization_name
+              cc.logo_url as apple_logo_url,
+              cc.primary_color as apple_background_color,
+              cc.text_color as apple_text_color,
+              cc.accent_color as apple_label_color,
+              cc.card_subtitle as apple_pass_description,
+              e.nom as apple_organization_name
        FROM clients c
-       LEFT JOIN enterprises e ON c.enterprise_id = e.id
+       LEFT JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN card_customization cc ON e.id = cc.company_id
-       WHERE c.id = ? OR c.uuid = ?`,
-      [clientId, clientId]
+       LEFT JOIN customer_stamps cs ON cs.client_id = c.id
+       WHERE c.id = ?`,
+      [clientId]
     );
 
     if (!clientRows || clientRows.length === 0) {
@@ -162,10 +166,10 @@ export const addPointsToWallet = async (req, res) => {
     // 1️⃣ Récupérer la carte du client
     const [walletRows] = await db.query(
       `SELECT wc.id, wc.pass_serial_number, wc.points_balance, wc.stamps_balance,
-              c.enterprise_id, e.loyalty_type
+              c.entreprise_id, e.loyalty_type
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
-       JOIN enterprises e ON c.enterprise_id = e.id
+       JOIN entreprises e ON c.entreprise_id = e.id
        WHERE wc.client_id = ? OR wc.pass_serial_number = ?`,
       [clientId, clientId]
     );
@@ -260,7 +264,7 @@ export const getWalletStatus = async (req, res) => {
               e.loyalty_type, COUNT(apr.id) as device_count
        FROM wallet_cards wc
        LEFT JOIN clients c ON wc.client_id = c.id
-       LEFT JOIN enterprises e ON c.enterprise_id = e.id
+       LEFT JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN apple_pass_registrations apr ON wc.pass_serial_number = apr.pass_serial_number
        WHERE wc.client_id = ? OR wc.pass_serial_number = ?
        GROUP BY wc.id`,
@@ -289,8 +293,96 @@ export const getWalletStatus = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/app/wallet/client-download/:clientId
+ * Génère (ou régénère) et télécharge la carte Apple Wallet d'un client.
+ */
+export const downloadClientPass = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (!clientId) {
+      return res.status(400).send('Client ID manquant');
+    }
+
+    logger.info(`📱 Téléchargement (GET) pass Apple Wallet pour client: ${clientId}`);
+
+    // Récupérer le client + entreprise + customization
+    const [clientRows] = await db.query(
+      `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, cs.stamps_collected,
+              e.id as company_id, e.nom as company_name, e.loyalty_type,
+              cc.logo_url as apple_logo_url,
+              cc.primary_color as apple_background_color,
+              cc.text_color as apple_text_color,
+              cc.accent_color as apple_label_color,
+              cc.card_subtitle as apple_pass_description,
+              e.nom as apple_organization_name
+       FROM clients c
+       LEFT JOIN entreprises e ON c.entreprise_id = e.id
+       LEFT JOIN card_customization cc ON e.id = cc.company_id
+       LEFT JOIN customer_stamps cs ON cs.client_id = c.id
+       WHERE c.id = ?`,
+      [clientId]
+    );
+
+    if (!clientRows || clientRows.length === 0) {
+      return res.status(404).send('Client non trouvé');
+    }
+
+    const client = clientRows[0];
+    const { company_id, company_name, loyalty_type, points, stamps_collected } = client;
+
+    // Génération déterministe pour éviter d'impliquer une table inexistante (wallet_cards)
+    let serialNumber = client.id.replace(/-/g, '').substring(0, 20).toUpperCase();
+    let authenticationToken = 'TOKEN_' + client.id.replace(/-/g, '') + 'APPLEWALLET';
+
+    const passData = {
+      clientId: client.id,
+      firstName: client.prenom,
+      lastName: client.nom,
+      phoneNumber: client.telephone,
+      companyName: company_name,
+      loyaltyType: loyalty_type || 'points',
+      balance: (loyalty_type === 'stamps') 
+                ? (stamps_collected || 0) 
+                : (points || 0),
+      stampMaxCount: 10,
+      createdAt: client.created_at || new Date(),
+      qrCodeValue: client.id.toString(),
+    };
+
+    const customization = {
+      apple_logo_url: client.apple_logo_url,
+      apple_icon_url: client.apple_icon_url,
+      apple_background_color: client.apple_background_color,
+      apple_text_color: client.apple_text_color,
+      apple_label_color: client.apple_label_color,
+      apple_pass_description: client.apple_pass_description,
+      apple_organization_name: client.apple_organization_name,
+    };
+
+    const passBuffer = await passGenerator.generateLoyaltyPass(
+      passData,
+      customization,
+      serialNumber,
+      authenticationToken
+    );
+
+    // Renvoyer en natif pour Safari
+    res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
+    res.setHeader('Content-Disposition', `attachment; filename="${client.prenom}_${client.nom}_Loyalty.pkpass"`);
+    res.setHeader('Content-Length', passBuffer.length);
+    res.send(passBuffer);
+
+  } catch (error) {
+    logger.error(`❌ Erreur GET /client-download: ${error.message}`);
+    res.status(500).send('Erreur lors de la génération du pass Apple Wallet.');
+  }
+};
+
 export default {
   createWalletPass,
   addPointsToWallet,
   getWalletStatus,
+  downloadClientPass,
 };

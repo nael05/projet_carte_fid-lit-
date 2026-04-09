@@ -1,0 +1,98 @@
+/* Pro Dashboard Styles */
+
+.pro-dashboard-loading {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  color: var(--text-tertiary);
+}
+
+.pro-dashboard-loading-icon {
+  font-size: 18px;
+  margin-bottom: var(--space-2);
+}
+
+.pro-dashboard-empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.pro-dashboard-empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-4);
+}
+
+.pro-dashboard-empty-text {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Suspended Account */
+.account-suspended-container {
+  padding: var(--space-12) var(--space-6);
+}
+
+.account-suspended-alert {
+  text-align: center;
+  padding: var(--space-8);
+  background: var(--error-bg);
+  border: 2px solid var(--error-border);
+  border-radius: var(--radius-lg);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.account-suspended-alert h2 {
+  color: var(--error-text);
+  margin: 0 0 var(--space-3) 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.account-suspended-alert p {
+  color: var(--error-text);
+  margin: 0 0 var(--space-2) 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.account-suspended-footer {
+  color: var(--error-text);
+  margin: var(--space-4) 0 0 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Scanner Status */
+.scanner-status {
+  padding: var(--space-4);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  font-size: 14px;
+}
+
+.scanner-status-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.scanner-status-indicator {
+  color: var(--success-text);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .account-suspended-alert {
+    margin: var(--space-4);
+  }
+
+  .pro-dashboard-loading,
+  .pro-dashboard-empty {
+    padding: var(--space-8) var(--space-4);
+  }
+}

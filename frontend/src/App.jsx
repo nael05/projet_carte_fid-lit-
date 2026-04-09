@@ -8,7 +8,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import ProLogin from './pages/ProLogin'
 import ProResetPassword from './pages/ProResetPassword'
 import ProDashboard from './pages/ProDashboard'
-import JoinWallet from './pages/JoinWallet'
+import Join from './pages/Join'
 
 function App() {
   return (
@@ -18,6 +18,9 @@ function App() {
           {/* Home */}
           <Route path="/" element={<Home />} />
 
+          {/* Client - Create Card */}
+          <Route path="/join/:empresaId" element={<Join />} />
+
           {/* Master Admin */}
           <Route path="/master-admin-secret" element={<AdminLogin />} />
           <Route path="/master-admin-secret/dashboard" element={<PrivateAdminRoute element={<AdminDashboard />} />} />
@@ -26,9 +29,6 @@ function App() {
           <Route path="/pro/login" element={<ProLogin />} />
           <Route path="/pro/reset-password" element={<ProResetPassword />} />
           <Route path="/pro/dashboard" element={<PrivateProRoute element={<ProDashboard />} />} />
-
-          {/* Public */}
-          <Route path="/join/:entrepriseId" element={<JoinWallet />} />
 
           {/* Default redirect */}
           <Route path="*" element={<Navigate to="/" />} />

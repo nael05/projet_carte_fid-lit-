@@ -32,17 +32,25 @@ function AdminDashboard() {
       return
     }
     loadEnterprises()
-  }, [token, navigate])
+  }, [token])
 
   const loadEnterprises = async () => {
     try {
       setLoading(true)
       setError('')
       const response = await api.get('/admin/enterprises')
-      setEnterprises(response.data || [])
+      console.log('Enterprises loaded:', response.data)
+      
+      // S'assurer que c'est un array
+      const data = Array.isArray(response.data) ? response.data : []
+      setEnterprises(data)
+      
+      if (data.length === 0) {
+        console.warn('Aucune entreprise trouvée')
+      }
     } catch (err) {
+      console.error('Error loading enterprises:', err)
       setError('⚠️ Erreur lors du chargement des entreprises')
-      console.error(err)
       if (err.response?.status === 401) {
         logout()
         navigate('/master-admin-secret')
@@ -154,9 +162,21 @@ function AdminDashboard() {
 
   // Filtrage
   const filteredEnterprises = enterprises.filter(ent => {
-    const matchesSearch = ent.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ent.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const searchLower = searchTerm.toLowerCase().trim()
+    
+    // Si la recherche est vide, retourner tous les éléments
+    if (!searchLower) {
+      return filterStatus === 'tous' || ent.statut === filterStatus
+    }
+    
+    // Convertir tous les champs en string pour la recherche
+    const nomMatch = (ent.nom || '').toLowerCase().includes(searchLower)
+    const emailMatch = (ent.email || '').toLowerCase().includes(searchLower)
+    const idMatch = String(ent.id || '').toLowerCase().includes(searchLower)
+    
+    const matchesSearch = nomMatch || emailMatch || idMatch
     const matchesStatus = filterStatus === 'tous' || ent.statut === filterStatus
+    
     return matchesSearch && matchesStatus
   })
 
@@ -320,7 +340,7 @@ function AdminDashboard() {
           <div className="search-box">
             <input
               type="text"
-              placeholder="🔍 Rechercher par nom ou email..."
+              placeholder="🔍 Rechercher par id, nom ou email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -354,11 +374,17 @@ function AdminDashboard() {
           {loading ? (
             <div className="loading">
               <div className="spinner"></div>
-              <p>Chargement des entreprises...</p>
+              <p>⏳ Chargement des entreprises...</p>
+            </div>
+          ) : enterprises.length === 0 ? (
+            <div className="empty-state">
+              <p>😐 Aucune entreprise trouvée</p>
+              <p style={{fontSize: '14px', color: 'var(--text-tertiary)'}}>Créez votre première entreprise pour commencer</p>
             </div>
           ) : filteredEnterprises.length === 0 ? (
             <div className="empty-state">
-              <p>😴 Aucune entreprise trouvée</p>
+              <p>🔍 Aucune entreprise ne correspond à votre recherche</p>
+              <p style={{fontSize: '14px', color: 'var(--text-tertiary)'}}>Essayez avec un autre ID, nom ou email</p>
             </div>
           ) : (
             <div className="enterprises-grid">

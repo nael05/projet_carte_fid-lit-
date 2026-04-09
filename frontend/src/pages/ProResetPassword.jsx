@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { validatePassword } from '../utils/passwordValidator'
 import api from '../api'
 import './Auth.css'
+import './ProResetPassword.css'
 
 function ProResetPassword() {
   const [newPassword, setNewPassword] = useState('')

@@ -3,12 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { Html5QrcodeScanner } from 'html5-qrcode'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
-import DeviceManager from './DeviceManager'
-import LoyaltySettings from './LoyaltySettings'
-import PushNotifications from './PushNotifications'
-import CardCustomizer from '../components/CardCustomizer'
-import CustomerCard from '../components/CustomerCard'
+import WalletAddModal from '../components/WalletAddModal'
 import './Dashboard.css'
+import './ProDashboard.css'
 
 function ProDashboard() {
   const [activeTab, setActiveTab] = useState('scanner')
@@ -22,6 +19,8 @@ function ProDashboard() {
   const [pageError, setPageError] = useState('')
   const [customization, setCustomization] = useState(null)
   const [selectedClientCard, setSelectedClientCard] = useState(null)
+  const [walletModalOpen, setWalletModalOpen] = useState(false)
+  const [walletSelectedClient, setWalletSelectedClient] = useState(null)
   const navigate = useNavigate()
   const scannerRef = useRef(null)
   const { token, isSuspended, logout } = useAuth()
@@ -149,6 +148,16 @@ function ProDashboard() {
     }
   }
 
+  const handleOpenWalletModal = (client) => {
+    setWalletSelectedClient(client)
+    setWalletModalOpen(true)
+  }
+
+  const handleCloseWalletModal = () => {
+    setWalletModalOpen(false)
+    setWalletSelectedClient(null)
+  }
+
   const handleLogout = () => {
     logout()
     navigate('/pro/login')
@@ -244,30 +253,6 @@ function ProDashboard() {
           >
             Clients
           </button>
-          <button
-            className={`tab ${activeTab === 'config' ? 'active' : ''}`}
-            onClick={() => setActiveTab('config')}
-          >
-            Fidélité
-          </button>
-          <button
-            className={`tab ${activeTab === 'notifications' ? 'active' : ''}`}
-            onClick={() => setActiveTab('notifications')}
-          >
-            Notifications
-          </button>
-          <button
-            className={`tab ${activeTab === 'devices' ? 'active' : ''}`}
-            onClick={() => setActiveTab('devices')}
-          >
-            Appareils (24h)
-          </button>
-          <button
-            className={`tab ${activeTab === 'card-design' ? 'active' : ''}`}
-            onClick={() => setActiveTab('card-design')}
-          >
-            Design Carte
-          </button>
         </div>
 
         {/* Scanner Tab */}
@@ -311,7 +296,6 @@ function ProDashboard() {
                     <th>Nom</th>
                     <th>Téléphone</th>
                     <th>{loyaltyType === 'points' ? 'Points' : 'Tampons'}</th>
-                    <th>Wallet</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -327,7 +311,6 @@ function ProDashboard() {
                             : `${client.stamps_collected || 0}/${proInfo?.stamps_count || 10}`}
                         </strong>
                       </td>
-                      <td>{client.type_wallet === 'apple' ? 'Apple' : 'Google'}</td>
                       <td>
                         <div className="action-buttons">
                           <button
@@ -351,6 +334,13 @@ function ProDashboard() {
                           >
                             -1
                           </button>
+                          <button
+                            className="btn-wallet"
+                            onClick={() => handleOpenWalletModal(client)}
+                            title="Ajouter au Apple Wallet"
+                          >
+                            📱 Wallet
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -367,24 +357,16 @@ function ProDashboard() {
         </div>
 
         {/* Loyalty Config Tab */}
-        <div className={`tab-content ${activeTab === 'config' ? 'active' : ''}`}>
-          <LoyaltySettings />
-        </div>
+        {/* Removed - LoyaltySettings component deleted */}
 
         {/* Push Notifications Tab */}
-        <div className={`tab-content ${activeTab === 'notifications' ? 'active' : ''}`}>
-          <PushNotifications />
-        </div>
+        {/* Removed - PushNotifications component deleted */}
 
         {/* Devices Tab - 24h Session Management */}
-        <div className={`tab-content ${activeTab === 'devices' ? 'active' : ''}`}>
-          <DeviceManager />
-        </div>
+        {/* Removed - DeviceManager component deleted */}
 
         {/* Card Design Tab */}
-        <div className={`tab-content ${activeTab === 'card-design' ? 'active' : ''}`}>
-          <CardCustomizer companyId={proInfo?.id} loyaltyType={loyaltyType} />
-        </div>
+        {/* Removed - CardCustomizer component deleted */}
           </div>
         </>
       )}
@@ -429,14 +411,28 @@ function ProDashboard() {
               ×
             </button>
             
-            <CustomerCard
-              client={selectedClientCard}
-              loyaltyType={loyaltyType}
-              customization={customization}
-              companyName={proInfo?.nom}
-            />
+            <h3>{selectedClientCard.prenom} {selectedClientCard.nom}</h3>
+            <p><strong>Téléphone:</strong> {selectedClientCard.telephone}</p>
+            <p><strong>Points:</strong> {selectedClientCard.points}</p>
+            {loyaltyType === 'stamps' && (
+              <p><strong>Tampons:</strong> {selectedClientCard.stamps_collected || 0}/{proInfo?.stamps_count || 10}</p>
+            )}
           </div>
         </div>
+      )}
+
+      {/* Apple Wallet Modal */}
+      {walletSelectedClient && (
+        <WalletAddModal
+          isOpen={walletModalOpen}
+          onClose={handleCloseWalletModal}
+          clientId={walletSelectedClient.id}
+          clientName={`${walletSelectedClient.prenom} ${walletSelectedClient.nom}`}
+          onSuccess={() => {
+            // Recharger les clients après ajout au wallet
+            loadClients()
+          }}
+        />
       )}
     </div>
   )

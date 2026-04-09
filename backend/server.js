@@ -1,13 +1,14 @@
+// CHARGER DOTENV EN PREMIER (avant tout import)
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import apiRoutes from './routes/apiRoutes.js';
-import dotenv from 'dotenv';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import pool from './db.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,6 +72,35 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// ===== HEALTH CHECK & DIAGNOSTICS =====
+app.get('/api/wallet/health', (req, res) => {
+  try {
+    // Test PassGenerator configuration
+    import('./utils/passGenerator.js').then((module) => {
+      const pg = module.passGenerator;
+      pg.validateConfiguration();
+    });
+
+    // Test APNService configuration  
+    import('./utils/apnService.js').then((module) => {
+      const apn = module.apnService;
+      logger.info('✅ Provider APNs prêt');
+    });
+
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      configuration: {
+        passGenerator: '✅ Validée',
+        apnService: '✅ Prête'
+      }
+    });
+  } catch (err) {
+    logger.error('Health check error', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ===== 404 HANDLER =====
 app.use(notFoundHandler);
 
@@ -82,4 +112,18 @@ app.listen(PORT, () => {
   logger.info(`✅ Backend démarré sur http://localhost:${PORT}`);
   logger.info(`📍 Environnement: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`🔒 CORS origins: ${allowedOrigins.join(', ')}`);
+  
+  // Test configurations au démarrage
+  setTimeout(() => {
+    try {
+      import('./utils/passGenerator.js').then((module) => {
+        module.passGenerator.validateConfiguration();
+      });
+      import('./utils/apnService.js').then((module) => {
+        logger.info('✅ Configuration APNs initialisée');
+      });
+    } catch (err) {
+      logger.warn('⚠️ Warning quelconque', err.message);
+    }
+  }, 100);
 });

@@ -3,14 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateToken } from '../middlewares/auth.js';
 import { createSession, generateDeviceFingerprint } from '../utils/sessionManager.js';
 import pool from '../db.js';
-import { PKPass } from 'passkit-generator';
-import * as fs from 'fs';
-import * as path from 'path';
-import googleWalletManager from '../utils/googleWalletManager.js';
-import { generateAppleWalletPass } from '../utils/appleWalletGenerator.js';
 import { validatePassword, validatePasswordChange } from '../utils/passwordValidator.js';
 import logger from '../utils/logger.js';
-import { validateLoginInput, validateJoinWalletInput } from '../utils/inputValidator.js';
+import { validateLoginInput } from '../utils/inputValidator.js';
 
 // ===== MASTER ADMIN CONTROLLERS =====
 
@@ -784,76 +779,13 @@ export const registerClientAndGeneratePass = async (req, res) => {
       card_logo_url: null
     };
 
-    // Générer le pass (pkpass pour Apple Wallet)
-    if (type_wallet === 'apple') {
-      try {
-        // Utiliser le nouveau module appleWalletGenerator
-        const passBuffer = await generateAppleWalletPass({
-          id: clientId,
-          firstName: prenom,
-          lastName: nom,
-          email: telephone,
-          points: 0,
-          cardNumber: clientId
-        });
-
-        res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
-        res.setHeader('Content-Disposition', `attachment; filename="${prenom}-${nom}-loyalty.pkpass"`);
-        res.send(passBuffer);
-        
-        logger.info('Apple Wallet pass généré via registerClientAndGeneratePass', { clientId });
-      } catch (passErr) {
-        logger.error('Apple pass generation error', { error: passErr.message });
-        // Client créé avec succès, juste la génération du pass échoue
-        res.status(200).json({
-          success: true,
-          clientId,
-          message: 'Client créé avec succès',
-          fallbackMessage: 'Erreur génération pass Apple Wallet',
-          walletsaveFallback: true,
-          errorDetails: passErr.message
-        });
-      }
-    } else if (type_wallet === 'google') {
-      // Pour Google Wallet, créer le pass via l'API Google
-      try {
-        const walletData = await googleWalletManager.createWalletPass(
-          {
-            id: clientId,
-            nom,
-            prenom,
-            companyName
-          },
-          cardConfig,
-          loyaltyType
-        );
-
-        res.json({
-          success: true,
-          clientId,
-          saveUrl: walletData.saveUrl,
-          message: 'Pass Google Wallet généré avec succès',
-          walletPass: {
-            classId: walletData.classId,
-            objectId: walletData.objectId,
-            jwt: walletData.jwt
-          }
-        });
-      } catch (googleErr) {
-        logger.error('Google Wallet generation error', { error: googleErr.message });
-        // Client créé avec succès, juste la génération du pass échoue
-        // Retourner 200 avec fallback plutôt que 500
-        res.status(200).json({
-          success: true,
-          clientId,
-          saveUrl: null,
-          message: 'Client créé avec succès',
-          fallbackMessage: 'Erreur génération pass Google Wallet - créez-la manuellement',
-          walletsaveFallback: true,
-          errorDetails: googleErr.message
-        });
-      }
-    }
+    // Wallet generation a été refactorisé dans les nouveaux controllers (walletAppController)
+    res.status(201).json({
+      success: true,
+      clientId,
+      message: 'Client créé avec succès',
+      note: 'Pour ajouter au wallet, utiliser POST /api/app/wallet/create'
+    });
   } catch (err) {
     logger.error('Register client error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Grid, Users, Home as HomeIcon } from '../icons/Icons'
+import api from '../api'
 import './Home.css'
 
 function Home() {
@@ -123,6 +124,7 @@ function Home() {
 
 function DemoClientAccess() {
   const [showForm, setShowForm] = React.useState(false)
+  const [searchTerm, setSearchTerm] = React.useState('')
   const [selectedId, setSelectedId] = React.useState('')
   const [enterprises, setEnterprises] = React.useState([])
   const [loading, setLoading] = React.useState(false)
@@ -136,19 +138,29 @@ function DemoClientAccess() {
 
   const fetchEnterprises = async () => {
     setLoading(true)
+    setError('')
     try {
-      const response = await fetch('/api/public/enterprises')
-      const data = await response.json()
-      setEnterprises(data || [])
-      if (data.length > 0) {
-        setSelectedId(data[0].id)
-      }
+      const response = await api.get('/public/enterprises')
+      console.log('Enterprises loaded:', response.data)
+      setEnterprises(response.data || [])
     } catch (err) {
-      setError('Erreur lors de la récupération des entreprises')
+      console.error('Error loading enterprises:', err)
+      setError('⚠️ Erreur lors du chargement des entreprises. Vérifiez que le serveur est actif.')
     } finally {
       setLoading(false)
     }
   }
+
+  // Filtrer les entreprises par ID ou nom
+  const filteredEnterprises = enterprises.filter(ent => {
+    const searchLower = searchTerm.toLowerCase().trim()
+    if (!searchLower) return true
+    
+    return (
+      String(ent.id).toLowerCase().includes(searchLower) ||
+      (ent.nom || '').toLowerCase().includes(searchLower)
+    )
+  })
 
   if (!showForm) {
     return (
@@ -168,60 +180,104 @@ function DemoClientAccess() {
         window.location.href = `/join/${selectedId}`
       }
     }} className="demo-form">
-      {error && <p style={{ color: '#ef4444', marginBottom: '10px' }}>{error}</p>}
+      {error && (
+        <div className="demo-form-error">
+          ⚠️ {error.replace('⚠️ ', '')}
+        </div>
+      )}
       
       {loading ? (
-        <p>Chargement des entreprises...</p>
+        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
+          ⏳ Chargement des entreprises...
+        </div>
       ) : enterprises.length > 0 ? (
         <>
-          <select
-            value={selectedId}
-            onChange={(e) => setSelectedId(e.target.value)}
-            required
-            style={{
-              padding: '10px',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              width: '100%',
-              marginBottom: '10px',
-              fontFamily: 'inherit',
-              fontSize: '14px'
-            }}
-          >
-            {enterprises.map((ent) => (
-              <option key={ent.id} value={ent.id}>
-                {ent.nom}
-              </option>
-            ))}
-          </select>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="submit" className="btn-small">Aller</button>
+          {/* Search Input */}
+          <div>
+            <label>🔍 Rechercher une entreprise</label>
+            <input
+              type="text"
+              placeholder="Tapez l'ID ou le nom de l'entreprise..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          {/* Results List */}
+          <div>
+            {filteredEnterprises.length > 0 ? (
+              <>
+                <label>Sélectionner une entreprise ({filteredEnterprises.length})</label>
+                <div className="demo-form-search-results">
+                  {filteredEnterprises.map((ent) => (
+                    <div
+                      key={ent.id}
+                      className={`demo-form-item ${selectedId === ent.id ? 'selected' : ''}`}
+                      onClick={() => setSelectedId(ent.id)}
+                    >
+                      <div>
+                        <div className="demo-form-item-name">{ent.nom}</div>
+                        <div className="demo-form-item-id">ID: {ent.id}</div>
+                      </div>
+                      {selectedId === ent.id && <span>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="demo-form-empty">
+                🔍 Aucune entreprise ne correspond à "{searchTerm}"
+              </div>
+            )}
+          </div>
+
+          {/* Selection Confirmation */}
+          {selectedId && (
+            <div className="demo-form-selection">
+              ✅ Entreprise sélectionnée: <strong>{enterprises.find(e => e.id === selectedId)?.nom}</strong>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="demo-form-buttons">
+            <button 
+              type="submit" 
+              disabled={!selectedId}
+              className="btn-primary"
+            >
+              ✅ Créer une Carte
+            </button>
             <button
               type="button"
               className="btn-small-cancel"
               onClick={() => {
                 setShowForm(false)
+                setSearchTerm('')
                 setSelectedId('')
                 setError('')
               }}
             >
-              Annuler
+              ✕ Annuler
             </button>
           </div>
         </>
       ) : (
         <>
-          <p style={{ color: '#6b7280', marginBottom: '10px' }}>Aucune entreprise disponible</p>
+          <div className="demo-form-empty">
+            😐 Aucune entreprise disponible pour le moment
+          </div>
           <button
             type="button"
             className="btn-small-cancel"
             onClick={() => {
               setShowForm(false)
+              setSearchTerm('')
               setSelectedId('')
               setError('')
             }}
           >
-            Retour
+            ✕ Retour
           </button>
         </>
       )}

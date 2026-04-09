@@ -1,6 +1,8 @@
 import express from 'express';
 import * as apiController from '../controllers/apiController.js';
 import * as loyaltyController from '../controllers/loyaltyController.js';
+import * as migrationController from '../controllers/migrationController.js';
+import walletRoutes from './walletRoutes.js';
 import { verifyToken, isAdmin, isPro } from '../middlewares/auth.js';
 import { loginLimiter, apiLimiter } from '../middlewares/rateLimiter.js';
 
@@ -11,6 +13,9 @@ router.use(apiLimiter);
 
 // ===== Master Admin Routes =====
 router.post('/admin/login', loginLimiter, apiController.adminLogin);
+// Endpoint public pour migration (temporaire - à sécuriser ou supprimer après)
+router.post('/setup/run-migration', migrationController.runMigrations);
+router.post('/admin/migrations/run', verifyToken, isAdmin, migrationController.runMigrations);
 router.get('/admin/enterprises', verifyToken, isAdmin, apiController.getEnterprises);
 router.post('/admin/create-company', verifyToken, isAdmin, apiController.createCompany);
 router.put('/admin/suspend-company/:companyId', verifyToken, isAdmin, apiController.suspendCompany);
@@ -50,8 +55,11 @@ router.get('/pro/loyalty/stats', verifyToken, isPro, loyaltyController.getLoyalt
 router.get('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.getCardCustomization);
 router.put('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.updateCardCustomization);
 
-// ===== Apple Wallet Routes =====
-router.post('/wallet/apple', verifyToken, loyaltyController.createAppleWalletPass);
+// ===== APPLE WALLET ROUTES =====
+// Import et utilisation des routes Apple Wallet (contient les endpoints frontend + Apple Web Service)
+// Frontend: /api/app/wallet /*
+// Apple Web Service: /api/wallet/v1/*
+router.use('/', walletRoutes);
 
 // ===== Public Client Routes =====
 router.get('/public/enterprises', apiController.getPublicEnterprises);

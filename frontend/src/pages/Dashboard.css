@@ -1,255 +1,77 @@
-/* Dashboard - Minimaliste */
+/* ============================================================
+   PRO DASHBOARD — Modern Grey (overrides index.css base)
+   ============================================================ */
 
-/* Animations */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Container override for pro dashboard (no sidebar) */
 .dashboard-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
   background: var(--bg-app);
-  padding: var(--space-4);
+  min-height: 100vh;
 }
 
+/* Header bar */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg-surface);
-  padding: var(--space-4) var(--space-6);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-4);
-  box-shadow: var(--shadow-md);
-}
-
-.dashboard-header h1 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 28px;
-}
-
-.dashboard-content {
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  box-shadow: var(--shadow-md);
-  transition: opacity 0.3s, pointer-events 0.3s;
-}
-
-.tabs {
-  display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-  border-bottom: 2px solid var(--border-light);
-}
-
-.tab {
-  padding: 12px 24px;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  transition: var(--transition);
-}
-
-.tab:hover {
-  color: var(--text-primary);
-}
-
-.tab.active {
-  color: var(--text-primary);
-  border-bottom-color: var(--text-primary);
-}
-
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-.card {
-  background: var(--bg-subtle);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.card h2 {
-  margin-top: 0;
-  color: var(--text-primary);
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-table th {
-  background: var(--bg-subtle);
-  padding: 12px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--text-primary);
-  border-bottom: 2px solid var(--border-light);
-}
-
-table td {
-  padding: 12px;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
   border-bottom: 1px solid var(--border-light);
 }
-
-table tr:hover {
-  background: var(--bg-hover);
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
 }
 
-.action-buttons {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+/* Content wrap */
+.dashboard-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
 }
 
-/* Buttons */
-.btn-primary,
-.btn-secondary,
-.btn-success,
-.btn-danger,
-.btn-wallet {
-  padding: var(--space-1) var(--space-3);
-  border: none;
+/* Cards inside tabs */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card h2 { margin-top: 0; }
+
+/* Table */
+.table-responsive { overflow-x: auto; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+table th {
+  background: var(--bg-subtle);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 500;
   font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
+table td { padding: 14px 16px; border-bottom: 1px solid var(--border-light); }
+tbody tr { transition: var(--transition); }
+tbody tr:hover { background: var(--bg-subtle); }
 
-.btn-primary {
-  background: var(--text-primary);
-  color: var(--text-inverse);
-}
-
-.btn-primary:hover {
-  background: #1F2937;
-  transform: translateY(-2px);
-}
-
-.btn-secondary {
-  background: var(--text-secondary);
-  color: var(--text-inverse);
-}
-
-.btn-secondary:hover {
-  background: var(--text-primary);
-}
-
-.btn-success {
-  background: var(--success-text);
-  color: var(--text-inverse);
-}
-
-.btn-success:hover {
-  background: #059669;
-}
-
-.btn-danger {
-  background: #ef4444;
-  color: var(--text-inverse);
-}
-
-.btn-danger:hover {
-  background: #dc2626;
-}
-
-.btn-wallet {
-  background: var(--text-primary);
-  color: var(--text-inverse);
-}
-
-.btn-wallet:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-/* Alerts */
-.alert {
-  padding: var(--space-4) var(--space-4);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-4);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  animation: slideDown 0.3s ease-out;
-}
-
-.alert.success {
-  background: var(--success-bg);
-  border-left: 4px solid var(--success-text);
-  color: var(--success-text);
-}
-
-.alert.error {
-  background: var(--error-bg);
-  border-left: 4px solid var(--error-text);
-  color: var(--error-text);
-}
-
-.alert-close {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: inherit;
-  opacity: 0.7;
-  padding: 0;
-  margin-left: var(--space-2);
-}
-
-.alert-close:hover {
-  opacity: 1;
-}
+.action-buttons { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    gap: var(--space-3);
-    text-align: center;
-  }
-
-  .dashboard-header h1 {
-    font-size: 20px;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-  }
-
-  .action-buttons button {
-    width: 100%;
-  }
-
-  .table-responsive {
-    font-size: 12px;
-  }
-
-  table th,
-  table td {
-    padding: 8px 4px;
-  }
+  .dashboard-container { padding: 20px 16px; }
+  .dashboard-header { flex-direction: column; gap: 12px; text-align: center; }
+  .dashboard-header h1 { font-size: 20px; }
+  .action-buttons { flex-direction: column; }
+  .action-buttons button { width: 100%; }
 }

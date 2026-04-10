@@ -6,7 +6,7 @@ import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import WalletAddModal from '../components/WalletAddModal'
 import CardCustomizer from '../components/CardCustomizer'
-import './Dashboard.css'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, ChevronRight, User, Phone, Award, Check } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {
@@ -23,6 +23,8 @@ function ProDashboard() {
   const [selectedClientCard, setSelectedClientCard] = useState(null)
   const [walletModalOpen, setWalletModalOpen] = useState(false)
   const [walletSelectedClient, setWalletSelectedClient] = useState(null)
+  const [copied, setCopied] = useState(false)
+  const [clientSearch, setClientSearch] = useState('')
   const navigate = useNavigate()
   const scannerRef = useRef(null)
   const { token, isSuspended, logout } = useAuth()
@@ -49,16 +51,13 @@ function ProDashboard() {
       const response = await api.get('/pro/info')
       setProInfo(response.data)
       setLoyaltyType(response.data.loyalty_type || 'points')
-      
-      // Charger la customization de la carte avec le type de loyauté
       try {
-        const loyaltyType = response.data.loyalty_type || 'points'
-        const customResp = await api.get(`/pro/card-customization/${response.data.id}?loyaltyType=${loyaltyType}`)
+        const lt = response.data.loyalty_type || 'points'
+        const customResp = await api.get(`/pro/card-customization/${response.data.id}?loyaltyType=${lt}`)
         setCustomization(customResp.data)
       } catch (err) {
         console.log('Pas de personnalisation, utiliser les valeurs par défaut')
       }
-      
       setLoading(false)
     } catch (err) {
       console.error('Erreur chargement pro info:', err)
@@ -84,7 +83,6 @@ function ProDashboard() {
         { fps: 10, qrbox: { width: 250, height: 250 } },
         false
       )
-
       scanner.render(
         async (decodedText) => {
           handleScan(decodedText)
@@ -99,9 +97,7 @@ function ProDashboard() {
   const destroyScanner = () => {
     if (scannerRef.current) {
       Html5QrcodeScanner.getCameras().then(() => {
-        try {
-          Html5QrcodeScanner.prototype.clear?.call({})
-        } catch (e) {}
+        try { Html5QrcodeScanner.prototype.clear?.call({}) } catch (e) {}
       })
     }
   }
@@ -110,14 +106,12 @@ function ProDashboard() {
     try {
       setLoading(true)
       const response = await api.post('/pro/scan', { clientId })
-      
       const successData = {
         success: true,
         clientName: response.data.clientName,
         rewardUnlocked: response.data.rewardUnlocked,
         rewardTitle: response.data.rewardTitle
       }
-
       if (loyaltyType === 'points') {
         successData.points = response.data.newPoints
         successData.message = response.data.message
@@ -125,16 +119,12 @@ function ProDashboard() {
         successData.stamps = response.data.newStamps
         successData.message = response.data.message
       }
-
       setLastScan(successData)
       setReward(response.data.rewardUnlocked ? response.data.rewardTitle : null)
       setTimeout(() => setLastScan(null), 5000)
       loadClients()
     } catch (err) {
-      setLastScan({
-        success: false,
-        error: err.response?.data?.error || 'Erreur scan'
-      })
+      setLastScan({ success: false, error: err.response?.data?.error || 'Erreur scan' })
       setTimeout(() => setLastScan(null), 3000)
     } finally {
       setLoading(false)
@@ -150,346 +140,283 @@ function ProDashboard() {
     }
   }
 
-  const handleOpenWalletModal = (client) => {
-    setWalletSelectedClient(client)
-    setWalletModalOpen(true)
+  const handleOpenWalletModal = (client) => { setWalletSelectedClient(client); setWalletModalOpen(true) }
+  const handleCloseWalletModal = () => { setWalletModalOpen(false); setWalletSelectedClient(null) }
+  const handleLogout = () => { logout(); navigate('/pro/login') }
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/join/${proInfo.id}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleCloseWalletModal = () => {
-    setWalletModalOpen(false)
-    setWalletSelectedClient(null)
-  }
+  const filteredClients = clients.filter(c => {
+    if (!clientSearch) return true
+    const s = clientSearch.toLowerCase()
+    return `${c.prenom} ${c.nom}`.toLowerCase().includes(s) || c.telephone?.includes(s)
+  })
 
-  const handleLogout = () => {
-    logout()
-    navigate('/pro/login')
-  }
+  const tabs = [
+    { id: 'scanner', icon: ScanLine, label: 'Scanner' },
+    { id: 'clients', icon: Users, label: 'Clients' },
+    { id: 'register', icon: LinkIcon, label: 'Recruter' },
+    { id: 'design', icon: Palette, label: 'Design' }
+  ]
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Dashboard {localStorage.getItem('companyName')}</h1>
-        <button className="btn-secondary" onClick={handleLogout}>Déconnexion</button>
-      </div>
+    <div className="pro-dash">
+      {/* ===== TOP BAR ===== */}
+      <header className="pro-topbar">
+        <div className="pro-topbar-left">
+          <div className="pro-avatar">{(localStorage.getItem('companyName') || 'E')[0]}</div>
+          <div>
+            <h1 className="pro-company-name">{localStorage.getItem('companyName')}</h1>
+            <span className="pro-badge">{loyaltyType === 'points' ? 'Points' : 'Tampons'} · {clients.length} client{clients.length !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+        <button className="pro-topbar-btn" onClick={handleLogout} title="Déconnexion">
+          <LogOut size={18} />
+        </button>
+      </header>
 
-      {/* Page de chargement */}
+      {/* ===== SUSPENDED BANNER ===== */}
+      {isSuspended && (
+        <div className="pro-suspended-banner">
+          <AlertCircle size={20} />
+          <div>
+            <strong>Compte Suspendu</strong>
+            <p>Contactez l'administrateur pour plus d'informations.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ===== LOADING ===== */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '60px 30px', color: '#999' }}>
-          <div style={{ fontSize: '18px', marginBottom: '10px' }}>Chargement des données...</div>
+        <div className="pro-loading">
+          <Loader2 size={28} className="pro-spin" />
+          <p>Chargement...</p>
         </div>
       )}
 
-      {/* Affichage des erreurs */}
+      {/* ===== ERROR ===== */}
       {pageError && (
-        <div style={{
-          backgroundColor: '#f8d7da',
-          border: '1px solid #f5c6cb',
-          borderRadius: '4px',
-          padding: '15px 30px',
-          margin: '20px 30px',
-          color: '#721c24'
-        }}>
-          {pageError}
+        <div className="pro-alert pro-alert-error">
+          <AlertCircle size={18} /> <span>{pageError}</span>
         </div>
       )}
 
-      {/* Contenu principal - visible seulement si chargé */}
+      {/* ===== MAIN CONTENT ===== */}
       {!loading && (
-        <>
-          {isSuspended && (
-            <div style={{
-              backgroundColor: '#f8d7da',
-              border: '2px solid #f5c6cb',
-              borderRadius: '8px',
-              padding: '20px',
-              margin: '20px 30px',
-              textAlign: 'center'
-            }}>
-              <h2 style={{ color: '#721c24', margin: '0 0 10px 0' }}>Compte Suspendu</h2>
-              <p style={{ color: '#721c24', margin: '0', fontSize: '16px' }}>
-                Votre compte est temporairement suspendu. Toutes les fonctionnalités sont indisponibles.
-              </p>
-              <p style={{ color: '#721c24', margin: '10px 0 0 0', fontSize: '14px' }}>
-                Veuillez contacter l'administrateur pour plus de détails.
-              </p>
+        <main className="pro-main" style={{ opacity: isSuspended ? 0.4 : 1, pointerEvents: isSuspended ? 'none' : 'auto' }}>
+
+          {/* Scan feedback toasts */}
+          {reward && (
+            <div className="pro-alert pro-alert-success">
+              <Award size={18} />
+              <div><strong>Palier atteint !</strong><p>{reward}</p></div>
+              <button className="pro-alert-close" onClick={() => setReward(null)}><X size={16} /></button>
+            </div>
+          )}
+          {lastScan && (
+            <div className={`pro-alert ${lastScan.success ? 'pro-alert-success' : 'pro-alert-error'}`}>
+              {lastScan.success ? (
+                <div><strong>{lastScan.clientName}</strong><p>{lastScan.message}</p></div>
+              ) : (
+                <span>{lastScan.error}</span>
+              )}
+              <button className="pro-alert-close" onClick={() => setLastScan(null)}><X size={16} /></button>
             </div>
           )}
 
-          <div className="dashboard-content" style={{ opacity: isSuspended ? 0.5 : 1, pointerEvents: isSuspended ? 'none' : 'auto' }}>
-        {reward && (
-          <div className="alert success" style={{ fontSize: '16px', padding: '20px' }}>
-            <div>
-              <strong>Palier atteint !</strong>
-              <p>{reward}</p>
-            </div>
-            <button className="alert-close" onClick={() => setReward(null)}>×</button>
-          </div>
-        )}
-
-        {lastScan && (
-          <div className={`alert ${lastScan.success ? 'success' : 'error'}`}>
-            <div>
-              {lastScan.success ? (
-                <>
-                  <strong>{lastScan.clientName}</strong>
-                  <p>{lastScan.message}</p>
-                </>
-              ) : (
-                <>{lastScan.error}</>
-              )}
-            </div>
-            <button className="alert-close" onClick={() => setLastScan(null)}>×</button>
-          </div>
-        )}
-
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'scanner' ? 'active' : ''}`}
-            onClick={() => setActiveTab('scanner')}
-          >
-            Scanner QR
-          </button>
-          <button
-            className={`tab ${activeTab === 'clients' ? 'active' : ''}`}
-            onClick={() => setActiveTab('clients')}
-          >
-            Clients
-          </button>
-          <button
-            className={`tab ${activeTab === 'register' ? 'active' : ''}`}
-            onClick={() => setActiveTab('register')}
-          >
-            Lien d'Inscription
-          </button>
-          <button
-            className={`tab ${activeTab === 'design' ? 'active' : ''}`}
-            onClick={() => setActiveTab('design')}
-          >
-            Design de la Carte
-          </button>
-        </div>
-
-        {/* Scanner Tab */}
-        <div className={`tab-content ${activeTab === 'scanner' ? 'active' : ''}`}>
-          <div className="card">
-            <h2>Scanner QR Code</h2>
-            <p style={{ marginBottom: '15px', color: '#666' }}>
-              Positionnez le QR code du client face à la caméra pour {loyaltyType === 'points' ? 'ajouter des points' : 'ajouter des tampons'}.
-            </p>
-
-            {!scannerActive ? (
-              <button
-                className="btn-primary"
-                onClick={() => setScannerActive(true)}
-                style={{ marginBottom: '20px' }}
-              >
-                Démarrer le scanner
+          {/* ===== DESKTOP TABS (hidden on mobile) ===== */}
+          <div className="pro-tabs-desktop">
+            {tabs.map(t => (
+              <button key={t.id} className={`pro-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
+                <t.icon size={16} />
+                {t.label}
               </button>
-            ) : (
-              <>
-                <div id="qr-scanner" ref={scannerRef} style={{ marginBottom: '20px' }}></div>
-                <button
-                  className="btn-secondary"
-                  onClick={() => setScannerActive(false)}
-                >
-                  Arrêter le scanner
-                </button>
-              </>
-            )}
+            ))}
           </div>
-        </div>
 
-        {/* Clients Tab */}
-        <div className={`tab-content ${activeTab === 'clients' ? 'active' : ''}`}>
-          <div className="card">
-            <h2>Liste des Clients</h2>
-            <div className="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nom</th>
-                    <th>Téléphone</th>
-                    <th>{loyaltyType === 'points' ? 'Points' : 'Tampons'}</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clients.map((client) => (
-                    <tr key={client.id}>
-                      <td>{client.prenom} {client.nom}</td>
-                      <td>{client.telephone}</td>
-                      <td>
-                        <strong>
-                          {loyaltyType === 'points' 
-                            ? client.points 
-                            : `${client.stamps_collected || 0}/${proInfo?.stamps_count || 10}`}
-                        </strong>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="btn-primary"
-                            onClick={() => setSelectedClientCard(client)}
-                            title="Voir la carte"
-                          >
-                            Carte
-                          </button>
-                          <button
-                            className="btn-success"
-                            onClick={() => adjustPoints(client.id, 1)}
-                            title={loyaltyType === 'points' ? '+1 point' : '+1 tampon'}
-                          >
-                            +1
-                          </button>
-                          <button
-                            className="btn-danger"
-                            onClick={() => adjustPoints(client.id, -1)}
-                            title={loyaltyType === 'points' ? '-1 point' : '-1 tampon'}
-                          >
-                            -1
-                          </button>
-                          <button
-                            className="btn-wallet"
-                            onClick={() => handleOpenWalletModal(client)}
-                            title="Ajouter au Apple Wallet"
-                          >
-                            📱 Wallet
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {clients.length === 0 && (
-              <p style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
-                Aucun client pour le moment
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Register Tab */}
-        <div className={`tab-content ${activeTab === 'register' ? 'active' : ''}`}>
-          <div className="card" style={{ textAlign: 'center' }}>
-            <h2>Recruter vos clients</h2>
-            <p style={{ marginBottom: '20px', color: '#666' }}>
-              Faites scanner ce QR Code à vos clients pour qu'ils s'inscrivent et téléchargent leur carte Apple Wallet personnalisée à votre entreprise !
-            </p>
-            
-            <div style={{ background: 'white', padding: '20px', display: 'inline-block', borderRadius: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
-              {proInfo ? (
-                <QRCodeSVG value={`${window.location.origin}/join/${proInfo.id}`} size={250} level="H" includeMargin={true} />
-              ) : (
-                <div style={{ width: 250, height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: '10px' }}>Chargement...</div>
-              )}
-            </div>
-
-            <div>
-              <p style={{ marginBottom: '10px', fontWeight: 'bold' }}>Ou partagez ce lien d'inscription :</p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={proInfo ? `${window.location.origin}/join/${proInfo.id}` : ''} 
-                  style={{ padding: '10px', width: '350px', borderRadius: '5px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#334155' }}
-                />
-                <button 
-                  className="btn-primary" 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/join/${proInfo.id}`)
-                    alert('Lien copié dans le presse-papier !')
-                  }}
-                >
-                  Copier
-                </button>
+          {/* ==================== SCANNER ==================== */}
+          {activeTab === 'scanner' && (
+            <div className="pro-section">
+              <div className="pro-section-header">
+                <ScanLine size={22} />
+                <div>
+                  <h2>Scanner QR Code</h2>
+                  <p>Scannez le QR code client pour {loyaltyType === 'points' ? 'ajouter des points' : 'valider un tampon'}</p>
+                </div>
+              </div>
+              <div className="pro-scanner-area">
+                {!scannerActive ? (
+                  <button className="pro-scan-btn" onClick={() => setScannerActive(true)}>
+                    <ScanLine size={28} />
+                    <span>Appuyez pour scanner</span>
+                  </button>
+                ) : (
+                  <>
+                    <div id="qr-scanner" ref={scannerRef} className="pro-qr-reader"></div>
+                    <button className="pro-btn-secondary" onClick={() => setScannerActive(false)}>
+                      <X size={16} /> Arrêter le scanner
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Card Design Tab */}
-        <div className={`tab-content ${activeTab === 'design' ? 'active' : ''}`}>
-          <CardCustomizer proInfo={proInfo} />
-        </div>
+          {/* ==================== CLIENTS ==================== */}
+          {activeTab === 'clients' && (
+            <div className="pro-section">
+              <div className="pro-section-header">
+                <Users size={22} />
+                <div>
+                  <h2>Clients ({clients.length})</h2>
+                  <p>Gérez vos clients et leurs {loyaltyType === 'points' ? 'points' : 'tampons'}</p>
+                </div>
+              </div>
 
-        {/* Loyalty Config Tab */}
-        {/* Removed - LoyaltySettings component deleted */}
+              {/* Search */}
+              <div className="pro-search-bar">
+                <input
+                  type="text"
+                  placeholder="Rechercher un client..."
+                  value={clientSearch}
+                  onChange={e => setClientSearch(e.target.value)}
+                />
+              </div>
 
-        {/* Push Notifications Tab */}
-        {/* Removed - PushNotifications component deleted */}
+              {/* Client Cards (mobile-friendly) */}
+              {filteredClients.length === 0 ? (
+                <div className="pro-empty">
+                  <Users size={40} />
+                  <p>{clientSearch ? 'Aucun résultat' : 'Aucun client pour le moment'}</p>
+                </div>
+              ) : (
+                <div className="pro-client-list">
+                  {filteredClients.map(client => (
+                    <div className="pro-client-card" key={client.id}>
+                      <div className="pro-client-info" onClick={() => setSelectedClientCard(client)}>
+                        <div className="pro-client-avatar">{client.prenom?.[0] || '?'}</div>
+                        <div className="pro-client-details">
+                          <span className="pro-client-name">{client.prenom} {client.nom}</span>
+                          <span className="pro-client-phone"><Phone size={12} /> {client.telephone}</span>
+                        </div>
+                        <div className="pro-client-points">
+                          <span className="pro-points-value">
+                            {loyaltyType === 'points'
+                              ? client.points
+                              : `${client.stamps_collected || 0}/${proInfo?.stamps_count || 10}`}
+                          </span>
+                          <span className="pro-points-label">{loyaltyType === 'points' ? 'pts' : 'tampons'}</span>
+                        </div>
+                      </div>
+                      <div className="pro-client-actions">
+                        <button className="pro-action-btn" onClick={() => adjustPoints(client.id, -1)} title="-1">
+                          <Minus size={16} />
+                        </button>
+                        <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(client.id, 1)} title="+1">
+                          <Plus size={16} />
+                        </button>
+                        <button className="pro-action-btn" onClick={() => handleOpenWalletModal(client)} title="Wallet">
+                          <Smartphone size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Devices Tab - 24h Session Management */}
-        {/* Removed - DeviceManager component deleted */}
+          {/* ==================== RECRUTER ==================== */}
+          {activeTab === 'register' && (
+            <div className="pro-section">
+              <div className="pro-section-header">
+                <LinkIcon size={22} />
+                <div>
+                  <h2>Recruter des clients</h2>
+                  <p>Partagez ce QR ou ce lien pour inscrire vos clients</p>
+                </div>
+              </div>
+              <div className="pro-recruit-content">
+                <div className="pro-qr-display">
+                  {proInfo ? (
+                    <QRCodeSVG value={`${window.location.origin}/join/${proInfo.id}`} size={200} level="H" includeMargin={true} />
+                  ) : (
+                    <div className="pro-qr-placeholder"><Loader2 size={24} className="pro-spin" /></div>
+                  )}
+                </div>
+                <p className="pro-recruit-hint">Faites scanner ce QR à vos clients ou partagez le lien ci-dessous</p>
+                <div className="pro-link-copy">
+                  <input
+                    type="text"
+                    readOnly
+                    value={proInfo ? `${window.location.origin}/join/${proInfo.id}` : ''}
+                  />
+                  <button className="pro-copy-btn" onClick={handleCopyLink}>
+                    {copied ? <><Check size={16} /> Copié</> : <><Copy size={16} /> Copier</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-        {/* Card Design Tab */}
-        {/* Removed - CardCustomizer component deleted */}
-          </div>
-        </>
+          {/* ==================== DESIGN ==================== */}
+          {activeTab === 'design' && (
+            <div className="pro-section">
+              <div className="pro-section-header">
+                <Palette size={22} />
+                <div>
+                  <h2>Design de la carte</h2>
+                  <p>Personnalisez l'apparence de votre carte Wallet</p>
+                </div>
+              </div>
+              <CardCustomizer proInfo={proInfo} />
+            </div>
+          )}
+        </main>
       )}
 
-      {/* Client Card Modal */}
+      {/* ===== MOBILE BOTTOM NAV ===== */}
+      <nav className="pro-bottom-nav">
+        {tabs.map(t => (
+          <button key={t.id} className={`pro-bnav-item ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
+            <t.icon size={20} />
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* ===== CLIENT DETAIL MODAL ===== */}
       {selectedClientCard && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '30px',
-            maxWidth: '500px',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            position: 'relative'
-          }}>
-            <button
-              onClick={() => setSelectedClientCard(null)}
-              style={{
-                position: 'absolute',
-                top: '15px',
-                right: '15px',
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: '#666'
-              }}
-            >
-              ×
-            </button>
-            
+        <div className="modal-backdrop" style={{ zIndex: 1000 }} onClick={() => setSelectedClientCard(null)}>
+          <div className="pro-modal" onClick={e => e.stopPropagation()}>
+            <button className="pro-modal-close" onClick={() => setSelectedClientCard(null)}><X size={20} /></button>
+            <div className="pro-modal-avatar">{selectedClientCard.prenom?.[0] || '?'}</div>
             <h3>{selectedClientCard.prenom} {selectedClientCard.nom}</h3>
-            <p><strong>Téléphone:</strong> {selectedClientCard.telephone}</p>
-            <p><strong>Points:</strong> {selectedClientCard.points}</p>
-            {loyaltyType === 'stamps' && (
-              <p><strong>Tampons:</strong> {selectedClientCard.stamps_collected || 0}/{proInfo?.stamps_count || 10}</p>
-            )}
+            <div className="pro-modal-info">
+              <div className="pro-modal-row"><Phone size={14} /><span>{selectedClientCard.telephone}</span></div>
+              <div className="pro-modal-row"><Award size={14} /><span>{loyaltyType === 'points' ? `${selectedClientCard.points} points` : `${selectedClientCard.stamps_collected || 0}/${proInfo?.stamps_count || 10} tampons`}</span></div>
+            </div>
+            <div className="pro-modal-actions">
+              <button className="pro-action-btn" onClick={() => adjustPoints(selectedClientCard.id, -1)}><Minus size={16} /></button>
+              <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(selectedClientCard.id, 1)}><Plus size={16} /></button>
+              <button className="pro-action-btn" onClick={() => { handleOpenWalletModal(selectedClientCard); setSelectedClientCard(null) }}><Smartphone size={16} /></button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Apple Wallet Modal */}
+      {/* ===== WALLET MODAL ===== */}
       {walletSelectedClient && (
         <WalletAddModal
           isOpen={walletModalOpen}
           onClose={handleCloseWalletModal}
           clientId={walletSelectedClient.id}
           clientName={`${walletSelectedClient.prenom} ${walletSelectedClient.nom}`}
-          onSuccess={() => {
-            // Recharger les clients après ajout au wallet
-            loadClients()
-          }}
+          onSuccess={() => loadClients()}
         />
       )}
     </div>

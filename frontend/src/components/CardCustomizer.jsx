@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { Palette, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 const CardCustomizer = ({ proInfo }) => {
   const [config, setConfig] = useState({
@@ -78,10 +79,10 @@ const CardCustomizer = ({ proInfo }) => {
     setMessage('');
     try {
       await api.put(`/pro/card-customization/${proInfo.id}?loyaltyType=${proInfo.loyalty_type || 'points'}`, config);
-      setMessage('✅ Personnalisation enregistrée avec succès !');
+      setMessage('success:Personnalisation enregistrée avec succès !');
     } catch (err) {
       console.error('Erreur sauvegarde', err);
-      setMessage('❌ Erreur lors de la sauvegarde.');
+      setMessage('error:Erreur lors de la sauvegarde.');
     } finally {
       setSaving(false);
     }
@@ -90,15 +91,20 @@ const CardCustomizer = ({ proInfo }) => {
   if (loading) return <div>Chargement...</div>;
 
   return (
-    <div style={{ padding: '20px', background: 'white', borderRadius: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-      <h2 style={{ marginBottom: '20px' }}>🎨 Personnalisation de votre Carte</h2>
-      <p style={{ color: '#666', marginBottom: '20px' }}>
+    <div className="card dashboard-content" style={{ marginTop: '20px' }}>
+      <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Palette size={24} /> Personnalisation de votre Carte
+      </h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
         Ces paramètres définiront l'apparence des cartes Apple Wallet téléchargées par vos clients.
       </p>
 
       {message && (
-        <div style={{ padding: '10px', marginBottom: '15px', background: message.includes('❌') || message.includes('Erreur') ? '#fee2e2' : '#dcfce7', color: message.includes('❌') || message.includes('Erreur') ? '#dc2626' : '#166534', borderRadius: '5px' }}>
-          {message}
+        <div className={`alert ${message.startsWith('error:') ? 'error' : 'success'}`} style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+             {message.startsWith('error:') ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+             <span>{message.replace('error:', '').replace('success:', '')}</span>
+          </div>
         </div>
       )}
 
@@ -175,9 +181,9 @@ const CardCustomizer = ({ proInfo }) => {
             onClick={handleSave} 
             disabled={saving}
             className="btn-primary" 
-            style={{ width: '100%', padding: '15px' }}
+            style={{ width: '100%', padding: '15px', marginTop: '20px' }}
           >
-            {saving ? 'Sauvegarde...' : 'Enregistrer le modèle'}
+            {saving ? <><Loader2 className="animate-spin" size={18} /> Sauvegarde...</> : 'Enregistrer le modèle'}
           </button>
         </div>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import './Auth.css'
 import './AdminLogin.css'
 
@@ -78,17 +79,18 @@ function AdminLogin() {
             />
             <button
               type="button"
-              className="toggle-password"
+              className="btn-ghost"
               onClick={() => setShowPassword(!showPassword)}
               tabIndex="-1"
+              style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
             >
-              {showPassword ? 'Masquer' : 'Afficher'}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
           {error && (
-            <div className="error-alert">
-              <span>{error}</span>
+            <div className="alert error">
+              <AlertCircle size={18} /> <span>{error}</span>
             </div>
           )}
 
@@ -99,7 +101,7 @@ function AdminLogin() {
           >
             {loading ? (
               <>
-                <span className="spinner"></span>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
                 Connexion en cours...
               </>
             ) : (

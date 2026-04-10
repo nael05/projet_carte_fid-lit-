@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { validatePassword } from '../utils/passwordValidator'
 import api from '../api'
+import { AlertCircle, Eye, EyeOff, Loader2, CheckCircle2, Circle } from 'lucide-react'
 import './Auth.css'
 import './ProResetPassword.css'
 
@@ -39,24 +40,24 @@ function ProResetPassword() {
     setLoading(true)
 
     try {
-      // ✅ Validation 1: Les mots de passe correspondent
+      // Validation 1: Les mots de passe correspondent
       if (newPassword !== confirmPassword) {
-        setError('❌ Les mots de passe ne correspondent pas')
+        setError('Les mots de passe ne correspondent pas')
         setLoading(false)
         return
       }
 
-      // ✅ Validation 2: Les champs ne sont pas vides
+      // Validation 2: Les champs ne sont pas vides
       if (!newPassword || !confirmPassword) {
-        setError('❌ Veuillez remplir tous les champs')
+        setError('Veuillez remplir tous les champs')
         setLoading(false)
         return
       }
 
-      // ✅ Validation 3: Complexité du mot de passe
+      // Validation 3: Complexité du mot de passe
       const validation = validatePassword(newPassword)
       if (!validation.isValid) {
-        setError(`❌ Exigences du mot de passe:\n${validation.errors.join('\n')}`)
+        setError(`Exigences du mot de passe:\n${validation.errors.join('\n')}`)
         setLoading(false)
         return
       }
@@ -80,15 +81,15 @@ function ProResetPassword() {
       console.error('❌ Erreur change password:', err)
       
       if (err.response?.status === 401) {
-        setError('❌ Session expirée. Reconnexion requise.')
+        setError('Session expirée. Reconnexion requise.')
         setTimeout(() => navigate('/pro/login'), 2000)
       } else if (err.response?.data?.error) {
         // Afficher les erreurs détaillées du backend
         const errorMsg = err.response.data.error
         const details = err.response.data.details
-        setError(`❌ ${errorMsg}${details ? '\n' + details.join('\n') : ''}`)
+        setError(`${errorMsg}${details ? '\n' + details.join('\n') : ''}`)
       } else {
-        setError('❌ Erreur lors du changement de mot de passe')
+        setError('Erreur lors du changement de mot de passe')
       }
     } finally {
       setLoading(false)
@@ -130,10 +131,11 @@ function ProResetPassword() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="toggle-password"
+              className="btn-ghost"
               tabIndex={-1}
+              style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
             >
-              {showPassword ? 'Masquer' : 'Afficher'}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
@@ -151,16 +153,18 @@ function ProResetPassword() {
             <button
               type="button"
               onClick={() => setShowConfirm(!showConfirm)}
-              className="toggle-password"
+              className="btn-ghost"
               tabIndex={-1}
+              style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
             >
-              {showConfirm ? 'Masquer' : 'Afficher'}
+              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
           {error && (
-            <div className="error">
-              {error}
+            <div className="alert error">
+              <AlertCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
           
@@ -168,15 +172,15 @@ function ProResetPassword() {
           {newPassword && (
             <div style={{ fontSize: '12px', color: '#4B5563', marginBottom: '12px' }}>
               <p style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: '#4B5563' }}>Critères du mot de passe:</p>
-              <ul style={{ margin: '0', paddingLeft: '20px', listStyle: 'none' }}>
-                <li style={{ color: newPassword.length >= 6 ? '#065F46' : '#9CA3AF', fontSize: '13px' }}>
-                  {newPassword.length >= 6 ? '✓' : '○'} Au moins 6 caractères
+              <ul style={{ margin: '0', paddingLeft: '0', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <li style={{ color: newPassword.length >= 6 ? '#10B981' : '#71717A', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {newPassword.length >= 6 ? <CheckCircle2 size={14} /> : <Circle size={14} />} Au moins 6 caractères
                 </li>
-                <li style={{ color: /(?=.*[A-Z])/.test(newPassword) ? '#065F46' : '#9CA3AF', fontSize: '13px' }}>
-                  {/(?=.*[A-Z])/.test(newPassword) ? '✓' : '○'} Une majuscule
+                <li style={{ color: /(?=.*[A-Z])/.test(newPassword) ? '#10B981' : '#71717A', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {/(?=.*[A-Z])/.test(newPassword) ? <CheckCircle2 size={14} /> : <Circle size={14} />} Une majuscule
                 </li>
-                <li style={{ color: /(?=.*[0-9!@#$%^&*])/.test(newPassword) ? '#065F46' : '#9CA3AF', fontSize: '13px' }}>
-                  {/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? '✓' : '○'} Un chiffre ou caractère spécial
+                <li style={{ color: /(?=.*[0-9!@#$%^&*])/.test(newPassword) ? '#10B981' : '#71717A', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? <CheckCircle2 size={14} /> : <Circle size={14} />} Un chiffre ou caractère spécial
                 </li>
               </ul>
             </div>
@@ -185,7 +189,7 @@ function ProResetPassword() {
           <button type="submit" className="btn-primary" disabled={loading || !newPassword || !confirmPassword}>
             {loading ? (
               <>
-                <span className="spinner"></span>
+                <Loader2 className="animate-spin" size={18} style={{ animation: 'spin 1s linear infinite' }} />
                 En cours...
               </>
             ) : (

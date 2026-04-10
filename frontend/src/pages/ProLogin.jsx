@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import './ProLogin.css'
 
 function ProLogin() {
@@ -113,13 +114,13 @@ function ProLogin() {
       console.error('❌ Erreur de connexion:', err)
       
       if (err.response?.status === 401) {
-        setError('❌ Email ou mot de passe incorrect')
+        setError('Email ou mot de passe incorrect')
       } else if (err.response?.status === 403) {
-        setError('🔒 Votre compte a été suspendu')
+        setError('Votre compte a été suspendu')
       } else if (err.response?.status === 500) {
-        setError('❌ Erreur serveur - Veuillez réessayer')
+        setError('Erreur serveur - Veuillez réessayer')
       } else {
-        setError(err.response?.data?.error || '❌ Erreur de connexion')
+        setError(err.response?.data?.error || 'Erreur de connexion')
       }
     } finally {
       setLoading(false)
@@ -150,8 +151,9 @@ function ProLogin() {
           <form onSubmit={handleSubmit} className="pro-login-form">
             {/* Error Alert */}
             {error && (
-              <div className="pro-alert pro-alert-error">
-                {error}
+              <div className="alert error">
+                <AlertCircle size={18} />
+                <span>{error}</span>
               </div>
             )}
 
@@ -184,11 +186,12 @@ function ProLogin() {
               />
               <button
                 type="button"
-                className="pro-toggle-password"
+                className="btn-ghost"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
+                style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
               >
-                {showPassword ? 'Masquer' : 'Afficher'}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
@@ -212,7 +215,7 @@ function ProLogin() {
             >
               {loading ? (
                 <>
-                  <span className="loader"></span>
+                  <Loader2 className="animate-spin" size={18} style={{ animation: 'spin 1s linear infinite' }} />
                   Connexion en cours...
                 </>
               ) : (

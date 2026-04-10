@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
+import { AlertCircle, CheckCircle2, Loader2, X, Plus, Search, Lock, Unlock, Trash2, Copy, ExternalLink, Star, Stamp, Key, BarChart3, LogOut } from 'lucide-react'
 import './Dashboard.css'
 import './AdminDashboard.css'
 
@@ -56,7 +57,7 @@ function AdminDashboard() {
       }
     } catch (err) {
       console.error('Error loading enterprises:', err)
-      setError('⚠️ Erreur lors du chargement des entreprises')
+      setError('Erreur lors du chargement des entreprises')
       if (err.response?.status === 401) {
         logout()
         navigate('/master-admin-secret')
@@ -73,19 +74,19 @@ function AdminDashboard() {
     
     // Validation
     if (!formData.nom || !formData.nom.trim()) {
-      setError('❌ Le nom de l\'entreprise est requis')
+      setError('Le nom de l\'entreprise est requis')
       return
     }
     
     if (!formData.email || !formData.email.trim()) {
-      setError('❌ L\'email est requis')
+      setError('L\'email est requis')
       return
     }
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      setError('❌ Email invalide')
+      setError('Email invalide')
       return
     }
     
@@ -107,7 +108,7 @@ function AdminDashboard() {
         nom: formData.nom
       })
 
-      setSuccess('✅ Entreprise créée avec succès!')
+      setSuccess('Entreprise créée avec succès!')
       setFormData({ nom: '', email: '', loyalty_type: 'points' })
       setShowCreateForm(false)
       
@@ -116,48 +117,48 @@ function AdminDashboard() {
         setSuccess('')
       }, 1500)
     } catch (err) {
-      setError(err.response?.data?.error || '❌ Erreur lors de la création')
+      setError(err.response?.data?.error || 'Erreur lors de la création')
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleSuspend = async (companyId) => {
-    if (!window.confirm('🔒 Suspendre cette entreprise?')) return
+    if (!window.confirm('Suspendre cette entreprise?')) return
 
     try {
       await api.put(`/admin/suspend-company/${companyId}`)
-      setSuccess('✅ Entreprise suspendue avec succès')
+      setSuccess('Entreprise suspendue avec succès')
       loadEnterprises()
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Erreur lors de la suspension'
-      setError(`❌ Impossible de suspendre: ${errorMsg}`)
+      setError(`Impossible de suspendre: ${errorMsg}`)
     }
   }
 
   const handleReactivate = async (companyId) => {
-    if (!window.confirm('🔓 Réactiver cette entreprise?')) return
+    if (!window.confirm('Réactiver cette entreprise?')) return
 
     try {
       await api.put(`/admin/reactivate-company/${companyId}`)
-      setSuccess('✅ Entreprise réactivée avec succès')
+      setSuccess('Entreprise réactivée avec succès')
       loadEnterprises()
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Erreur lors de la réactivation'
-      setError(`❌ Impossible de réactiver: ${errorMsg}`)
+      setError(`Impossible de réactiver: ${errorMsg}`)
     }
   }
 
   const handleDelete = async (companyId) => {
-    if (!window.confirm('⚠️ ATTENTION: Suppression définitive!\n\nCette action supprimera l\'entreprise ET tous ses clients.\nÊtes-vous sûr?')) return
+    if (!window.confirm('ATTENTION: Suppression définitive!\n\nCette action supprimera l\'entreprise ET tous ses clients.\nÊtes-vous sûr?')) return
 
     try {
       await api.delete(`/admin/delete-company/${companyId}`)
-      setSuccess('✅ Entreprise supprimée avec succès')
+      setSuccess('Entreprise supprimée avec succès')
       loadEnterprises()
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Erreur lors de la suppression'
-      setError(`❌ Impossible de supprimer: ${errorMsg}`)
+      setError(`Impossible de supprimer: ${errorMsg}`)
     }
   }
 
@@ -192,9 +193,9 @@ function AdminDashboard() {
       {newCompanyCredentials && (
         <div className="modal-overlay" onClick={() => setNewCompanyCredentials(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setNewCompanyCredentials(null)}>✕</button>
+            <button className="modal-close" onClick={() => setNewCompanyCredentials(null)}><X size={18} /></button>
             <div className="modal-header">
-              <h2>🎉 Entreprise créée!</h2>
+              <h2>Entreprise créée!</h2>
               <p className="modal-company-name">{newCompanyCredentials.nom}</p>
             </div>
             
@@ -228,16 +229,18 @@ function AdminDashboard() {
 
                 <div className="credential-item">
                   <label>Type de fidélité</label>
-                  <span>{newCompanyCredentials.loyalty_type === 'points' ? '⭐ Points' : '📝 Timbres'}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {newCompanyCredentials.loyalty_type === 'points' ? <><Star size={14} /> Points</> : <><Stamp size={14} /> Timbres</>}
+                  </span>
                 </div>
               </div>
 
               <div className="modal-warning">
-                <p>⚠️ L'entreprise devra changer ce mot de passe lors de sa première connexion.</p>
+                <p>L'entreprise devra changer ce mot de passe lors de sa première connexion.</p>
               </div>
 
               <div className="modal-link">
-                <p>📍 Lien de connexion pro:</p>
+                <p>Lien de connexion pro:</p>
                 <a href="/pro/login" target="_blank" rel="noopener noreferrer" className="login-link">
                   Accéder à la connexion pro
                 </a>
@@ -246,7 +249,7 @@ function AdminDashboard() {
 
             <div className="modal-footer">
               <button onClick={() => setNewCompanyCredentials(null)} className="btn-primary">
-                ✅ Fermer
+                Fermer
               </button>
             </div>
           </div>
@@ -256,19 +259,19 @@ function AdminDashboard() {
       {/* Sidebar */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-header">
-          <h2>🎯</h2>
-          <h3>LoyaltyCore Admin</h3>
+          <h3>Fidelyz Admin</h3>
         </div>
         
         <nav className="sidebar-nav">
           <div className="nav-item active">
-            <span className="nav-icon">📊</span>
+            <BarChart3 size={18} />
             <span>Tableau de bord</span>
           </div>
         </nav>
 
         <div className="sidebar-footer">
           <button onClick={handleLogout} className="btn-logout">
+            <LogOut size={16} />
             Déconnexion
           </button>
         </div>
@@ -285,13 +288,21 @@ function AdminDashboard() {
             onClick={() => setShowCreateForm(!showCreateForm)}
             className="btn-primary"
           >
-            {showCreateForm ? '✕ Annuler' : '+ Nouvelle entreprise'}
+            {showCreateForm ? 'Annuler' : <><Plus size={16} /> Nouvelle entreprise</>}
           </button>
         </header>
 
         {/* Messages */}
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
+        {error && (
+          <div className="alert error" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={18} /> <span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="alert success" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={18} /> <span>{success}</span>
+          </div>
+        )}
 
         {/* Create Form */}
         {showCreateForm && (
@@ -335,7 +346,7 @@ function AdminDashboard() {
               </div>
 
               <button type="submit" className="btn-primary" disabled={submitting}>
-                {submitting ? '⏳ Création...' : '✅ Créer l\'entreprise'}
+                {submitting ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Création...</> : 'Créer l\'entreprise'}
               </button>
             </form>
           </div>
@@ -346,7 +357,7 @@ function AdminDashboard() {
           <div className="search-box">
             <input
               type="text"
-              placeholder="🔍 Rechercher par id, nom ou email..."
+              placeholder="Rechercher par id, nom ou email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -378,18 +389,18 @@ function AdminDashboard() {
         {/* Enterprises List */}
         <div className="enterprises-section">
           {loading ? (
-            <div className="loading">
-              <div className="spinner"></div>
-              <p>⏳ Chargement des entreprises...</p>
+            <div className="loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+              <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
+              <p>Chargement des entreprises...</p>
             </div>
           ) : enterprises.length === 0 ? (
             <div className="empty-state">
-              <p>😐 Aucune entreprise trouvée</p>
+              <p>Aucune entreprise trouvée</p>
               <p style={{fontSize: '14px', color: 'var(--text-tertiary)'}}>Créez votre première entreprise pour commencer</p>
             </div>
           ) : filteredEnterprises.length === 0 ? (
             <div className="empty-state">
-              <p>🔍 Aucune entreprise ne correspond à votre recherche</p>
+              <p>Aucune entreprise ne correspond à votre recherche</p>
               <p style={{fontSize: '14px', color: 'var(--text-tertiary)'}}>Essayez avec un autre ID, nom ou email</p>
             </div>
           ) : (
@@ -399,7 +410,7 @@ function AdminDashboard() {
                   <div className="card-header">
                     <h3>{enterprise.nom}</h3>
                     <span className={`status-badge status-${enterprise.statut}`}>
-                      {enterprise.statut === 'actif' ? '✅ Actif' : '🔒 Suspendu'}
+                      {enterprise.statut === 'actif' ? 'Actif' : 'Suspendu'}
                     </span>
                   </div>
 
@@ -414,14 +425,14 @@ function AdminDashboard() {
                     </div>
                     {enterprise.temporary_password && (
                       <div className="info-row temp-password-row">
-                        <span className="label">🔑 Mot de passe temp:</span>
+                        <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Key size={14} /> Mot de passe temp:</span>
                         <span className="value password-value">{enterprise.temporary_password}</span>
                       </div>
                     )}
                     <div className="info-row">
                       <span className="label">Fidélité:</span>
-                      <span className="value">
-                        {enterprise.loyalty_type === 'points' ? '⭐ Points' : '📝 Timbres'}
+                      <span className="value" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {enterprise.loyalty_type === 'points' ? <><Star size={14} /> Points</> : <><Stamp size={14} /> Timbres</>}
                       </span>
                     </div>
                     <div className="info-row">
@@ -439,15 +450,15 @@ function AdminDashboard() {
                         className="btn-secondary btn-small"
                         title="Suspendre cette entreprise"
                       >
-                        🔒 Suspendre
+                        <Lock size={14} /> Suspendre
                       </button>
                     ) : (
                       <button
                         onClick={() => handleReactivate(enterprise.id)}
-                        className="btn-success btn-small"
+                        className="btn-secondary btn-small"
                         title="Réactiver cette entreprise"
                       >
-                        🔓 Réactiver
+                        <Unlock size={14} /> Réactiver
                       </button>
                     )}
                     <button
@@ -455,7 +466,7 @@ function AdminDashboard() {
                       className="btn-danger btn-small"
                       title="Supprimer définitivement"
                     >
-                      🗑️ Supprimer
+                      <Trash2 size={14} /> Supprimer
                     </button>
                   </div>
                 </div>

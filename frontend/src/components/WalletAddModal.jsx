@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { Smartphone, X as XIcon, CheckCircle2, AlertCircle, Info, Loader2, Plus } from 'lucide-react';
 import '../styles/WalletAddModal.css';
 
 const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) => {
@@ -64,13 +65,13 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
       <div className="wallet-modal-content" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="wallet-modal-header">
-          <h2>📱 Ajouter au Wallet</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Smartphone size={22} /> Ajouter au Wallet</h2>
           <button 
             className="wallet-modal-close"
             onClick={onClose}
             disabled={loading}
           >
-            ✕
+            <XIcon size={18} />
           </button>
         </div>
 
@@ -78,14 +79,14 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
         <div className="wallet-modal-body">
           {success ? (
             <div className="wallet-success-message">
-              <div className="wallet-success-icon">✅</div>
+              <div className="wallet-success-icon"><CheckCircle2 size={48} /></div>
               <h3>Succès!</h3>
               <p>Votre carte a été ajoutée au Wallet avec succès.</p>
               <p className="wallet-info-text">Le fichier de passe s'est téléchargé automatiquement.</p>
             </div>
           ) : error ? (
             <div className="wallet-error-message">
-              <div className="wallet-error-icon">❌</div>
+              <div className="wallet-error-icon"><AlertCircle size={48} /></div>
               <h3>Erreur</h3>
               <p>{error}</p>
               <button 
@@ -105,7 +106,7 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
               </p>
 
               <div className="wallet-info-box">
-                <h4>📌 Qu'est-ce qui se passe?</h4>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Info size={16} /> Qu'est-ce qui se passe?</h4>
                 <ul>
                   <li>Votre carte Apple Wallet sera créée</li>
                   <li>Vous recevrez les mises à jour de points en temps réel</li>
@@ -120,11 +121,11 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
               >
                 {loading ? (
                   <>
-                    <span className="wallet-spinner"></span>
+                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
                     En cours...
                   </>
                 ) : (
-                  '➕ Ajouter au Wallet'
+                  <><Plus size={18} /> Ajouter au Wallet</>
                 )}
               </button>
             </div>

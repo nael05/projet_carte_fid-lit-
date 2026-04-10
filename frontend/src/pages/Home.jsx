@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Grid, Users, Home as HomeIcon } from '../icons/Icons'
+import { LayoutGrid, Users, CreditCard, Search, CheckCircle2, Loader2, AlertTriangle, X } from 'lucide-react'
 import api from '../api'
 import './Home.css'
 
@@ -10,15 +10,15 @@ function Home() {
   return (
     <div className="home-container">
       <header className="home-header">
-        <h1>Loyalty Cards SaaS</h1>
-        <p>Plateforme B2B de gestion de cartes de fidélité dématérialisées</p>
+        <h1>Fidelyz</h1>
+        <p>Plateforme de gestion de cartes de fidélité dématérialisées</p>
       </header>
 
       <div className="home-content">
         {/* Admin Role */}
         <div className="interface-card admin-card">
           <div className="card-icon">
-            <Grid size={28} />
+            <LayoutGrid size={28} />
           </div>
           <h2>Master Admin</h2>
           <p className="card-description">
@@ -70,7 +70,7 @@ function Home() {
         {/* Client Public Role */}
         <div className="interface-card client-card">
           <div className="card-icon">
-            <HomeIcon size={28} />
+            <CreditCard size={28} />
           </div>
           <h2>Client Public</h2>
           <p className="card-description">
@@ -115,8 +115,7 @@ function Home() {
       </div>
 
       <footer className="home-footer">
-        <p>Loyalty Cards SaaS v1.0.0</p>
-        <p>Backend: http://localhost:5000 | Frontend: http://localhost:3000</p>
+        <p>Fidelyz v1.0.0</p>
       </footer>
     </div>
   )
@@ -153,7 +152,7 @@ function DemoClientAccess() {
       setEnterprises(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Error loading enterprises:', err)
-      setError('⚠️ Erreur lors du chargement des entreprises. Vérifiez que le serveur est actif.')
+      setError('Erreur lors du chargement des entreprises. Vérifiez que le serveur est actif.')
     } finally {
       setLoading(false)
     }
@@ -189,20 +188,20 @@ function DemoClientAccess() {
       }
     }} className="demo-form">
       {error && (
-        <div className="demo-form-error">
-          ⚠️ {error.replace('⚠️ ', '')}
+        <div className="alert error" style={{ fontSize: '13px', marginBottom: '12px' }}>
+          <AlertTriangle size={16} /> <span>{error}</span>
         </div>
       )}
       
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
-          ⏳ Chargement des entreprises...
+        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Chargement des entreprises...
         </div>
       ) : enterprises.length > 0 ? (
         <>
           {/* Search Input */}
           <div>
-            <label>🔍 Rechercher une entreprise</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Search size={14} /> Rechercher une entreprise</label>
             <input
               type="text"
               placeholder="Tapez l'ID ou le nom de l'entreprise..."
@@ -228,22 +227,22 @@ function DemoClientAccess() {
                         <div className="demo-form-item-name">{ent.nom}</div>
                         <div className="demo-form-item-id">ID: {ent.id}</div>
                       </div>
-                      {selectedId === ent.id && <span>✓</span>}
+                      {selectedId === ent.id && <CheckCircle2 size={16} />}
                     </div>
                   ))}
                 </div>
               </>
             ) : (
               <div className="demo-form-empty">
-                🔍 Aucune entreprise ne correspond à "{searchTerm}"
+                Aucune entreprise ne correspond à "{searchTerm}"
               </div>
             )}
           </div>
 
           {/* Selection Confirmation */}
           {selectedId && (
-            <div className="demo-form-selection">
-              ✅ Entreprise sélectionnée: <strong>{enterprises.find(e => e.id === selectedId)?.nom}</strong>
+            <div className="demo-form-selection" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 size={16} /> Entreprise sélectionnée: <strong>{enterprises.find(e => e.id === selectedId)?.nom}</strong>
             </div>
           )}
 
@@ -254,7 +253,7 @@ function DemoClientAccess() {
               disabled={!selectedId}
               className="btn-primary"
             >
-              ✅ Créer une Carte
+              Créer une Carte
             </button>
             <button
               type="button"
@@ -266,14 +265,14 @@ function DemoClientAccess() {
                 setError('')
               }}
             >
-              ✕ Annuler
+              Annuler
             </button>
           </div>
         </>
       ) : (
         <>
           <div className="demo-form-empty">
-            😐 Aucune entreprise disponible pour le moment
+            Aucune entreprise disponible pour le moment
           </div>
           <button
             type="button"
@@ -285,7 +284,7 @@ function DemoClientAccess() {
               setError('')
             }}
           >
-            ✕ Retour
+            Retour
           </button>
         </>
       )}

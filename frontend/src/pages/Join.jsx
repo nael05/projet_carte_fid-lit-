@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api'
+import { Loader2, AlertTriangle, AlertCircle, CheckCircle2, ArrowLeft, Check } from 'lucide-react'
 import './Join.css'
 
 function Join() {
@@ -39,7 +40,7 @@ function Join() {
       setCompanyInfo(response.data)
     } catch (err) {
       console.error('Error loading company:', err)
-      setError('⚠️ Entreprise non trouvée. Vérifiez l\'ID.')
+      setError('Entreprise non trouvée. Vérifiez l\'ID.')
       setTimeout(() => navigate('/'), 3000)
     } finally {
       setLoading(false)
@@ -56,33 +57,33 @@ function Join() {
 
   const validateForm = () => {
     if (!formData.firstName.trim()) {
-      setError('❌ Le prénom est requis')
+      setError('Le prénom est requis')
       return false
     }
     if (!formData.lastName.trim()) {
-      setError('❌ Le nom est requis')
+      setError('Le nom est requis')
       return false
     }
     if (!formData.email.trim()) {
-      setError('❌ L\'email est requis')
+      setError('L\'email est requis')
       return false
     }
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      setError('❌ Email invalide')
+      setError('Email invalide')
       return false
     }
 
     if (!formData.phone.trim()) {
-      setError('❌ Le numéro de téléphone est requis')
+      setError('Le numéro de téléphone est requis')
       return false
     }
 
     const phoneRegex = /^[\d\s\-\+\(\)]{8,}$/
     if (!phoneRegex.test(formData.phone)) {
-      setError('❌ Numéro de téléphone invalide')
+      setError('Numéro de téléphone invalide')
       return false
     }
 
@@ -113,12 +114,12 @@ function Join() {
       const clientId = registrationResponse.data.clientId
 
       if (!clientId) {
-        setError('❌ Erreur: ID client non reçu')
+        setError('Erreur: ID client non reçu')
         setFormSubmitting(false)
         return
       }
 
-      setSuccess('✅ Inscription réussie ! Redirection vers Apple Wallet...')
+      setSuccess('Inscription réussie ! Redirection vers Apple Wallet...')
 
       // Redirection automatique via GET vers la route téléchargement natif
       setTimeout(() => {
@@ -128,7 +129,7 @@ function Join() {
     } catch (err) {
       console.error('Registration error:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de la création de la carte'
-      setError(`❌ ${errorMsg}`)
+      setError(errorMsg)
     } finally {
       setFormSubmitting(false)
     }
@@ -137,9 +138,9 @@ function Join() {
   if (loading) {
     return (
       <div className="join-container">
-        <div className="join-loading">
-          <div className="spinner"></div>
-          <p>⏳ Chargement...</p>
+        <div className="join-loading" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+          <Loader2 className="animate-spin" size={32} style={{ animation: 'spin 1s linear infinite' }} />
+          <p>Chargement...</p>
         </div>
       </div>
     )
@@ -148,10 +149,11 @@ function Join() {
   if (error && !companyInfo) {
     return (
       <div className="join-container">
-        <div className="join-error">
-          <p>{error}</p>
+        <div className="join-error" style={{ textAlign: 'center' }}>
+          <AlertTriangle size={48} style={{ margin: '0 auto 16px', color: '#EF4444' }} />
+          <p style={{ marginBottom: '20px' }}>{error}</p>
           <button className="btn-primary" onClick={() => navigate('/')}>
-            ← Retour à l'accueil
+            <ArrowLeft size={16} /> Retour à l'accueil
           </button>
         </div>
       </div>
@@ -163,8 +165,8 @@ function Join() {
       <div className="join-card">
         {/* Header */}
         <div className="join-header">
-          <button className="join-back" onClick={() => navigate('/')}>
-            ← Retour
+          <button className="join-back" onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <ArrowLeft size={18} /> Retour
           </button>
           <h1>Créer votre carte de fidélité</h1>
           {companyInfo && (
@@ -173,8 +175,16 @@ function Join() {
         </div>
 
         {/* Alerts */}
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
+        {error && (
+          <div className="alert error">
+            <AlertCircle size={18} /> <span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="alert success">
+            <CheckCircle2 size={18} /> <span>{success}</span>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="join-form">
@@ -242,7 +252,11 @@ function Join() {
             disabled={formSubmitting}
             style={{ width: '100%', marginTop: 'var(--space-2)' }}
           >
-            {formSubmitting ? '⏳ Création en cours...' : '✅ Créer ma carte'}
+            {formSubmitting ? (
+              <><Loader2 className="animate-spin" size={18} style={{ animation: 'spin 1s linear infinite' }} /> Création en cours...</>
+            ) : (
+              <><Check size={18} /> Créer ma carte</>
+            )}
           </button>
         </form>
 

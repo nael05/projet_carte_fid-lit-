@@ -859,12 +859,14 @@ export const updateCardCustomization = async (req, res) => {
 
     if (existing.length === 0) {
       // Créer une nouvelle entrée
+      const customizationId = uuidv4();
       await pool.query(
         `INSERT INTO card_customization 
-         (company_id, loyalty_type, primary_color, text_color, accent_color, secondary_color,
+         (id, company_id, loyalty_type, primary_color, text_color, accent_color, secondary_color,
           logo_url, card_subtitle, card_title)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          customizationId,
           empresaId,
           loyaltyType,
           primary_color || '#1f2937',

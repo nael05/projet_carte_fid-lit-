@@ -6,8 +6,8 @@
 CREATE TABLE IF NOT EXISTS wallet_cards (
   id INT PRIMARY KEY AUTO_INCREMENT,
   
-  client_id INT NOT NULL UNIQUE COMMENT 'Référence au client (unique: 1 client = 1 carte)',
-  company_id INT NOT NULL COMMENT 'Entreprise propriétaire',
+  client_id VARCHAR(36) NOT NULL UNIQUE COMMENT 'Référence au client (unique: 1 client = 1 carte)',
+  company_id VARCHAR(36) NOT NULL COMMENT 'Entreprise propriétaire',
   
   pass_serial_number VARCHAR(100) NOT NULL UNIQUE COMMENT 'Identifiant unique du pass Apple Wallet',
   authentication_token VARCHAR(255) NOT NULL UNIQUE COMMENT 'Token d\'authentification pour les requêtes Apple',
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS wallet_cards (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   
   FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
-  FOREIGN KEY (company_id) REFERENCES enterprises(id),
+  FOREIGN KEY (company_id) REFERENCES entreprises(id),
   INDEX idx_serial_number (pass_serial_number),
   INDEX idx_token (authentication_token),
   INDEX idx_company_client (company_id, client_id)

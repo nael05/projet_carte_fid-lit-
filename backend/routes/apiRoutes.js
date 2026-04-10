@@ -4,6 +4,7 @@ import express from 'express';
 import * as apiController from '../controllers/apiController.js';
 import * as loyaltyController from '../controllers/loyaltyController.js';
 import * as migrationController from '../controllers/migrationController.js';
+import * as pushController from '../controllers/pushController.js';
 import walletRoutes from './walletRoutes.js';
 import { verifyToken, isAdmin, isPro } from '../middlewares/auth.js';
 import { loginLimiter, apiLimiter } from '../middlewares/rateLimiter.js';
@@ -75,6 +76,10 @@ router.get('/pro/loyalty/stats', verifyToken, isPro, loyaltyController.getLoyalt
 router.get('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.getCardCustomization);
 router.put('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.updateCardCustomization);
 router.post('/pro/upload-logo', verifyToken, isPro, upload.single('logo'), apiController.uploadLogo);
+
+// ===== PUSH NOTIFICATION ROUTES =====
+router.post('/pro/push/send', verifyToken, isPro, pushController.sendNotification);
+router.get('/pro/push/history', verifyToken, isPro, pushController.getHistory);
 
 // ===== APPLE WALLET ROUTES =====
 // Import et utilisation des routes Apple Wallet (contient les endpoints frontend + Apple Web Service)

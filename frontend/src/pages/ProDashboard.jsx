@@ -4,9 +4,9 @@ import { Html5QrcodeScanner } from 'html5-qrcode'
 import { QRCodeSVG } from 'qrcode.react'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
-import WalletAddModal from '../components/WalletAddModal'
+
 import CardCustomizer from '../components/CardCustomizer'
-import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, ChevronRight, User, Phone, Award, Check } from 'lucide-react'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, ChevronRight, User, Phone, Award, Check, Bell, Send, History, Settings, Save } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {
@@ -21,10 +21,20 @@ function ProDashboard() {
   const [pageError, setPageError] = useState('')
   const [customization, setCustomization] = useState(null)
   const [selectedClientCard, setSelectedClientCard] = useState(null)
-  const [walletModalOpen, setWalletModalOpen] = useState(false)
-  const [walletSelectedClient, setWalletSelectedClient] = useState(null)
+
   const [copied, setCopied] = useState(false)
   const [clientSearch, setClientSearch] = useState('')
+  const [pushTitle, setPushTitle] = useState('')
+  const [pushMessage, setPushMessage] = useState('')
+  const [selectedClients, setSelectedClients] = useState([])
+  const [pushHistory, setPushHistory] = useState([])
+  const [sendingPush, setSendingPush] = useState(false)
+  const [loyaltyConfig, setLoyaltyConfig] = useState({
+    points_for_reward: 10,
+    reward_title: '',
+    reward_description: ''
+  })
+  const [savingSettings, setSavingSettings] = useState(false)
   const navigate = useNavigate()
   const scannerRef = useRef(null)
   const { token, isSuspended, logout } = useAuth()
@@ -35,6 +45,8 @@ function ProDashboard() {
     } else {
       loadProInfo()
       loadClients()
+      loadPushHistory()
+      loadLoyaltyConfig()
     }
   }, [token, navigate])
 
@@ -140,14 +152,87 @@ function ProDashboard() {
     }
   }
 
-  const handleOpenWalletModal = (client) => { setWalletSelectedClient(client); setWalletModalOpen(true) }
-  const handleCloseWalletModal = () => { setWalletModalOpen(false); setWalletSelectedClient(null) }
+
   const handleLogout = () => { logout(); navigate('/pro/login') }
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/join/${proInfo.id}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const loadPushHistory = async () => {
+    try {
+      const resp = await api.get('/pro/push/history')
+      setPushHistory(resp.data)
+    } catch (err) {
+      console.error('Erreur chargement historique push:', err)
+    }
+  }
+
+  const loadLoyaltyConfig = async () => {
+    try {
+      const resp = await api.get('/pro/loyalty/config')
+      setLoyaltyConfig(resp.data)
+    } catch (err) {
+      console.error('Erreur chargement config loyauté:', err)
+    }
+  }
+
+  const handleSaveLoyaltyConfig = async (e) => {
+    e.preventDefault()
+    try {
+      setSavingSettings(true)
+      await api.put('/pro/loyalty/config', loyaltyConfig)
+      alert('Paramètres de fidélité mis à jour !')
+      loadProInfo() // Refresh proInfo for loyaltyType etc
+    } catch (err) {
+      alert(err.response?.data?.error || 'Erreur lors de la sauvegarde')
+    } finally {
+      setSavingSettings(false)
+    }
+  }
+
+  const toggleClientSelection = (clientId) => {
+    setSelectedClients(prev => 
+      prev.includes(clientId) ? prev.filter(id => id !== clientId) : [...prev, clientId]
+    )
+  }
+
+  const selectAllClients = () => {
+    const notifiableClients = clients.filter(c => c.device_count > 0).map(c => c.id)
+    if (selectedClients.length === notifiableClients.length) {
+      setSelectedClients([])
+    } else {
+      setSelectedClients(notifiableClients)
+    }
+  }
+
+  const handleSendPush = async (e) => {
+    e.preventDefault()
+    if (!pushTitle || !pushMessage || selectedClients.length === 0) {
+      alert('Veuillez remplir tous les champs et sélectionner au moins un client.')
+      return
+    }
+
+    try {
+      setSendingPush(true)
+      const response = await api.post('/pro/push/send', {
+        clientIds: selectedClients,
+        title: pushTitle,
+        message: pushMessage
+      })
+
+      alert(response.data.message)
+      setPushTitle('')
+      setPushMessage('')
+      setSelectedClients([])
+      loadPushHistory()
+    } catch (err) {
+      alert(err.response?.data?.error || 'Erreur lors de l\'envoi')
+    } finally {
+      setSendingPush(false)
+    }
   }
 
   const filteredClients = clients.filter(c => {
@@ -159,8 +244,10 @@ function ProDashboard() {
   const tabs = [
     { id: 'scanner', icon: ScanLine, label: 'Scanner' },
     { id: 'clients', icon: Users, label: 'Clients' },
+    { id: 'notifications', icon: Bell, label: 'Push' },
     { id: 'register', icon: LinkIcon, label: 'Recruter' },
-    { id: 'design', icon: Palette, label: 'Design' }
+    { id: 'design', icon: Palette, label: 'Design' },
+    { id: 'settings', icon: Settings, label: 'Réglages' }
   ]
 
   return (
@@ -319,14 +406,116 @@ function ProDashboard() {
                         <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(client.id, 1)} title="+1">
                           <Plus size={16} />
                         </button>
-                        <button className="pro-action-btn" onClick={() => handleOpenWalletModal(client)} title="Wallet">
-                          <Smartphone size={16} />
-                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ==================== NOTIFICATIONS ==================== */}
+          {activeTab === 'notifications' && (
+            <div className="pro-section">
+              <div className="pro-section-header">
+                <Bell size={22} />
+                <div>
+                  <h2>Notifications Push</h2>
+                  <p>Envoyez des messages personnalisés à vos clients</p>
+                </div>
+              </div>
+
+              <div className="pro-push-container">
+                {/* Formulaire d'envoi */}
+                <form className="pro-push-form" onSubmit={handleSendPush}>
+                  <div className="pro-form-group">
+                    <label>Sujet / Titre</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Promotion de Printemps !" 
+                      value={pushTitle}
+                      onChange={e => setPushTitle(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="pro-form-group">
+                    <label>Message</label>
+                    <textarea 
+                      placeholder="Votre message ici..." 
+                      rows={4}
+                      value={pushMessage}
+                      onChange={e => setPushMessage(e.target.value)}
+                      required
+                    ></textarea>
+                  </div>
+
+                  <div className="pro-push-selection">
+                    <div className="pro-selection-header">
+                      <h3>Sélectionner les clients ({selectedClients.length})</h3>
+                      <button type="button" className="pro-btn-text" onClick={selectAllClients}>
+                        {selectedClients.length === clients.filter(c => c.device_count > 0).length && selectedClients.length > 0 ? 'Tout désélectionner' : 'Sél. clients prêts'}
+                      </button>
+                    </div>
+                    
+                    <div className="pro-push-info-banner">
+                      <AlertCircle size={14} />
+                      <span>Seuls les clients ayant ajouté leur carte au Wallet (icône <Smartphone size={12} style={{verticalAlign:'middle'}}/>) peuvent recevoir des messages.</span>
+                    </div>
+
+                    <div className="pro-push-client-grid">
+                      {clients.map(client => {
+                        const isNotifiable = client.device_count > 0;
+                        return (
+                          <div 
+                            key={client.id} 
+                            className={`pro-push-client-item ${selectedClients.includes(client.id) ? 'selected' : ''} ${!isNotifiable ? 'disabled' : ''}`}
+                            onClick={() => isNotifiable && toggleClientSelection(client.id)}
+                            title={!isNotifiable ? "Ce client n'a pas encore installé sa carte Wallet" : ""}
+                          >
+                            <div className="pro-checkbox">
+                              {selectedClients.includes(client.id) && <Check size={12} />}
+                            </div>
+                            <div className="pro-push-client-info-mini">
+                              <span className="pro-push-client-name">{client.prenom} {client.nom}</span>
+                              {isNotifiable && <Smartphone size={12} className="pro-notifiable-icon" title="Carte Wallet active" />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <button type="submit" className="pro-btn-primary" disabled={sendingPush || selectedClients.length === 0}>
+                    {sendingPush ? <><Loader2 size={18} className="pro-spin" /> Envoi...</> : <><Send size={18} /> Envoyer la notification</>}
+                  </button>
+                </form>
+
+                {/* Historique */}
+                <div className="pro-push-history">
+                  <div className="pro-history-header">
+                    <History size={18} />
+                    <h3>Historique des envois</h3>
+                  </div>
+                  <div className="pro-history-list">
+                    {pushHistory.length === 0 ? (
+                      <p className="pro-empty-small">Aucun historique pour le moment.</p>
+                    ) : (
+                      pushHistory.map(item => (
+                        <div key={item.id} className="pro-history-item">
+                          <div className="pro-history-main">
+                            <h4>{item.title}</h4>
+                            <p>{item.message}</p>
+                          </div>
+                          <div className="pro-history-meta">
+                            <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                            <span className="pro-badge-small">{item.recipients_count} dest.</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -376,6 +565,116 @@ function ProDashboard() {
               <CardCustomizer proInfo={proInfo} />
             </div>
           )}
+
+          {/* ==================== RÉGLAGES ==================== */}
+          {activeTab === 'settings' && (
+            <div className="pro-section">
+              <div className="pro-section-header">
+                <Settings size={22} />
+                <div>
+                  <h2>Paramètres de Fidélité</h2>
+                  <p>Configurez les paliers et les récompenses</p>
+                </div>
+              </div>
+
+              <div className="pro-settings-container">
+                <form className="pro-settings-form" onSubmit={handleSaveLoyaltyConfig}>
+                  <div className="pro-settings-card">
+                    <h3>Type de programme</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
+                      <div className="pro-badge" style={{ 
+                        background: 'var(--accent-light)', 
+                        color: 'var(--accent)', 
+                        padding: '6px 14px', 
+                        borderRadius: '20px',
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        textTransform: 'capitalize'
+                      }}>
+                        {loyaltyConfig.loyalty_type === 'stamps' ? 'Tampons (Stamps)' : 'Points'}
+                      </div>
+                      <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>
+                        Contactez l'administrateur pour changer le type de programme.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pro-settings-card">
+                    <h3>Fonctionnement</h3>
+                    <div className="pro-form-row">
+                      <div className="pro-form-group">
+                        <label>{loyaltyConfig.loyalty_type === 'points' ? 'Points par passage' : 'Tampons par passage'}</label>
+                        <input 
+                          type="number" 
+                          min="1"
+                          value={loyaltyConfig.loyalty_type === 'points' ? loyaltyConfig.points_per_purchase : loyaltyConfig.stamps_per_purchase}
+                          onChange={e => setLoyaltyConfig({
+                            ...loyaltyConfig, 
+                            [loyaltyConfig.loyalty_type === 'points' ? 'points_per_purchase' : 'stamps_per_purchase']: parseInt(e.target.value)
+                          })}
+                        />
+                      </div>
+                      <div className="pro-form-group">
+                        <label>{loyaltyConfig.loyalty_type === 'points' ? 'Points pour un cadeau' : 'Seuil de récompense'}</label>
+                        {loyaltyConfig.loyalty_type === 'points' ? (
+                          <input 
+                            type="number" 
+                            min="1"
+                            value={loyaltyConfig.points_for_reward || 10}
+                            onChange={e => setLoyaltyConfig({
+                              ...loyaltyConfig, 
+                              points_for_reward: parseInt(e.target.value)
+                            })}
+                          />
+                        ) : (
+                          <div className="pro-read-only-box" style={{ 
+                            padding: '12px 16px', 
+                            background: 'var(--bg-subtle)', 
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: 'var(--text-secondary)',
+                            border: '1px solid var(--border-light)'
+                          }}>
+                            10 tampons (Fixe)
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <p className="pro-hint">Le client verra sa progression sur sa carte (ex: 15 / 20 points).</p>
+                  </div>
+
+                  <div className="pro-settings-card">
+                    <h3>Récompense</h3>
+                    <div className="pro-form-group">
+                      <label>Nom du cadeau ou de l'offre</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ex: Un café offert" 
+                        value={loyaltyConfig.reward_title || ''}
+                        onChange={e => setLoyaltyConfig({...loyaltyConfig, reward_title: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="pro-form-group">
+                      <label>Description (optionnel)</label>
+                      <textarea 
+                        placeholder="Détails de l'offre..." 
+                        rows={2}
+                        value={loyaltyConfig.reward_description || ''}
+                        onChange={e => setLoyaltyConfig({...loyaltyConfig, reward_description: e.target.value})}
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="pro-btn-primary" disabled={savingSettings}>
+                    {savingSettings ? <Loader2 size={18} className="pro-spin" /> : <Save size={18} />}
+                    Enregistrer les paramètres
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
         </main>
       )}
 
@@ -403,22 +702,12 @@ function ProDashboard() {
             <div className="pro-modal-actions">
               <button className="pro-action-btn" onClick={() => adjustPoints(selectedClientCard.id, -1)}><Minus size={16} /></button>
               <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(selectedClientCard.id, 1)}><Plus size={16} /></button>
-              <button className="pro-action-btn" onClick={() => { handleOpenWalletModal(selectedClientCard); setSelectedClientCard(null) }}><Smartphone size={16} /></button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ===== WALLET MODAL ===== */}
-      {walletSelectedClient && (
-        <WalletAddModal
-          isOpen={walletModalOpen}
-          onClose={handleCloseWalletModal}
-          clientId={walletSelectedClient.id}
-          clientName={`${walletSelectedClient.prenom} ${walletSelectedClient.nom}`}
-          onSuccess={() => loadClients()}
-        />
-      )}
+      {/* ===== WALLET MODAL (SUPPRIMÉ) ===== */}
     </div>
   )
 }

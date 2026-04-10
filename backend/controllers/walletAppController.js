@@ -30,10 +30,11 @@ export const createWalletPass = async (req, res) => {
 
     logger.info(`📱 Création pass Apple Wallet pour client: ${clientId}`);
 
-    // 1️⃣ Récupérer le client + entreprise + customization
+    // 1️⃣ Récupérer le client + entreprise + customization + loyalty_config
     const [clientRows] = await db.query(
       `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, cs.stamps_collected,
               e.id as company_id, e.nom as company_name, e.loyalty_type,
+              lc.points_for_reward, lc.stamps_for_reward,
               cc.logo_url as apple_logo_url,
               cc.primary_color as apple_background_color,
               cc.text_color as apple_text_color,
@@ -42,6 +43,7 @@ export const createWalletPass = async (req, res) => {
               e.nom as apple_organization_name
        FROM clients c
        LEFT JOIN entreprises e ON c.entreprise_id = e.id
+       LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
        LEFT JOIN card_customization cc ON e.id = cc.company_id
        LEFT JOIN customer_stamps cs ON cs.client_id = c.id
        WHERE c.id = ?`,
@@ -53,7 +55,7 @@ export const createWalletPass = async (req, res) => {
     }
 
     const client = clientRows[0];
-    const { company_id, company_name, loyalty_type, points, stamps_collected } = client;
+    const { company_id, company_name, loyalty_type, points, stamps_collected, points_for_reward, stamps_for_reward } = client;
 
     if (!company_id) {
       return res.status(400).json({ error: 'Client sans entreprise associée' });
@@ -87,7 +89,9 @@ export const createWalletPass = async (req, res) => {
       companyName: company_name,
       loyaltyType: loyalty_type || 'points',
       balance: loyalty_type === 'stamps' ? (stamps_collected || 0) : (points || 0),
-      stampMaxCount: 10, // À paramétrer dans card_customization si besoin
+      pointsGoal: points_for_reward || 10,
+      stampsGoal: stamps_for_reward || 10,
+      stampMaxCount: stamps_for_reward || 10,
       createdAt: client.created_at || new Date(),
       qrCodeValue: client.id.toString(), // Le QR du client
     };

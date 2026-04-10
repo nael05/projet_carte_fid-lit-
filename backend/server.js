@@ -47,9 +47,13 @@ const ipRangeRegex = /^http:\/\/(192\.168|10)\.\d+\.\d+:(300[0-9]|5[0-9]{3})$/;
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || ipRangeRegex.test(origin)) {
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const isTunnel = origin && (origin.endsWith('.loca.lt') || origin.endsWith('.ngrok-free.app') || origin.endsWith('.ngrok.io'));
+    
+    if (!origin || isDevelopment || isTunnel || allowedOrigins.includes(origin) || ipRangeRegex.test(origin)) {
       callback(null, true);
     } else {
+      logger.warn(`🚫 CORS bloqué pour l'origine: ${origin}`);
       callback(new Error('Not allowed by CORS'), false);
     }
   },

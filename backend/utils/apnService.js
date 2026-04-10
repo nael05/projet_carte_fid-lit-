@@ -114,39 +114,70 @@ export class APNService {
   }
 
   /**
-   * Envoie des notifications à plusieurs devices
-   * @param {string[]} pushTokens - List des push tokens
-   * @param {Object} options - Options
-   * @returns {Promise<Object>} - Résultats agrégés
+   * Envoie une notification VISIBLE (Alerte)
+   * @param {string} pushToken - Token APNs
+   * @param {string} title - Titre de la notification
+   * @param {string} body - Message de la notification
+   * @returns {Promise<Object>}
    */
-  async sendBulkUpdateNotifications(pushTokens, options = {}) {
+  async sendAlertNotification(pushToken, title, body) {
+    if (!this.provider) {
+      logger.warn('⚠️ APNs non configuré - notification non envoyée');
+      return { sent: false, reason: 'APNs not configured' };
+    }
+
+    try {
+      const notification = new apn.Notification({
+        alert: {
+          title,
+          body
+        },
+        sound: 'default',
+        badge: 1,
+        topic: process.env.APPLE_PASS_TYPE_ID,
+        payload: {
+          click_action: 'APPLE_WALLET' // Aide le device à savoir quoi ouvrir
+        }
+      });
+
+      const result = await this.provider.send(notification, pushToken);
+
+      if (result.failed && result.failed.length > 0) {
+        const failure = result.failed[0];
+        logger.warn(`⚠️ Notification alerte échouée: ${failure.error || 'Statut: ' + failure.status}`);
+        return { sent: false, error: failure.error || 'Status ' + failure.status, token: pushToken };
+      }
+
+      logger.info(`✅ Alert push envoyée (token: ${pushToken.substring(0, 10)}...)`);
+      return { sent: true, token: pushToken };
+    } catch (error) {
+      logger.error(`❌ Erreur envoi alert push: ${error.message}`);
+      return { sent: false, error: error.message };
+    }
+  }
+
+  /**
+   * Envoie des notifications d'alerte à plusieurs devices
+   * @param {string[]} pushTokens - Liste des tokens
+   * @param {string} title - Titre
+   * @param {string} body - Message
+   * @returns {Promise<Object>}
+   */
+  async sendBulkAlertNotifications(pushTokens, title, body) {
     if (!Array.isArray(pushTokens) || pushTokens.length === 0) {
       return { sent: 0, failed: 0, results: [] };
     }
 
-    logger.info(`📤 Envoi notifications silencieuses à ${pushTokens.length} devices`);
+    logger.info(`📤 Envoi de ${pushTokens.length} alertes push`);
 
     const results = await Promise.all(
-      pushTokens.map((token) => this.sendUpdateNotification(token, options))
+      pushTokens.map((token) => this.sendAlertNotification(token, title, body))
     );
 
     const sent = results.filter((r) => r.sent).length;
     const failed = results.filter((r) => !r.sent).length;
 
-    logger.info(`✅ Bulk send résumé: ${sent} envoyées, ${failed} échouées`);
-
     return { sent, failed, results };
-  }
-
-  /**
-   * Invalide un push token (le device n'est plus valide)
-   * À appeler lors d'une réponse 410 (invalid token) d'Apple
-   * @param {string} pushToken - Token à invalider
-   * @returns {void}
-   */
-  invalidateToken(pushToken) {
-    // Logiquement, tu supprimeras ce token de la BD dans apple_pass_registrations
-    logger.warn(`❌ Token invalide: ${pushToken} - À supprimer de la BD`);
   }
 
   /**

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../db.js';
 import logger from '../utils/logger.js';
+import apnService from '../utils/apnService.js';
 
 // ===== LOYALTY CONFIGURATION CONTROLLERS =====
 
@@ -55,9 +56,18 @@ export const updateLoyaltyConfig = async (req, res) => {
 
     if (existing.length > 0) {
       // Mettre à jour
+      let final_stamps_for_reward = stamps_for_reward;
+      let final_stamps_count = stamps_count;
+      
+      // On récupère le type actuel pour être sûr
+      const [configData] = await pool.query('SELECT loyalty_type FROM loyalty_config WHERE entreprise_id = ?', [empresaId]);
+      if (configData[0]?.loyalty_type === 'stamps') {
+        final_stamps_for_reward = 10;
+        final_stamps_count = 10;
+      }
+
       await pool.query(
         `UPDATE loyalty_config SET 
-          loyalty_type = COALESCE(?, loyalty_type),
           points_per_purchase = COALESCE(?, points_per_purchase),
           points_for_reward = COALESCE(?, points_for_reward),
           stamps_count = COALESCE(?, stamps_count),
@@ -71,8 +81,8 @@ export const updateLoyaltyConfig = async (req, res) => {
           updated_at = NOW()
          WHERE entreprise_id = ?`,
         [
-          loyalty_type, points_per_purchase, points_for_reward,
-          stamps_count, stamps_per_purchase, stamps_for_reward,
+          points_per_purchase, points_for_reward,
+          final_stamps_count, stamps_per_purchase, final_stamps_for_reward,
           reward_title, reward_description,
           apple_wallet_key, google_wallet_key,
           push_notifications_enabled, empresaId
@@ -133,42 +143,127 @@ export const addStamps = async (req, res) => {
 
     // Obtenir ou créer les tampons du client
     const [stampRows] = await pool.query(
-      'SELECT id, stamps_collected FROM customer_stamps WHERE client_id = ?',
-      [clientId]
+      'SELECT id, stamps_collected FROM customer_stamps WHERE client_id = ? AND entreprise_id = ?',
+      [clientId, empresaId]
     );
 
     if (stampRows.length === 0) {
-      // Créer l'entrée des tampons
-      const stampId = uuidv4();
       await pool.query(
         'INSERT INTO customer_stamps (id, client_id, entreprise_id, stamps_collected) VALUES (?, ?, ?, ?)',
-        [stampId, clientId, empresaId, stamps_to_add]
+        [uuidv4(), clientId, empresaId, stamps_to_add]
       );
     } else {
-      // Ajouter aux tampons existants
       await pool.query(
-        'UPDATE customer_stamps SET stamps_collected = stamps_collected + ? WHERE client_id = ?',
-        [stamps_to_add, clientId]
+        'UPDATE customer_stamps SET stamps_collected = stamps_collected + ? WHERE client_id = ? AND entreprise_id = ?',
+        [stamps_to_add, clientId, empresaId]
       );
     }
 
-    // Enregistrer la transaction
-    const transactionId = uuidv4();
+    // Obtenir la nouvelle valeur et la config
+    const [configRows] = await pool.query(
+      'SELECT stamps_for_reward, reward_title FROM loyalty_config WHERE entreprise_id = ?',
+      [empresaId]
+    );
+    const config = configRows[0] || { stamps_for_reward: 10, reward_title: 'Cadeau' };
+    const threshold = Number(config.stamps_for_reward || 10);
+
+    const [updatedStamps] = await pool.query(
+      'SELECT stamps_collected FROM customer_stamps WHERE client_id = ? AND entreprise_id = ?',
+      [clientId, empresaId]
+    );
+
+    let newStamps = Number(updatedStamps[0].stamps_collected || 0);
+    let rewardReached = false;
+
+    if (newStamps >= threshold) {
+      rewardReached = true;
+      newStamps = 0;
+      await pool.query(
+        'UPDATE customer_stamps SET stamps_collected = 0 WHERE client_id = ? AND entreprise_id = ?',
+        [clientId, empresaId]
+      );
+
+      // Enregistrer la transaction de récompense
+      await pool.query(
+        `INSERT INTO transaction_history (id, client_id, entreprise_id, type, description)
+         VALUES (?, ?, ?, 'reward_claimed', ?)`,
+        [uuidv4(), clientId, empresaId, `Récompense atteinte et Reset : ${config.reward_title}`]
+      );
+    }
+
+    // Enregistrer la transaction d'ajout
     await pool.query(
       `INSERT INTO transaction_history (id, client_id, entreprise_id, type, stamps_change, description)
        VALUES (?, ?, ?, 'stamps_added', ?, ?)`,
-      [transactionId, clientId, empresaId, stamps_to_add, `${stamps_to_add} tampon(s) ajouté(s)`]
+      [uuidv4(), clientId, empresaId, stamps_to_add, `${stamps_to_add} tampon(s) ajouté(s)`]
     );
 
-    // Récupérer l'état actuel
-    const [updatedStamps] = await pool.query(
-      'SELECT stamps_collected, stamps_redeemed FROM customer_stamps WHERE client_id = ?',
-      [clientId]
-    );
+    // 📱 Mise à jour Apple Wallet (Stamps)
+    try {
+      const [walletRows] = await pool.query(
+        'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
+        [clientId, empresaId]
+      );
+
+      if (walletRows.length > 0) {
+        const wallet = walletRows[0];
+        
+        // Mettre à jour le solde dans wallet_cards
+        await pool.query(
+          'UPDATE wallet_cards SET stamps_balance = ?, last_updated = NOW() WHERE id = ?',
+          [newStamps, wallet.id]
+        );
+
+        // Log de mise à jour du pass
+        await pool.query(
+          `INSERT INTO pass_update_logs (
+            wallet_card_id, pass_serial_number, action, value, old_balance, new_balance, description, triggered_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            wallet.id, 
+            wallet.pass_serial_number, 
+            rewardReached ? 'reward_reset' : 'add_stamps', 
+            stamps_to_add, 
+            rewardReached ? threshold : (newStamps - stamps_to_add), 
+            newStamps, 
+            rewardReached ? `Récompense atteinte et Reset : ${config.reward_title}` : 'Ajout manuel de tampons', 
+            'pro_add_stamps'
+          ]
+        );
+
+        // Envoyer les notifications push
+        const [registrations] = await pool.query(
+          'SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?',
+          [wallet.pass_serial_number]
+        );
+
+        if (registrations.length > 0) {
+          const pushTokens = registrations.map(r => r.push_token);
+          
+          if (rewardReached) {
+            // Notification d'alerte (Visible)
+            for (const token of pushTokens) {
+              await apnService.sendAlertNotification(
+                token, 
+                "Félicitations ! 🎁", 
+                `Vous avez gagné votre récompense : ${config.reward_title}`,
+                { action: 'reward', company: 'Votre Commerçant' }
+              );
+            }
+          } else {
+            // Mise à jour silencieuse
+            await apnService.sendBulkUpdateNotifications(pushTokens);
+          }
+          logger.info(`📱 Push envoyé pour ajout tampons (client: ${clientId}, reward: ${rewardReached})`);
+        }
+      }
+    } catch (walletErr) {
+      logger.error('Erreur mise à jour wallet après ajout manuel de tampons:', walletErr.message);
+    }
 
     res.json({
       success: true,
-      stamps_collected: updatedStamps[0].stamps_collected,
+      stamps_collected: newStamps,
       stamps_redeemed: updatedStamps[0].stamps_redeemed,
       message: `${stamps_to_add} tampon(s) ajouté(s)`
     });
@@ -233,9 +328,55 @@ export const claimStampReward = async (req, res) => {
       [clientId]
     );
 
+    const newStamps = updatedStamps[0].stamps_collected;
+
+    // 📱 Mise à jour Apple Wallet (Récompense)
+    try {
+      const [walletRows] = await pool.query(
+        'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
+        [clientId, empresaId]
+      );
+
+      if (walletRows.length > 0) {
+        const wallet = walletRows[0];
+        
+        // Mettre à jour le solde dans wallet_cards
+        await pool.query(
+          'UPDATE wallet_cards SET stamps_balance = ?, last_updated = NOW() WHERE id = ?',
+          [newStamps, wallet.id]
+        );
+
+        // Log de mise à jour du pass
+        await pool.query(
+          `INSERT INTO pass_update_logs (
+            wallet_card_id, pass_serial_number, action, value, old_balance, new_balance, description, triggered_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [wallet.id, wallet.pass_serial_number, 'stamps_redeemed', -stampsRequired, newStamps + stampsRequired, newStamps, 'Récompense réclamée', 'pro_claim_reward']
+        );
+
+        // Envoyer les notifications push
+        if (registrations.length > 0) {
+          const pushTokens = registrations.map(r => r.push_token);
+          
+          // Notification d'alerte (Visible)
+          for (const token of pushTokens) {
+            await apnService.sendAlertNotification(
+              token, 
+              "Récompense validée ! 🎉", 
+              `Votre récompense a été validée avec succès.`,
+              { action: 'reward_claimed' }
+            );
+          }
+          logger.info(`📱 Notification push d'alerte envoyée pour récompense tampons (client: ${clientId})`);
+        }
+      }
+    } catch (walletErr) {
+      logger.error('Erreur mise à jour wallet après récompense tampons:', walletErr.message);
+    }
+
     res.json({
       success: true,
-      stamps_collected: updatedStamps[0].stamps_collected,
+      stamps_collected: newStamps,
       stamps_redeemed: updatedStamps[0].stamps_redeemed,
       message: 'Récompense réclamée avec succès!'
     });

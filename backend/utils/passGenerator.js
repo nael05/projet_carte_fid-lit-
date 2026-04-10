@@ -172,10 +172,11 @@ export class PassGenerator {
 
       // Champs principal
       if (clientData.loyaltyType !== 'stamps') {
+        const goal = clientData.pointsGoal || 10;
         pass.primaryFields.add({
           key: 'balance',
           label: 'Points',
-          value: `${clientData.balance}`,
+          value: `${clientData.balance} / ${goal}`,
           changeMessage: 'Nouveaux points: +%@',
         });
       }
@@ -211,6 +212,36 @@ export class PassGenerator {
           altText: `ID: ${clientData.clientId}`,
         }
       ];
+
+      // Texte du logo
+      if (customization?.logo_text) {
+        pass.logoText = customization.logo_text;
+      }
+
+      // Champs au verso (Back Fields)
+      if (customization?.back_fields_info) {
+        pass.backFields.add({
+          key: 'info',
+          label: 'À propos',
+          value: customization.back_fields_info
+        });
+      }
+
+      if (customization?.back_fields_terms) {
+        pass.backFields.add({
+          key: 'terms',
+          label: 'Conditions Générales',
+          value: customization.back_fields_terms
+        });
+      }
+
+      if (customization?.back_fields_website) {
+        pass.backFields.add({
+          key: 'website',
+          label: 'Site Web',
+          value: customization.back_fields_website
+        });
+      }
 
       // Générer le buffer du fichier .pkpass
       const passBuffer = await pass.asBuffer();

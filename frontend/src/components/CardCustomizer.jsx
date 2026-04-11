@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw, Globe, FileText, ChevronRight } from 'lucide-react';
+import { Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw, Globe, FileText, ChevronRight, Smartphone, Apple } from 'lucide-react';
 import './CardCustomizer.css';
 
 const CardCustomizer = ({ proInfo }) => {
+  const [platform, setPlatform] = useState('apple');
   const [activeTab, setActiveTab] = useState('appearance');
   const [previewSide, setPreviewSide] = useState('front');
   const [config, setConfig] = useState({
+    // Apple specific
     primary_color: '#1f2937',
     text_color: '#ffffff',
     accent_color: '#3b82f6',
@@ -21,12 +23,23 @@ const CardCustomizer = ({ proInfo }) => {
     back_fields_terms: '',
     back_fields_website: '',
     apple_organization_name: '',
-    apple_pass_description: 'Votre carte de fidélité numérique'
+    apple_pass_description: 'Votre carte de fidélité numérique',
+    // Google specific
+    google_primary_color: '#1f2937',
+    google_text_color: '#ffffff',
+    google_logo_url: '',
+    google_hero_image_url: '',
+    google_card_title: 'Carte Fidélité',
+    google_card_subtitle: 'Scannez lors de votre passage',
+    // Shared
+    latitude: '',
+    longitude: '',
+    relevant_text: ''
   });
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingType, setUploadingType] = useState(null); // 'logo', 'icon', 'strip'
+  const [uploadingType, setUploadingType] = useState(null); // 'logo', 'icon', 'strip', 'hero'
   const [status, setStatus] = useState({ type: '', message: '' });
 
   useEffect(() => {
@@ -47,8 +60,13 @@ const CardCustomizer = ({ proInfo }) => {
         primary_color: data.primary_color || '#1f2937',
         text_color: data.text_color || '#ffffff',
         accent_color: data.accent_color || '#3b82f6',
-        card_title: data.card_title || 'Carte de Fidélité',
-        apple_organization_name: data.apple_organization_name || proInfo.nom || ''
+        google_primary_color: data.google_primary_color || '#1f2937',
+        google_text_color: data.google_text_color || '#ffffff',
+        google_card_title: data.google_card_title || 'Carte Fidélité',
+        apple_organization_name: data.apple_organization_name || proInfo.nom || '',
+        latitude: data.latitude || '',
+        longitude: data.longitude || '',
+        relevant_text: data.relevant_text || ''
       }));
     } catch (err) {
       console.error('Error loading customization:', err);
@@ -79,7 +97,12 @@ const CardCustomizer = ({ proInfo }) => {
       });
       
       if (response.data.success) {
-        const fieldName = type === 'logo' ? 'logo_url' : type === 'icon' ? 'icon_url' : 'strip_image_url';
+        let fieldName = '';
+        if (type === 'logo') fieldName = platform === 'apple' ? 'logo_url' : 'google_logo_url';
+        else if (type === 'icon') fieldName = 'icon_url';
+        else if (type === 'strip') fieldName = 'strip_image_url';
+        else if (type === 'hero') fieldName = 'google_hero_image_url';
+
         setConfig(prev => ({ ...prev, [fieldName]: response.data.url }));
         setStatus({ type: 'success', message: 'Image mise à jour ! N\'oubliez pas de sauvegarder.' });
       }
@@ -107,6 +130,37 @@ const CardCustomizer = ({ proInfo }) => {
     }
   };
 
+  const getContrastColor = (hexcolor) => {
+    if (!hexcolor) return '#ffffff';
+    // If it's not a hex color (like 'transparent' or similar), default to white or black
+    if (!hexcolor.startsWith('#')) return '#000000';
+    
+    const r = parseInt(hexcolor.slice(1, 3), 16);
+    const g = parseInt(hexcolor.slice(3, 5), 16);
+    const b = parseInt(hexcolor.slice(5, 7), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? '#000000' : '#ffffff';
+  };
+
+  const getMediaUrl = (url) => {
+    if (!url) return null;
+    
+    // If it's already a full external URL, return as is
+    if (url.startsWith('http') && !url.includes('localhost') && !url.includes('loca.lt')) {
+      return url;
+    }
+    
+    // Extract everything after /uploads/ or just the path if already relative
+    const relativeMatch = url.match(/uploads\/.+/);
+    const cleanPath = relativeMatch ? relativeMatch[0] : url.replace(/^\//, '');
+    
+    // Use API base URL directly (which already includes /api)
+    let baseUrl = api.defaults.baseURL || 'http://localhost:5000/api';
+    baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if any
+    
+    return `${baseUrl}/${cleanPath}`;
+  };
+
   if (loading) return (
     <div className="pro-loading">
       <Loader2 size={32} className="pro-spin" />
@@ -120,6 +174,22 @@ const CardCustomizer = ({ proInfo }) => {
       {/* Settings Panel */}
       <div className="customizer-settings">
         
+        {/* Platform Selector */}
+        <div className="platform-selector">
+          <button 
+            className={`platform-btn apple ${platform === 'apple' ? 'active' : ''}`}
+            onClick={() => { setPlatform('apple'); setActiveTab('appearance'); }}
+          >
+            <Apple size={20} /> Apple Wallet
+          </button>
+          <button 
+            className={`platform-btn google ${platform === 'google' ? 'active' : ''}`}
+            onClick={() => { setPlatform('google'); setActiveTab('appearance'); }}
+          >
+            <Smartphone size={20} /> Google Wallet
+          </button>
+        </div>
+
         {/* Tabs Navigation */}
         <div className="customizer-tabs">
           <button 
@@ -134,21 +204,30 @@ const CardCustomizer = ({ proInfo }) => {
           >
             <ImageIcon size={16} /> Images
           </button>
+          {platform === 'apple' && (
+            <button 
+              className={`customizer-tab ${activeTab === 'infos' ? 'active' : ''}`}
+              onClick={() => setActiveTab('infos')}
+            >
+              <Info size={16} /> Verso
+            </button>
+          )}
           <button 
-            className={`customizer-tab ${activeTab === 'infos' ? 'active' : ''}`}
-            onClick={() => setActiveTab('infos')}
+            className={`customizer-tab ${activeTab === 'proximity' ? 'active' : ''}`}
+            onClick={() => setActiveTab('proximity')}
           >
-            <Info size={16} /> Verso
+            <Globe size={16} /> GPS & Notifs
           </button>
         </div>
 
         {/* Dynamic Settings Card */}
         <div className="settings-card">
           
-          {activeTab === 'appearance' && (
+          {/* APPLE APPEARANCE */}
+          {platform === 'apple' && activeTab === 'appearance' && (
             <>
               <div className="settings-group">
-                <label>Nom de l'organisation (Apple Wallet)</label>
+                <label>Nom de l'organisation</label>
                 <input 
                   type="text" name="apple_organization_name" 
                   value={config.apple_organization_name} 
@@ -189,13 +268,6 @@ const CardCustomizer = ({ proInfo }) => {
                     <code>{config.accent_color}</code>
                   </div>
                 </div>
-                <div className="settings-group">
-                  <label>Traits (Optionnel)</label>
-                  <div className="color-input-wrapper">
-                    <input type="color" name="secondary_color" value={config.secondary_color} onChange={handleChange} />
-                    <code>{config.secondary_color}</code>
-                  </div>
-                </div>
               </div>
 
               <div className="settings-group">
@@ -210,51 +282,160 @@ const CardCustomizer = ({ proInfo }) => {
             </>
           )}
 
+          {/* GOOGLE APPEARANCE */}
+          {platform === 'google' && activeTab === 'appearance' && (
+            <>
+              <div className="settings-group">
+                <label>Titre de la carte (Google Wallet)</label>
+                <input 
+                  type="text" name="google_card_title" 
+                  value={config.google_card_title} 
+                  onChange={handleChange}
+                  placeholder="Carte Cadeau / Fidélité"
+                />
+              </div>
+
+              <div className="settings-group">
+                <label>Sous-titre (Description courte)</label>
+                <input 
+                  type="text" name="google_card_subtitle" 
+                  value={config.google_card_subtitle} 
+                  onChange={handleChange}
+                  placeholder="Ex: Scannez lors de votre passage"
+                />
+              </div>
+
+              <div className="color-grid">
+                <div className="settings-group">
+                  <label>Couleur d'accentuation</label>
+                  <div className="color-input-wrapper">
+                    <input type="color" name="google_primary_color" value={config.google_primary_color} onChange={handleChange} />
+                    <code>{config.google_primary_color}</code>
+                  </div>
+                </div>
+                <div className="settings-group">
+                  <label>Couleur du Texte</label>
+                  <div className="color-input-wrapper">
+                    <input type="color" name="google_text_color" value={config.google_text_color} onChange={handleChange} />
+                    <code>{config.google_text_color}</code>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {activeTab === 'images' && (
             <div className="upload-grid">
               
               <div className="upload-item">
                 <div className="upload-preview">
-                  {config.logo_url ? <img src={config.logo_url} alt="Logo" /> : <Layout size={20} />}
+                  {platform === 'apple' 
+                    ? (config.logo_url ? <img src={getMediaUrl(config.logo_url)} alt="Logo" /> : <Layout size={20} />)
+                    : (config.google_logo_url ? <img src={getMediaUrl(config.google_logo_url)} alt="Logo" /> : <Layout size={20} />)
+                  }
                 </div>
                 <div className="upload-controls">
                   <label>Logo de l'entreprise</label>
                   <span className="upload-hint">Format Paysage (max 160x50px)</span>
                   <label className="upload-btn">
                     <input type="file" hidden onChange={e => handleFileUpload(e, 'logo')} disabled={uploadingType === 'logo'} />
-                    {uploadingType === 'logo' ? 'Téléchargement...' : 'Choisir un logo'}
+                    {uploadingType === 'logo' ? 'Envoi...' : 'Choisir un logo'}
                   </label>
                 </div>
               </div>
 
-              <div className="upload-item">
-                <div className="upload-preview">
-                  {config.icon_url ? <img src={config.icon_url} alt="Icon" /> : <RotateCw size={20} />}
+              {platform === 'apple' ? (
+                <>
+                  <div className="upload-item">
+                    <div className="upload-preview">
+                      {config.icon_url ? <img src={getMediaUrl(config.icon_url)} alt="Icon" /> : <RotateCw size={20} />}
+                    </div>
+                    <div className="upload-controls">
+                      <label>Icône App (Apple)</label>
+                      <span className="upload-hint">Format Carré (min 29x29px)</span>
+                      <label className="upload-btn">
+                        <input type="file" hidden onChange={e => handleFileUpload(e, 'icon')} disabled={uploadingType === 'icon'} />
+                        {uploadingType === 'icon' ? 'Envoi...' : 'Choisir une icône'}
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="upload-item">
+                    <div className="upload-preview">
+                      {config.strip_image_url ? <img src={getMediaUrl(config.strip_image_url)} alt="Strip" /> : <ImageIcon size={20} />}
+                    </div>
+                    <div className="upload-controls">
+                      <label>Bannière Apple (Strip)</label>
+                      <span className="upload-hint">Format 375x123px</span>
+                      <label className="upload-btn">
+                        <input type="file" hidden onChange={e => handleFileUpload(e, 'strip')} disabled={uploadingType === 'strip'} />
+                        {uploadingType === 'strip' ? 'Envoi...' : 'Choisir une bannière'}
+                      </label>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="upload-item">
+                  <div className="upload-preview">
+                    {config.google_hero_image_url ? <img src={getMediaUrl(config.google_hero_image_url)} alt="Hero" /> : <ImageIcon size={20} />}
+                  </div>
+                  <div className="upload-controls">
+                    <label>Image Android (Hero)</label>
+                    <span className="upload-hint">Bannière 1032x336px (3:1)</span>
+                    <label className="upload-btn">
+                      <input type="file" hidden onChange={e => handleFileUpload(e, 'hero')} disabled={uploadingType === 'hero'} />
+                      {uploadingType === 'hero' ? 'Envoi...' : 'Choisir une image'}
+                    </label>
+                  </div>
                 </div>
-                <div className="upload-controls">
-                  <label>Icône de l'application</label>
-                  <span className="upload-hint">Format Carré (min 29x29px)</span>
-                  <label className="upload-btn">
-                    <input type="file" hidden onChange={e => handleFileUpload(e, 'icon')} disabled={uploadingType === 'icon'} />
-                    {uploadingType === 'icon' ? 'Téléchargement...' : 'Choisir une icône'}
-                  </label>
+              )}
+
+            </div>
+          )}
+
+          {activeTab === 'proximity' && (
+            <div className="proximity-settings">
+              <div className="settings-header">
+                <h3>Géolocalisation & Proximité</h3>
+                <p>La carte s'affichera automatiquement sur l'écran verrouillé du client lorsqu'il sera à proximité.</p>
+              </div>
+
+              <div className="settings-grid">
+                <div className="settings-group">
+                  <label>Latitude</label>
+                  <input 
+                    type="number" step="any" name="latitude" 
+                    value={config.latitude} 
+                    onChange={handleChange}
+                    placeholder="Ex: 48.8566"
+                  />
+                </div>
+                <div className="settings-group">
+                  <label>Longitude</label>
+                  <input 
+                    type="number" step="any" name="longitude" 
+                    value={config.longitude} 
+                    onChange={handleChange}
+                    placeholder="Ex: 2.3522"
+                  />
                 </div>
               </div>
 
-              <div className="upload-item">
-                <div className="upload-preview">
-                  {config.strip_image_url ? <img src={config.strip_image_url} alt="Strip" /> : <ImageIcon size={20} />}
-                </div>
-                <div className="upload-controls">
-                  <label>Image de fond (Strip)</label>
-                  <span className="upload-hint">Bannière principale (375x123px)</span>
-                  <label className="upload-btn">
-                    <input type="file" hidden onChange={e => handleFileUpload(e, 'strip')} disabled={uploadingType === 'strip'} />
-                    {uploadingType === 'strip' ? 'Téléchargement...' : 'Choisir une bannière'}
-                  </label>
-                </div>
+              <div className="settings-group">
+                <label>Message de proximité (Écran verrouillé)</label>
+                <input 
+                  type="text" name="relevant_text" 
+                  value={config.relevant_text} 
+                  onChange={handleChange}
+                  placeholder="Ex: Vous êtes proche de notre boutique !"
+                  maxLength={100}
+                />
+                <span className="upload-hint">S'affichera sous la carte sur l'écran verrouillé.</span>
               </div>
 
+              <div className="info-alert" style={{ marginTop: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px', borderRadius: '8px', color: '#60a5fa', fontSize: '0.85rem' }}>
+                💡 <strong>Astuce :</strong> Vous pouvez trouver vos coordonnées sur Google Maps en faisant un clic droit sur votre adresse (les chiffres sont la latitude et la longitude).
+              </div>
             </div>
           )}
 
@@ -314,88 +495,182 @@ const CardCustomizer = ({ proInfo }) => {
 
           <button className="btn-premium-save" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="pro-spin" size={20} /> : <CheckCircle2 size={20} />}
-            Enregistrer le Design
+            Enregistrer les réglages {platform === 'apple' ? 'Apple' : 'Google'}
           </button>
         </div>
       </div>
 
       {/* Preview Section */}
       <div className="customizer-preview">
-        <div className="preview-toggle">
-          <button className={previewSide === 'front' ? 'active' : ''} onClick={() => setPreviewSide('front')}>Recto</button>
-          <button className={previewSide === 'back' ? 'active' : ''} onClick={() => setPreviewSide('back')}>Verso</button>
-        </div>
-
-        <div className={`apple-card ${previewSide === 'back' ? 'flipped' : ''}`} style={{ backgroundColor: config.primary_color }}>
-          
-          {/* FRONT */}
-          <div className="card-front" style={{ color: config.text_color }}>
-            <div className="card-header">
-              <div className="card-logo-container">
-                {config.logo_url && <img src={config.logo_url} alt="Logo" className="card-logo" />}
-                {config.logo_text && <span className="card-logo-text">{config.logo_text}</span>}
-              </div>
-              <span style={{ fontSize: '11px', fontWeight: 600, opacity: 0.8 }}>{config.apple_organization_name || proInfo.nom}</span>
+        
+        {platform === 'apple' ? (
+          <>
+            <div className="preview-toggle">
+              <button className={previewSide === 'front' ? 'active' : ''} onClick={() => setPreviewSide('front')}>Recto</button>
+              <button className={previewSide === 'back' ? 'active' : ''} onClick={() => setPreviewSide('back')}>Verso</button>
             </div>
 
-            {config.strip_image_url ? (
-              <div className="card-strip" style={{ backgroundImage: `url(${config.strip_image_url})` }}>
-                <div className="strip-overlay"></div>
-              </div>
-            ) : (
-              <div className="card-strip" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                 <ImageIcon opacity={0.2} />
-              </div>
-            )}
-
-            <div className="card-body">
-              <div>
-                <div className="card-field-label" style={{ color: config.accent_color }}>{proInfo.loyalty_type === 'points' ? 'Points' : 'Tampons'}</div>
-                <div className="card-field-value">{proInfo.loyalty_type === 'points' ? '12 / 20' : '● ● ● ○ ○'}</div>
-              </div>
-              <div>
-                <div className="card-field-label" style={{ color: config.accent_color }}>Client</div>
-                <div className="card-field-value" style={{ fontSize: '16px' }}>Jean Dupont</div>
-              </div>
-            </div>
-
-            <div className="card-footer">
-               <div style={{ fontSize: '11px', opacity: 0.7, textAlign: 'center' }}>{config.card_subtitle}</div>
-               <div className="card-barcode">
-                  <div className="barcode-mock">QR CODE</div>
-               </div>
-            </div>
-          </div>
-
-          {/* BACK */}
-          <div className="card-back" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            <div className="back-content">
-              <h3>Détails de la Carte</h3>
+            <div className={`apple-card ${previewSide === 'back' ? 'flipped' : ''}`} style={{ 
+              backgroundColor: config.primary_color,
+              color: config.text_color,
+              '--stamp-color': config.accent_color 
+            }}>
               
-              <div className="back-item">
-                <h4>Conditions</h4>
-                <p>{config.back_fields_terms || "Aucune condition spécifiée."}</p>
-              </div>
-
-              <div className="back-item">
-                <h4>Informations</h4>
-                <p>{config.back_fields_info || "Contactez l'entreprise pour plus d'infos."}</p>
-              </div>
-
-              {config.back_fields_website && (
-                <div className="back-item">
-                  <h4>Site Web</h4>
-                  <p style={{ color: config.accent_color }}>{config.back_fields_website}</p>
+              {/* APPLE FRONT */}
+              <div className="card-front">
+                <div className="card-top-bar">
+                  {config.icon_url ? (
+                    <img src={getMediaUrl(config.icon_url)} alt="App Icon" className="card-app-icon" />
+                  ) : (
+                    <div className="card-app-icon" style={{ background: 'rgba(255,255,255,0.2)' }}></div>
+                  )}
+                  <span className="card-org-name">{config.apple_organization_name || proInfo.nom}</span>
                 </div>
-              )}
-            </div>
-          </div>
 
-        </div>
-        <p className="pro-hint" style={{textAlign:'center'}}>
-          <RotateCw size={12} style={{marginRight:4}} />
-          Ceci est un aperçu approximatif. Le rendu final peut varier selon le modèle d'iPhone.
-        </p>
+                <div className="card-header">
+                  <div className="card-logo-placeholder">
+                    {config.logo_url ? (
+                      <img src={getMediaUrl(config.logo_url)} alt="Logo" className="card-logo" />
+                    ) : (
+                      <span style={{ fontSize: '13px', fontWeight: 700, opacity: 0.6 }}>{config.logo_text || proInfo.nom}</span>
+                    )}
+                  </div>
+                  <div className="card-label-field">
+                     <span className="card-field-label" style={{ color: config.accent_color }}>Offre</span>
+                     <span className="card-field-value" style={{ fontSize: '13px' }}>{config.reward_title || "Votre Récompense"}</span>
+                  </div>
+                </div>
+
+                <div className="card-strip" style={{ 
+                  backgroundImage: config.strip_image_url ? `url(${getMediaUrl(config.strip_image_url)})` : 'none',
+                  backgroundColor: !config.strip_image_url ? 'rgba(0,0,0,0.1)' : ''
+                }}>
+                  {config.strip_image_url && <div className="strip-overlay"></div>}
+                  {proInfo.loyalty_type === 'stamps' && (
+                    <div className="stamps-preview-grid">
+                      {[...Array(10)].map((_, i) => (
+                        <div key={i} className={`stamp-slot ${i < 3 ? 'filled' : ''}`}>
+                          {i < 3 && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="card-body">
+                  <div className="card-primary-field">
+                    <span className="card-field-label" style={{ color: config.accent_color }}>
+                      {proInfo.loyalty_type === 'points' ? 'Solde Points' : 'Progression'}
+                    </span>
+                    <span className="card-field-value-lg">
+                      {proInfo.loyalty_type === 'points' ? '1,250' : '3 / 10'}
+                    </span>
+                  </div>
+                  <div className="card-aux-row">
+                    <div className="card-field-group">
+                      <span className="card-field-label" style={{ color: config.accent_color }}>Détenteur</span>
+                      <span className="card-field-value">A. Martin</span>
+                    </div>
+                    <div className="card-field-group">
+                      <span className="card-field-label" style={{ color: config.accent_color }}>Membre</span>
+                      <span className="card-field-value">04/2026</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-footer">
+                   <span className="card-footer-subtitle">{config.card_subtitle}</span>
+                   <div className="card-barcode-area">
+                      <div className="qr-mock"></div>
+                      <div className="barcode-id">CUST-8829-PRO</div>
+                   </div>
+                </div>
+              </div>
+
+              {/* APPLE BACK */}
+              <div className="card-back">
+                <button className="btn-done-flip" onClick={() => setPreviewSide('front')}>Terminé</button>
+                <div className="back-content">
+                  <div className="back-header">
+                    <h3 style={{ color: '#000', margin: 0 }}>Informations</h3>
+                  </div>
+                  <div className="back-item">
+                    <h4>Conditions</h4>
+                    <p>{config.back_fields_terms || "Cumulez des tampons pour obtenir des cadeaux."}</p>
+                  </div>
+                  <div className="back-item">
+                    <h4>Description</h4>
+                    <p>{config.back_fields_info || "Votre carte de fidélité numérique."}</p>
+                  </div>
+                  {config.back_fields_website && (
+                    <div className="back-item">
+                      <h4>Site Web</h4>
+                      <p style={{ color: '#007aff', fontWeight: '600' }}>{config.back_fields_website} <ChevronRight size={14} style={{verticalAlign:'middle'}} /></p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <p className="pro-hint" style={{textAlign:'center', marginTop: '1rem'}}>
+              <RotateCw size={12} style={{marginRight:4}} />
+              Aperçu Apple Wallet approximatif.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="google-card" style={{ backgroundColor: config.google_primary_color || '#ffffff' }}>
+              {/* Header: Icon + Org Name */}
+              <div className="google-card-new-header">
+                <div className="google-wallet-icon">
+                  <svg viewBox="0 0 48 48" width="24" height="24">
+                    <path fill="#4285F4" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4z"/>
+                    <path fill="#34A853" d="M40 12H8c-2.2 0-4 1.8-4 4v4h40v-4c0-2.2-1.8-4-4-4z"/>
+                    <path fill="#FBBC05" d="M40 12H8c-2.2 0-4 1.8-4 4v8h40v-8c0-2.2-1.8-4-4-4z"/>
+                    <path fill="#EA4335" d="M40 12H8c-2.2 0-4 1.8-4 4v12h40v-12c0-2.2-1.8-4-4-4z"/>
+                  </svg>
+                </div>
+                <span className="google-org-name-top" style={{ color: getContrastColor(config.google_primary_color) }}>{proInfo.nom}</span>
+              </div>
+
+              <div className="google-card-content">
+                {/* Large Title */}
+                <h2 className="google-main-title" style={{ color: getContrastColor(config.google_primary_color) }}>
+                   {config.google_card_title || 'Programme Fidélité'}
+                </h2>
+
+                {/* Points Section */}
+                <div className="google-points-section">
+                  <span className="google-points-label" style={{ color: getContrastColor(config.google_primary_color), opacity: 0.7 }}>Points</span>
+                  <span className="google-points-value" style={{ color: getContrastColor(config.google_primary_color) }}>0</span>
+                </div>
+
+                {/* QR Code Section */}
+                <div className="google-qr-container">
+                  <div className="google-qr-box">
+                    <div className="google-qr-mock-real"></div>
+                  </div>
+                  <span className="google-client-id-text" style={{ color: getContrastColor(config.google_primary_color), opacity: 0.6 }}>
+                    {proInfo.id.substring(0, 30)}...
+                  </span>
+                </div>
+              </div>
+
+              <div className="google-footer-actions">
+                 <div className="google-add-btn-minimal">
+                    <img src="https://www.gstatic.com/wallet/apple-wallet-icons/en_US/add_to_google_wallet_wallet_button.png" alt="Add to Google Wallet" style={{ height: '36px' }} />
+                 </div>
+              </div>
+            </div>
+            <p className="pro-hint" style={{textAlign:'center', marginTop: '1rem'}}>
+               <Smartphone size={12} style={{marginRight:4}} />
+               Aperçu Google Wallet fidèle au modèle officiel.
+            </p>
+          </>
+        )}
       </div>
 
     </div>

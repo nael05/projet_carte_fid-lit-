@@ -1,5 +1,0 @@
-[31merror[39m: ❌ Erreur GET /client-download: logo image must have width no large than 160px for 1x density
-[31merror[39m: ❌ Erreur génération pass: The "path" argument must be of type string or an instance of Buffer or URL. Received undefined
-[31merror[39m: ❌ Erreur génération pass: The "path" argument must be of type string or an instance of Buffer or URL. Received undefined
-[31merror[39m: ❌ Erreur génération pass: strip image must have height 144px for 1x density
-[31merror[39m: ❌ Erreur GET /client-download: strip image must have height 144px for 1x density

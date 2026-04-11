@@ -16,7 +16,6 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
       setError(null);
       setSuccess(false);
 
-      // Appeler l'API pour créer le pass Apple Wallet
       const response = await fetch('/api/app/wallet/create', {
         method: 'POST',
         headers: {
@@ -25,29 +24,38 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
         },
         body: JSON.stringify({
           clientId,
-          clientName
+          clientName,
+          type_wallet: platform // On passe le type choisi
         })
       });
 
       if (!response.ok) {
-        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erreur ${response.status}: ${response.statusText}`);
       }
 
-      // Récupérer le .pkpass et le télécharger
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${clientName}-loyalty.pkpass`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Traiter selon la plateforme
+      if (platform === 'apple') {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${clientName}-loyalty.pkpass`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        // Google Wallet redirection
+        const data = await response.json();
+        if (data.saveUrl) {
+          window.open(data.saveUrl, '_blank');
+        }
+      }
 
       setSuccess(true);
       if (onSuccess) onSuccess();
 
-      // Fermer le modal après 2 secondes
       setTimeout(() => {
         onClose();
         setSuccess(false);
@@ -81,8 +89,8 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
             <div className="wallet-success-message">
               <div className="wallet-success-icon"><CheckCircle2 size={48} /></div>
               <h3>Succès!</h3>
-              <p>Votre carte a été ajoutée au Wallet avec succès.</p>
-              <p className="wallet-info-text">Le fichier de passe s'est téléchargé automatiquement.</p>
+              <p>Votre carte a été préparée avec succès.</p>
+              <p className="wallet-info-text">Suivez les instructions sur votre écran pour l'ajouter.</p>
             </div>
           ) : error ? (
             <div className="wallet-error-message">
@@ -91,10 +99,7 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
               <p>{error}</p>
               <button 
                 className="wallet-retry-btn"
-                onClick={() => {
-                  setError(null);
-                  handleAddToWallet();
-                }}
+                onClick={() => setError(null)}
               >
                 Réessayer
               </button>
@@ -102,32 +107,41 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
           ) : (
             <div className="wallet-form">
               <p className="wallet-description">
-                Cliquez sur le bouton ci-dessous pour ajouter votre carte de fidélité au Wallet Apple.
+                Choisissez votre plateforme pour ajouter votre carte de fidélité numérique.
               </p>
 
-              <div className="wallet-info-box">
-                <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Info size={16} /> Qu'est-ce qui se passe?</h4>
-                <ul>
-                  <li>Votre carte Apple Wallet sera créée</li>
-                  <li>Vous recevrez les mises à jour de points en temps réel</li>
-                  <li>Accés rapide depuis le Wallet de votre iPhone</li>
-                </ul>
+              <div className="wallet-options-grid">
+                <div 
+                  className="wallet-option-card apple"
+                  onClick={() => handleAddToWallet('apple')}
+                >
+                  <div className="wallet-icon-wrapper">
+                    <Smartphone size={24} />
+                  </div>
+                  <span>Apple Wallet</span>
+                  <p className="wallet-description-small">Pour iPhone / iOS</p>
+                </div>
+
+                <div 
+                  className="wallet-option-card google"
+                  onClick={() => handleAddToWallet('google')}
+                >
+                  <div className="wallet-icon-wrapper">
+                    <Smartphone size={24} style={{ transform: 'rotate(180deg)' }} />
+                  </div>
+                  <span>Google Wallet</span>
+                  <p className="wallet-description-small">Pour Android</p>
+                </div>
               </div>
 
-              <button
-                className="wallet-add-btn"
-                onClick={handleAddToWallet}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                    En cours...
-                  </>
-                ) : (
-                  <><Plus size={18} /> Ajouter au Wallet</>
-                )}
-              </button>
+              <div className="wallet-info-box">
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Info size={16} /> Pourquoi l'ajouter ?</h4>
+                <ul>
+                  <li>Accès rapide sans connexion internet</li>
+                  <li>Notifications de points en temps réel</li>
+                  <li>Géolocalisation (bientôt disponible)</li>
+                </ul>
+              </div>
             </div>
           )}
         </div>

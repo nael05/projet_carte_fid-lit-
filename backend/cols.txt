@@ -1,1 +1,0 @@
-id, company_id, loyalty_type, primary_color, secondary_color, accent_color, text_color, logo_url, background_pattern, card_title, card_subtitle, footer_text, show_qr_code, show_barcode, show_progress_bar, apple_wallet_enabled, google_wallet_enabled, apple_pkpass_id, google_pass_class_id, created_at, updated_at

@@ -69,6 +69,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // ===== STATIC FILES =====
 app.use('/uploads', express.static('uploads'));
+app.use('/api/uploads', express.static('uploads')); // Double mount for better tunnel/proxy support
 
 // ===== ROUTES =====
 app.use('/api', apiRoutes);

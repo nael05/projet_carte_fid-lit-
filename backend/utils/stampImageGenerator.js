@@ -8,47 +8,36 @@ import sharp from 'sharp';
 import logger from './logger.js';
 
 /**
- * Génère une image strip (750x490 @2x) avec une grille de tampons visuels.
- * Les tampons collectés sont remplis avec la couleur accent,
- * les tampons non collectés sont des cercles gris foncé.
- * 
+ * Génère une image strip (375x144) avec une grille de tampons visuels.
  * @param {number} collected - Nombre de tampons collectés
  * @param {number} total - Nombre total de tampons (ex: 10)
- * @param {string} filledColor - Couleur hex des tampons remplis (ex: "#3b82f6")
- * @param {string} emptyColor - Couleur hex des tampons vides (ex: "#374151")
- * @param {string} bgColor - Couleur de fond hex (ex: "#1f2937")
+ * @param {string} filledColor - Couleur hex des tampons remplis
+ * @param {string} emptyColor - Couleur hex des tampons vides
+ * @param {string} bgColor - Couleur de fond (utilisée si pas d'image)
+ * @param {Buffer} backgroundImageBuffer - Buffer d'une image de fond à superposer
  * @returns {Promise<Buffer>} - Buffer PNG de l'image strip
  */
-export async function generateStampStrip(collected, total = 10, filledColor = '#3b82f6', emptyColor = '#4b5563', bgColor = '#1f2937') {
+export async function generateStampStrip(collected, total = 10, filledColor = '#3b82f6', emptyColor = '#4b5563', bgColor = '#1f2937', backgroundImageBuffer = null) {
   try {
-    // Apple Wallet storeCard strip: EXACTEMENT 375x144 @1x
     const width = 375;
     const height = 144;
 
-    // Calculer la grille
+    // Calcul de la grille (même logique)
     let cols, rows;
-    if (total <= 6) {
-      cols = 3; rows = Math.ceil(total / cols);
-    } else if (total <= 10) {
-      cols = 5; rows = Math.ceil(total / cols);
-    } else if (total <= 12) {
-      cols = 4; rows = Math.ceil(total / cols);
-    } else {
-      cols = 5; rows = Math.ceil(total / cols);
-    }
+    if (total <= 6) { cols = 3; rows = Math.ceil(total / cols); }
+    else if (total <= 10) { cols = 5; rows = Math.ceil(total / cols); }
+    else if (total <= 12) { cols = 4; rows = Math.ceil(total / cols); }
+    else { cols = 5; rows = Math.ceil(total / cols); }
 
     const paddingX = 20;
     const paddingTop = 12;
     const circleRadius = 18;
     const circleDiameter = circleRadius * 2;
-
-    // Espacement dynamique
     const spacingX = (width - paddingX * 2 - cols * circleDiameter) / (cols - 1);
     const totalGridHeight = rows * circleDiameter;
     const spacingY = rows > 1 ? (height - paddingTop * 2 - totalGridHeight) / (rows - 1) : 0;
     const startY = paddingTop + (height - paddingTop * 2 - totalGridHeight - spacingY * (rows - 1)) / 2;
 
-    // Construire les cercles SVG
     let circles = '';
     for (let i = 0; i < total; i++) {
       const col = i % cols;
@@ -66,29 +55,43 @@ export async function generateStampStrip(collected, total = 10, filledColor = '#
         `;
       } else {
         circles += `
-          <circle cx="${cx}" cy="${cy}" r="${circleRadius}" fill="${emptyColor}" opacity="0.45" />
-          <circle cx="${cx}" cy="${cy}" r="${circleRadius - 2}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
+          <circle cx="${cx}" cy="${cy}" r="${circleRadius}" fill="${emptyColor}" opacity="0.5" />
+          <circle cx="${cx}" cy="${cy}" r="${circleRadius - 1}" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="0.5" />
         `;
       }
     }
 
-    const svg = `
+    // Le SVG ne contient QUE les cercles (pas de fond si on a une image)
+    const svgOverlay = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <rect width="${width}" height="${height}" fill="${bgColor}" />
         ${circles}
       </svg>
     `;
 
-    const buffer = await sharp(Buffer.from(svg))
-      .png()
-      .toBuffer();
+    if (backgroundImageBuffer) {
+      // 1. Préparer le fond (redimensionner et obscurcir un peu pour la lisibilité)
+      const base = await sharp(backgroundImageBuffer)
+        .resize(width, height, { fit: 'cover' })
+        .modulate({ brightness: 0.85 })
+        .toBuffer();
 
-    logger.info(`🎯 Image strip tampons générée: ${collected}/${total}`);
-    return buffer;
+      // 2. Superposer les tampons par-dessus
+      return await sharp(base)
+        .composite([{ input: Buffer.from(svgOverlay), blend: 'over' }])
+        .png()
+        .toBuffer();
+    } else {
+      // Pas d'image -> Fond plein classique
+      const fullSvg = `
+        <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+          <rect width="${width}" height="${height}" fill="${bgColor}" />
+          ${circles}
+        </svg>
+      `;
+      return await sharp(Buffer.from(fullSvg)).png().toBuffer();
+    }
   } catch (error) {
     logger.error(`❌ Erreur génération strip tampons: ${error.message}`);
     return null;
   }
 }
-
-export default { generateStampStrip };

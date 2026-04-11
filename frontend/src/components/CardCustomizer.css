@@ -58,6 +58,58 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Platform Switcher */
+.platform-selector {
+  display: flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.platform-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.platform-btn svg {
+  opacity: 0.6;
+}
+
+.platform-btn.active {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.platform-btn.apple.active {
+  background: linear-gradient(135deg, #333 0%, #000 100%);
+  color: white;
+}
+
+.platform-btn.google.active {
+  background: linear-gradient(135deg, #4285F4 0%, #34A853 33%, #FBBC05 66%, #EA4335 100%);
+  color: white;
+}
+
+.platform-btn.active svg {
+  opacity: 1;
+}
+
 /* Card Section */
 .settings-card {
   background: var(--bg-surface);
@@ -181,62 +233,80 @@
   display: block;
 }
 
-/* ---- RIGHT: Card Preview ---- */
+/* ============================================================
+   APPLE WALLET REALISM — 100% FIDELITY
+   ============================================================ */
+
 .customizer-preview {
-  width: 340px;
+  width: 380px;
   position: sticky;
-  top: 100px;
+  top: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
   margin: 0 auto;
 }
 
 .preview-toggle {
   display: flex;
   background: var(--bg-subtle);
-  padding: 3px;
-  border-radius: 20px;
+  padding: 4px;
+  border-radius: 24px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .preview-toggle button {
-  padding: 6px 16px;
-  border-radius: 17px;
+  padding: 8px 24px;
+  border-radius: 20px;
   border: none;
   background: none;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
 }
 
 .preview-toggle button.active {
   background: var(--bg-surface);
-  color: var(--text-primary);
+  color: var(--accent);
   box-shadow: var(--shadow-sm);
 }
 
-/* Apple Card Mockup */
 .apple-card {
   width: 100%;
   aspect-ratio: 1 / 1.58;
   border-radius: 16px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 6px rgba(0,0,0,0.1),
+    0 15px 45px rgba(0,0,0,0.25);
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transform-style: preserve-3d;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
 }
 
-.apple-card.flipped {
-  transform: rotateY(180deg);
+/* Static Glass Reflection */
+.apple-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+  z-index: 10;
 }
+
+.apple-card.flipped { transform: rotateY(180deg); }
 
 .card-front, .card-back {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  padding: 20px;
+  padding: 16px 18px;
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
@@ -244,78 +314,151 @@
 
 .card-back {
   transform: rotateY(180deg);
-  background: #f8f8f8; /* default for some passes, but we'll use primary color usually */
-  color: #333;
+  background: #ffffff !important;
+  color: #000000 !important;
 }
 
-/* Header */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 2;
-}
-
-.card-logo-container {
+/* TOP BAR (Icon + Name) */
+.card-top-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.card-logo {
   height: 24px;
-  max-width: 80px;
-  object-fit: contain;
+  margin-bottom: 4px;
+  flex-shrink: 0;
 }
 
-.card-logo-text {
-  font-size: 15px;
-  font-weight: 700;
+.card-app-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.card-org-name {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.9;
   letter-spacing: -0.01em;
 }
 
-/* Strip Area */
+/* HEADER (Logo & Récompense) */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 52px;
+  margin-bottom: 6px;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.card-logo-placeholder {
+  height: 40px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.card-logo {
+  height: 38px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.card-label-field {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+}
+
+/* STRIP (Stamps or Image) */
 .card-strip {
-  position: absolute;
-  top: 60px;
-  left: 0;
-  width: 100%;
-  height: 120px;
+  margin: 0 -18px;
+  height: 123px;
   background-size: cover;
   background-position: center;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .strip-overlay {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0,0,0,0.15);
 }
 
-/* Content Area */
+/* Stamps Grid */
+.stamps-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 0 18px;
+  width: 100%;
+  position: relative; /* Indispensable pour le z-index */
+  z-index: 10;        /* Passer devant l'overlay */
+}
+
+.stamp-slot {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stamp-slot.filled {
+  background: var(--stamp-color, var(--accent));
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* BODY (Fields) */
 .card-body {
-  margin-top: 140px;
+  padding-top: 16px;
+  z-index: 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  z-index: 2;
+  gap: 14px;
 }
 
 .card-field-label {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   font-weight: 600;
   opacity: 0.8;
-  margin-bottom: 2px;
+  display: block;
+  letter-spacing: 0.02em;
 }
 
 .card-field-value {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
+  display: block;
 }
 
+.card-field-value-lg {
+  font-size: 38px;
+  font-weight: 300;
+  line-height: 1;
+  display: block;
+}
+
+.card-aux-row {
+  display: flex;
+  gap: 20px;
+}
+
+/* FOOTER (Subtitle & Barcode) */
 .card-footer {
   margin-top: auto;
   display: flex;
@@ -323,74 +466,260 @@
   align-items: center;
   gap: 12px;
   z-index: 2;
+  padding-bottom: 8px;
 }
 
-.card-barcode {
-  width: 80%;
+.card-footer-subtitle {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.card-barcode-area {
+  width: 160px;
+  height: 160px;
+  background: white;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.qr-mock {
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #000 75%),
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+  background-size: 11px 11px;
+  opacity: 0.9;
+}
+
+.barcode-id {
+  font-size: 9px;
+  font-family: monospace;
+  color: #444;
+}
+
+.btn-info-flip {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.btn-done-flip {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #007aff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card-barcode-area {
+  width: 160px;
+  height: 160px;
   background: white;
   padding: 8px;
   border-radius: 4px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
 }
 
-.barcode-mock {
+.qr-mock {
   width: 100%;
-  aspect-ratio: 1.5 / 1;
-  background: #eee;
+  height: 100%;
+  background-image: 
+    linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #000 75%),
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+  opacity: 0.9;
+}
+
+.barcode-id {
+  font-size: 9px;
+  font-family: monospace;
+  color: #333;
+}
+
+/* ============================================================
+   GOOGLE WALLET MOCKUP — Android Style
+   ============================================================ */
+/* ============================================================
+   GOOGLE WALLET MOCKUP — Android Style (Material Design 3)
+   ============================================================ */
+.google-card {
+  width: 100%;
+  aspect-ratio: 1 / 1.6;
+  background: #ffffff;
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 4px 12px rgba(0,0,0,0.1),
+    0 24px 48px rgba(0,0,0,0.15);
+  font-family: 'Google Sans', 'Roboto', sans-serif;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.google-card-new-header {
+  padding: 20px 24px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.google-wallet-icon {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  color: #999;
 }
 
-/* Mockup back view */
-.back-content {
+.google-org-name-top {
+  font-size: 18px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.google-card-content {
+  padding: 12px 24px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  text-align: left;
 }
 
-.back-item h4 {
-  font-size: 11px;
-  text-transform: uppercase;
-  margin: 0 0 6px 0;
-  opacity: 0.6;
-}
-
-.back-item p {
-  font-size: 13px;
+.google-main-title {
+  font-size: 40px;
+  font-weight: 400;
+  color: #202124;
   margin: 0;
-  line-height: 1.5;
-  white-space: pre-wrap;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
 }
 
+.google-points-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.google-points-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.google-points-value {
+  font-size: 32px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.google-qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: auto;
+  margin-bottom: 16px;
+}
+
+.google-qr-box {
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e8eaed;
+  width: 180px;
+  aspect-ratio: 1;
+}
+
+.google-qr-mock-real {
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #000 75%),
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+  background-size: 10px 10px;
+  opacity: 0.9;
+}
+
+.google-client-id-text {
+  font-size: 11px;
+  color: #5f6368;
+  font-family: monospace;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.google-footer-actions {
+  padding: 16px 24px 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.google-add-btn-minimal {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.google-add-btn-minimal:hover {
+  transform: scale(1.02);
+}
 .btn-premium-save {
   width: 100%;
   padding: 16px;
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: var(--radius-md);
-  font-weight: 700;
+  border-radius: 12px;
+  font-weight: 600;
   font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: opacity 0.2s;
 }
 
-.btn-premium-save:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
-}
-
-.btn-premium-save:active {
-  transform: translateY(0);
-}
+.btn-premium-save:hover { opacity: 0.9; }
+.btn-premium-save:active { transform: scale(0.98); }

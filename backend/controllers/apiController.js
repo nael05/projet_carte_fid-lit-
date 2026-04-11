@@ -10,6 +10,7 @@ import { validatePassword, validatePasswordChange } from '../utils/passwordValid
 import logger from '../utils/logger.js';
 import { validateLoginInput } from '../utils/inputValidator.js';
 import apnService from '../utils/apnService.js';
+import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 
 // ===== MASTER ADMIN CONTROLLERS =====
 
@@ -656,7 +657,14 @@ export const handleScan = async (req, res) => {
         }
       } catch (walletErr) {
         logger.error('Erreur mise à jour wallet après scan (points):', walletErr.message);
-        // On ne bloque pas le retour success car les points DB sont ok
+      }
+
+      // 📱 Mise à jour Google Wallet (Points)
+      try {
+        await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
+        logger.info(`📱 Points Google Wallet synchronisés après scan pour client ${clientId}`);
+      } catch (googleErr) {
+        logger.warn('Échec synchro Google Wallet après scan (points):', googleErr.message);
       }
 
     } else if (loyaltyType === 'stamps') {
@@ -781,6 +789,14 @@ export const handleScan = async (req, res) => {
         }
       } catch (walletErr) {
         logger.error('Erreur mise à jour wallet après scan (stamps):', walletErr.message);
+      }
+
+      // 📱 Mise à jour Google Wallet (Stamps)
+      try {
+        await googleWalletGenerator.updateLoyaltyPoints(clientId, newStamps);
+        logger.info(`📱 Tampons Google Wallet synchronisés après scan pour client ${clientId}`);
+      } catch (googleErr) {
+        logger.warn('Échec synchro Google Wallet après scan (stamps):', googleErr.message);
       }
     }
 
@@ -1084,7 +1100,13 @@ export const getCardCustomization = async (req, res) => {
         background_pattern: 'solid',
         card_title: '',
         card_subtitle: '',
-        footer_text: ''
+        footer_text: '',
+        google_primary_color: '#1f2937',
+        google_text_color: '#ffffff',
+        google_logo_url: null,
+        google_hero_image_url: null,
+        google_card_title: '',
+        google_card_subtitle: ''
       });
     }
 
@@ -1113,7 +1135,16 @@ export const updateCardCustomization = async (req, res) => {
     back_fields_terms,
     back_fields_website,
     apple_organization_name,
-    apple_pass_description
+    apple_pass_description,
+    latitude,
+    longitude,
+    relevant_text,
+    google_primary_color,
+    google_text_color,
+    google_logo_url,
+    google_hero_image_url,
+    google_card_title,
+    google_card_subtitle
   } = req.body;
 
   try {
@@ -1134,27 +1165,21 @@ export const updateCardCustomization = async (req, res) => {
         `INSERT INTO card_customization 
          (id, company_id, loyalty_type, primary_color, text_color, accent_color, secondary_color,
           logo_url, icon_url, strip_image_url, logo_text, card_subtitle, card_title,
-          back_fields_info, back_fields_terms, back_fields_website, apple_organization_name, apple_pass_description)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          back_fields_info, back_fields_terms, back_fields_website, apple_organization_name, apple_pass_description,
+          latitude, longitude, relevant_text,
+          google_primary_color, google_text_color, google_logo_url,
+          google_hero_image_url, google_card_title, google_card_subtitle)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          customizationId,
-          empresaId,
-          loyaltyType,
-          primary_color || '#1f2937',
-          text_color || '#ffffff',
-          accent_color || '#3b82f6',
-          secondary_color || '#374151',
-          logo_url || null,
-          icon_url || null,
-          strip_image_url || null,
-          logo_text || null,
-          card_subtitle || '',
-          card_title || '',
-          back_fields_info || null,
-          back_fields_terms || null,
-          back_fields_website || null,
-          apple_organization_name || null,
-          apple_pass_description || null
+          customizationId, empresaId, loyaltyType, 
+          primary_color || '#1f2937', text_color || '#ffffff', accent_color || '#3b82f6', secondary_color || '#374151',
+          logo_url || null, icon_url || null, strip_image_url || null, logo_text || null, 
+          card_subtitle || '', card_title || '',
+          back_fields_info || null, back_fields_terms || null, back_fields_website || null, 
+          apple_organization_name || null, apple_pass_description || null,
+          latitude || null, longitude || null, relevant_text || null,
+          google_primary_color || '#1f2937', google_text_color || '#ffffff', google_logo_url || null,
+          google_hero_image_url || null, google_card_title || '', google_card_subtitle || ''
         ]
       );
     } else {
@@ -1166,6 +1191,9 @@ export const updateCardCustomization = async (req, res) => {
          card_subtitle = ?, card_title = ?, 
          back_fields_info = ?, back_fields_terms = ?, back_fields_website = ?,
          apple_organization_name = ?, apple_pass_description = ?,
+         latitude = ?, longitude = ?, relevant_text = ?,
+         google_primary_color = ?, google_text_color = ?, google_logo_url = ?,
+         google_hero_image_url = ?, google_card_title = ?, google_card_subtitle = ?,
          updated_at = NOW()
          WHERE company_id = ? AND loyalty_type = ?`,
         [
@@ -1184,10 +1212,55 @@ export const updateCardCustomization = async (req, res) => {
           back_fields_website || null,
           apple_organization_name || null,
           apple_pass_description || null,
+          latitude || null,
+          longitude || null,
+          relevant_text || null,
+          google_primary_color || '#1f2937',
+          google_text_color || '#ffffff',
+          google_logo_url || null,
+          google_hero_image_url || null,
+          google_card_title || '',
+          google_card_subtitle || '',
           empresaId,
           loyaltyType
         ]
       );
+    }
+
+    // 📱 Synchronisation en temps réel avec Google Wallet (Mise à jour de la Classe/Template)
+    try {
+      const [empresaRows] = await pool.query(
+        'SELECT nom FROM entreprises WHERE id = ?',
+        [empresaId]
+      );
+      
+      if (empresaRows.length > 0) {
+        // On récupère le type pour cibler la bonne classe Google
+        const loyaltyType = req.query.loyaltyType || 'points';
+        await googleWalletGenerator.createOrUpdateClass(empresaId, req.body, empresaRows[0].nom, loyaltyType);
+        logger.info(`📱 Google Loyalty Class (${loyaltyType}) synchronisée pour l'entreprise ${empresaId}`);
+      }
+    } catch (googleSyncErr) {
+      logger.error('Erreur synchro Google Wallet design:', { error: googleSyncErr.message });
+    }
+
+    // 📱 Synchronisation Apple Wallet (Push de mise à jour silencieuse à TOUS les clients)
+    try {
+      const [registrations] = await pool.query(
+        `SELECT DISTINCT r.push_token 
+         FROM apple_pass_registrations r
+         JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
+         WHERE w.company_id = ?`,
+        [empresaId]
+      );
+
+      if (registrations.length > 0) {
+        const tokens = registrations.map(r => r.push_token);
+        await apnService.sendBulkUpdateNotifications(tokens);
+        logger.info(`📱 Signal de rafraîchissement design envoyé à ${tokens.length} clients Apple`);
+      }
+    } catch (appleSyncErr) {
+      logger.error('Erreur push Apple Wallet design:', { error: appleSyncErr.message });
     }
 
     res.json({
@@ -1218,6 +1291,8 @@ export const uploadLogo = async (req, res) => {
       resizeOpts = { width: 29, height: 29, fit: 'cover' };
     } else if (imageType === 'strip') {
       resizeOpts = { width: 375, height: 123, fit: 'cover' };
+    } else if (imageType === 'hero') {
+      resizeOpts = { width: 1032, height: 336, fit: 'cover' };
     }
     
     await sharp(tempPath)
@@ -1227,9 +1302,8 @@ export const uploadLogo = async (req, res) => {
       
     fs.unlinkSync(tempPath);
 
-    let domain = req.get('host');
-    let protocol = domain && domain.includes('loca.lt') ? 'https' : req.protocol;
-    const fileUrl = `${protocol}://${domain}/uploads/${finalFilename}`;
+    // Return relative path instead of absolute URL to ensure portability
+    const fileUrl = `uploads/${finalFilename}`;
     
     res.json({ success: true, url: fileUrl });
   } catch (err) {

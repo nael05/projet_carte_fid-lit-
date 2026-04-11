@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api'
-import { Loader2, AlertTriangle, AlertCircle, CheckCircle2, ArrowLeft, Check } from 'lucide-react'
+import { Loader2, AlertTriangle, AlertCircle, CheckCircle2, ArrowLeft, Check, Smartphone } from 'lucide-react'
 import './Join.css'
 
 function Join() {
@@ -20,6 +20,7 @@ function Join() {
     email: '',
     phone: ''
   })
+  const [selectedWallet, setSelectedWallet] = useState('apple')
 
   // Charger les infos de l'entreprise
   useEffect(() => {
@@ -106,7 +107,7 @@ function Join() {
         prenom: formData.firstName,
         email: formData.email,
         telephone: formData.phone,
-        type_wallet: 'apple' // On enregistre pour Apple Wallet par défaut
+        type_wallet: selectedWallet
       })
 
       console.log('Registration response:', registrationResponse.data)
@@ -119,7 +120,7 @@ function Join() {
         return
       }
 
-      setSuccess('Inscription réussie ! Redirection vers Apple Wallet...')
+      setSuccess(`Inscription réussie ! Redirection vers ${selectedWallet === 'apple' ? 'Apple Wallet' : 'Google Wallet'}...`)
 
       // Redirection automatique via GET vers la route téléchargement natif
       setTimeout(() => {
@@ -244,6 +245,27 @@ function Join() {
               disabled={formSubmitting}
               required
             />
+          </div>
+
+          {/* Wallet Selector */}
+          <div className="wallet-selector-group">
+            <label className="wallet-selector-label">Quel type de smartphone utilisez-vous ?</label>
+            <div className="wallet-options">
+              <div 
+                className={`wallet-option ${selectedWallet === 'apple' ? 'active' : ''}`}
+                onClick={() => setSelectedWallet('apple')}
+              >
+                <Smartphone size={24} />
+                <span>iPhone</span>
+              </div>
+              <div 
+                className={`wallet-option ${selectedWallet === 'google' ? 'active' : ''}`}
+                onClick={() => setSelectedWallet('google')}
+              >
+                <Smartphone size={24} style={{ transform: 'rotate(180deg)' }} />
+                <span>Android</span>
+              </div>
+            </div>
           </div>
 
           <button

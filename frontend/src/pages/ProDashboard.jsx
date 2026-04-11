@@ -24,10 +24,6 @@ function ProDashboard() {
 
   const [copied, setCopied] = useState(false)
   const [clientSearch, setClientSearch] = useState('')
-  const [pushTitle, setPushTitle] = useState('')
-  const [pushMessage, setPushMessage] = useState('')
-  const [selectedClients, setSelectedClients] = useState([])
-  const [pushHistory, setPushHistory] = useState([])
   const [sendingPush, setSendingPush] = useState(false)
   const [loyaltyConfig, setLoyaltyConfig] = useState({
     points_for_reward: 10,
@@ -45,7 +41,6 @@ function ProDashboard() {
     } else {
       loadProInfo()
       loadClients()
-      loadPushHistory()
       loadLoyaltyConfig()
     }
   }, [token, navigate])
@@ -92,16 +87,25 @@ function ProDashboard() {
     if (scannerRef.current && !scannerRef.current.querySelector('iframe')) {
       const scanner = new Html5QrcodeScanner(
         'qr-scanner',
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { 
+          fps: 15, 
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          rememberLastUsedCamera: true,
+          showTorchButtonIfSupported: true
+        },
         false
       )
       scanner.render(
         async (decodedText) => {
-          handleScan(decodedText)
+          // On arrête le scanner dès qu'on a un résultat
           scanner.clear()
           setScannerActive(false)
+          handleScan(decodedText)
         },
-        (err) => console.warn(err)
+        (err) => {
+          // On ignore les erreurs de lecture continue (non détection)
+        }
       )
     }
   }
@@ -161,14 +165,6 @@ function ProDashboard() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const loadPushHistory = async () => {
-    try {
-      const resp = await api.get('/pro/push/history')
-      setPushHistory(resp.data)
-    } catch (err) {
-      console.error('Erreur chargement historique push:', err)
-    }
-  }
 
   const loadLoyaltyConfig = async () => {
     try {
@@ -193,47 +189,7 @@ function ProDashboard() {
     }
   }
 
-  const toggleClientSelection = (clientId) => {
-    setSelectedClients(prev => 
-      prev.includes(clientId) ? prev.filter(id => id !== clientId) : [...prev, clientId]
-    )
-  }
 
-  const selectAllClients = () => {
-    const notifiableClients = clients.filter(c => c.device_count > 0).map(c => c.id)
-    if (selectedClients.length === notifiableClients.length) {
-      setSelectedClients([])
-    } else {
-      setSelectedClients(notifiableClients)
-    }
-  }
-
-  const handleSendPush = async (e) => {
-    e.preventDefault()
-    if (!pushTitle || !pushMessage || selectedClients.length === 0) {
-      alert('Veuillez remplir tous les champs et sélectionner au moins un client.')
-      return
-    }
-
-    try {
-      setSendingPush(true)
-      const response = await api.post('/pro/push/send', {
-        clientIds: selectedClients,
-        title: pushTitle,
-        message: pushMessage
-      })
-
-      alert(response.data.message)
-      setPushTitle('')
-      setPushMessage('')
-      setSelectedClients([])
-      loadPushHistory()
-    } catch (err) {
-      alert(err.response?.data?.error || 'Erreur lors de l\'envoi')
-    } finally {
-      setSendingPush(false)
-    }
-  }
 
   const filteredClients = clients.filter(c => {
     if (!clientSearch) return true
@@ -244,7 +200,6 @@ function ProDashboard() {
   const tabs = [
     { id: 'scanner', icon: ScanLine, label: 'Scanner' },
     { id: 'clients', icon: Users, label: 'Clients' },
-    { id: 'notifications', icon: Bell, label: 'Push' },
     { id: 'register', icon: LinkIcon, label: 'Recruter' },
     { id: 'design', icon: Palette, label: 'Design' },
     { id: 'settings', icon: Settings, label: 'Réglages' }
@@ -411,111 +366,6 @@ function ProDashboard() {
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* ==================== NOTIFICATIONS ==================== */}
-          {activeTab === 'notifications' && (
-            <div className="pro-section">
-              <div className="pro-section-header">
-                <Bell size={22} />
-                <div>
-                  <h2>Notifications Push</h2>
-                  <p>Envoyez des messages personnalisés à vos clients</p>
-                </div>
-              </div>
-
-              <div className="pro-push-container">
-                {/* Formulaire d'envoi */}
-                <form className="pro-push-form" onSubmit={handleSendPush}>
-                  <div className="pro-form-group">
-                    <label>Sujet / Titre</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: Promotion de Printemps !" 
-                      value={pushTitle}
-                      onChange={e => setPushTitle(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="pro-form-group">
-                    <label>Message</label>
-                    <textarea 
-                      placeholder="Votre message ici..." 
-                      rows={4}
-                      value={pushMessage}
-                      onChange={e => setPushMessage(e.target.value)}
-                      required
-                    ></textarea>
-                  </div>
-
-                  <div className="pro-push-selection">
-                    <div className="pro-selection-header">
-                      <h3>Sélectionner les clients ({selectedClients.length})</h3>
-                      <button type="button" className="pro-btn-text" onClick={selectAllClients}>
-                        {selectedClients.length === clients.filter(c => c.device_count > 0).length && selectedClients.length > 0 ? 'Tout désélectionner' : 'Sél. clients prêts'}
-                      </button>
-                    </div>
-                    
-                    <div className="pro-push-info-banner">
-                      <AlertCircle size={14} />
-                      <span>Seuls les clients ayant ajouté leur carte au Wallet (icône <Smartphone size={12} style={{verticalAlign:'middle'}}/>) peuvent recevoir des messages.</span>
-                    </div>
-
-                    <div className="pro-push-client-grid">
-                      {clients.map(client => {
-                        const isNotifiable = client.device_count > 0;
-                        return (
-                          <div 
-                            key={client.id} 
-                            className={`pro-push-client-item ${selectedClients.includes(client.id) ? 'selected' : ''} ${!isNotifiable ? 'disabled' : ''}`}
-                            onClick={() => isNotifiable && toggleClientSelection(client.id)}
-                            title={!isNotifiable ? "Ce client n'a pas encore installé sa carte Wallet" : ""}
-                          >
-                            <div className="pro-checkbox">
-                              {selectedClients.includes(client.id) && <Check size={12} />}
-                            </div>
-                            <div className="pro-push-client-info-mini">
-                              <span className="pro-push-client-name">{client.prenom} {client.nom}</span>
-                              {isNotifiable && <Smartphone size={12} className="pro-notifiable-icon" title="Carte Wallet active" />}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <button type="submit" className="pro-btn-primary" disabled={sendingPush || selectedClients.length === 0}>
-                    {sendingPush ? <><Loader2 size={18} className="pro-spin" /> Envoi...</> : <><Send size={18} /> Envoyer la notification</>}
-                  </button>
-                </form>
-
-                {/* Historique */}
-                <div className="pro-push-history">
-                  <div className="pro-history-header">
-                    <History size={18} />
-                    <h3>Historique des envois</h3>
-                  </div>
-                  <div className="pro-history-list">
-                    {pushHistory.length === 0 ? (
-                      <p className="pro-empty-small">Aucun historique pour le moment.</p>
-                    ) : (
-                      pushHistory.map(item => (
-                        <div key={item.id} className="pro-history-item">
-                          <div className="pro-history-main">
-                            <h4>{item.title}</h4>
-                            <p>{item.message}</p>
-                          </div>
-                          <div className="pro-history-meta">
-                            <span>{new Date(item.created_at).toLocaleDateString()}</span>
-                            <span className="pro-badge-small">{item.recipients_count} dest.</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

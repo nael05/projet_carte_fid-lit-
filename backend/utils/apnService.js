@@ -157,6 +157,26 @@ export class APNService {
   }
 
   /**
+   * Envoie des notifications de mise à jour à plusieurs devices (Silencieux)
+   * @param {string[]} pushTokens - Liste des tokens
+   * @returns {Promise<Object>}
+   */
+  async sendBulkUpdateNotifications(pushTokens) {
+    if (!Array.isArray(pushTokens) || pushTokens.length === 0) {
+      return { sent: 0, failed: 0, results: [] };
+    }
+
+    const results = await Promise.all(
+      pushTokens.map((token) => this.sendUpdateNotification(token))
+    );
+
+    const sent = results.filter((r) => r.sent).length;
+    const failed = results.filter((r) => !r.sent).length;
+
+    return { sent, failed, results };
+  }
+
+  /**
    * Envoie des notifications d'alerte à plusieurs devices
    * @param {string[]} pushTokens - Liste des tokens
    * @param {string} title - Titre

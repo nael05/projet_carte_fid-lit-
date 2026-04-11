@@ -1,7 +1,0 @@
-Missing required image logo.png\nSyntaxError: Missing required image logo.png
-    at PassImages.validate (C:\wamp64\www\projet_carte_fid-lit-\backend\node_modules\@walletpass\pass-js\dist\lib\images.js:35:23)
-    at Pass.validate (C:\wamp64\www\projet_carte_fid-lit-\backend\node_modules\@walletpass\pass-js\dist\pass.js:40:21)
-    at Pass.asBuffer (C:\wamp64\www\projet_carte_fid-lit-\backend\node_modules\@walletpass\pass-js\dist\pass.js:50:14)
-    at Proxy.generateLoyaltyPass (file:///C:/wamp64/www/projet_carte_fid-lit-/backend/utils/passGenerator.js:173:37)
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
-    at async run (file:///C:/wamp64/www/projet_carte_fid-lit-/backend/test-wallet.js:24:20)

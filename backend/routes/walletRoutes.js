@@ -11,6 +11,7 @@ import express from 'express';
 import * as walletAppController from '../controllers/walletAppController.js';
 import * as appleWebserviceController from '../controllers/appleWebserviceController.js';
 import { verifyToken, isPro } from '../middlewares/auth.js';
+import { passGenerator } from '../utils/passGenerator.js';
 import db from '../db.js';
 import logger from '../utils/logger.js';
 
@@ -159,7 +160,6 @@ router.get('/app/wallet/admin/cards/:companyId', verifyToken, async (req, res) =
  * GET /api/app/wallet/test-download
  * TEMPORAIRE: Route non-authentifiée pour tester directement sur un iPhone
  */
-import passGenerator from '../utils/passGenerator.js';
 router.get('/app/wallet/test-download', async (req, res) => {
   try {
     const dummyClient = {

@@ -24,7 +24,7 @@ export class PassGenerator {
    * Charge la configuration une seule fois de manière paresseuse
    */
   _loadConfig() {
-    if (this.configLoaded) return;
+    if (this.configLoaded) return true;
 
     this.certPath = process.env.APPLE_CERT_PATH;
     this.keyPath = process.env.APPLE_KEY_PATH || this.certPath;
@@ -33,25 +33,31 @@ export class PassGenerator {
     this.passTypeId = process.env.APPLE_PASS_TYPE_ID;
     this.webserviceUrl = process.env.APPLE_WALLET_WEBSERVICE_URL;
 
+    // Sécurité: Si certPath est manquant, on ne marque pas comme chargé
+    if (!this.certPath) {
+      logger.error('❌ APPLE_CERT_PATH est manquant dans .env. La génération de pass va échouer.');
+      return false;
+    }
+
     // Convertir en chemins absolus si relatifs
-    if (this.certPath && !path.isAbsolute(this.certPath)) {
+    if (typeof this.certPath === 'string' && !path.isAbsolute(this.certPath)) {
       this.certPath = path.resolve(__dirname, '..', this.certPath);
     }
-    if (this.keyPath && !path.isAbsolute(this.keyPath)) {
+    if (typeof this.keyPath === 'string' && !path.isAbsolute(this.keyPath)) {
       this.keyPath = path.resolve(__dirname, '..', this.keyPath);
     }
 
     this.configLoaded = true;
-    logger.debug('⚙️ Configuration PassGenerator chargée');
+    logger.info('⚙️ Configuration PassGenerator chargée avec succès');
+    return true;
   }
 
   /**
    * Valide que tous les certificats et configs sont disponibles
    */
   validateConfiguration() {
-    this._loadConfig();
-    if (!this.certPath) {
-      throw new Error('❌ VARIABLE ENV MANQUANTE: APPLE_CERT_PATH');
+    if (!this._loadConfig()) {
+      throw new Error('❌ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant)');
     }
     
     if (!fs.existsSync(this.certPath)) {
@@ -69,18 +75,33 @@ export class PassGenerator {
   }
 
   /**
-   * Helper pour télécharger une image
+   * Helper pour obtenir le buffer d'une image (URL ou disque local)
    */
-  async fetchImageBuffer(url) {
-    if (!url) return null;
+  async fetchImageBuffer(urlOrPath) {
+    if (!urlOrPath) return null;
+    
     try {
-      const response = await axios.get(url, { 
-        responseType: 'arraybuffer',
-        timeout: 5000 // 5 seconds timeout
-      });
-      return Buffer.from(response.data, 'binary');
+      // 1. Si c'est un chemin local (relatif à la racine du backend)
+      if (urlOrPath.startsWith('uploads/')) {
+        const fullPath = path.resolve(__dirname, '..', urlOrPath);
+        if (fs.existsSync(fullPath)) {
+          return fs.readFileSync(fullPath);
+        }
+        logger.warn(`Image locale manquante sur le disque: ${fullPath}`);
+      }
+
+      // 2. Si c'est une URL HTTP
+      if (urlOrPath.startsWith('http')) {
+        const response = await axios.get(urlOrPath, { 
+          responseType: 'arraybuffer',
+          timeout: 5000 
+        });
+        return Buffer.from(response.data, 'binary');
+      }
+
+      return null;
     } catch (e) {
-      logger.warn(`Impossible de télécharger l'image: ${url} (${e.message})`);
+      logger.warn(`Impossible de charger l'image: ${urlOrPath} (${e.message})`);
       return null;
     }
   }
@@ -125,7 +146,7 @@ export class PassGenerator {
       template.setCertificate(cleanCert);
       template.setPrivateKey(cleanKey, this.certPassword || undefined);
 
-      // Ajouter les images si présentes
+      // Ajouter les images si présentes (supporte les nouveaux chemins relatifs)
       const logoBuffer = await this.fetchImageBuffer(customization?.apple_logo_url);
       if (logoBuffer) {
         await template.images.add("logo", logoBuffer);
@@ -147,28 +168,50 @@ export class PassGenerator {
       }
 
       const stripBuffer = await this.fetchImageBuffer(customization?.apple_strip_image_url);
-      if (stripBuffer) {
-        await template.images.add("strip", stripBuffer);
-      } else if (clientData.loyaltyType === 'stamps') {
-        // Générer dynamiquement une image strip avec les tampons visuels
+      
+      if (clientData.loyaltyType === 'stamps') {
+        // En mode TAMPONS, on génère TOUJOURS le strip dynamique
+        // mais on lui passe le stripBuffer (la photo) comme fond si elle existe
         const accentColor = customization?.apple_label_color || '#3b82f6';
         const bgColor = customization?.apple_background_color || '#1f2937';
         const stampStrip = await generateStampStrip(
-          clientData.balance || 0,
-          clientData.stampMaxCount || 10,
+          Number(clientData.balance || 0),
+          Number(clientData.stampMaxCount || 10),
           accentColor,
           '#4b5563',  // couleur des cercles vides
-          bgColor
+          bgColor,
+          stripBuffer // Le fond optionnel (SI null, fond uni utilisé)
         );
         if (stampStrip) {
           await template.images.add("strip", stampStrip);
         }
+      } else if (stripBuffer) {
+        // En mode POINTS, on utilise juste la photo si elle existe
+        await template.images.add("strip", stripBuffer);
       }
 
       // Création du passe individuel à partir du template
       const pass = template.createPass({
         serialNumber: String(serialNumber),
       });
+
+      // Géolocalisation (Premium Feature)
+      if (customization?.latitude && customization?.longitude) {
+        pass.locations.add({
+          latitude: Number(customization.latitude),
+          longitude: Number(customization.longitude),
+          relevantText: customization.relevant_text || 'Boutique à proximité'
+        });
+      }
+
+      // Titre de la récompense (Visible sur le devant)
+      if (clientData.rewardTitle) {
+        pass.headerFields.add({
+          key: 'reward',
+          label: 'OFFRE',
+          value: clientData.rewardTitle
+        });
+      }
 
       // Champs principal
       if (clientData.loyaltyType !== 'stamps') {

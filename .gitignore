@@ -1,4 +1,11 @@
-archive/
-
-archive/
-
+node_modules/
+.env
+backend/certs/*.json
+backend/certs/*.pem
+backend/certs/*.p8
+backend/uploads/
+backend/logs/*.log
+frontend/dist/
+frontend/node_modules/
+.DS_Store
+*.local

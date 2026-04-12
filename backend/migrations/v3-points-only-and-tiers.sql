@@ -23,9 +23,8 @@ CREATE TABLE IF NOT EXISTS reward_tiers (
   points_required INT NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (entreprise_id) REFERENCES entreprises(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 
 
 

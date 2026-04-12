@@ -330,7 +330,6 @@ export const downloadClientPass = async (req, res) => {
 
     const [clientRows] = await db.query(
       `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.type_wallet,
-               cs.stamps_collected,
                e.id as company_id, e.nom as company_name, e.loyalty_type,
                lc.points_for_reward, lc.stamps_for_reward,
                cc.logo_url as apple_logo_url,
@@ -354,7 +353,6 @@ export const downloadClientPass = async (req, res) => {
         LEFT JOIN entreprises e ON c.entreprise_id = e.id
         LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
         LEFT JOIN card_customization cc ON e.id = cc.company_id
-        LEFT JOIN customer_stamps cs ON cs.client_id = c.id
         WHERE c.id = ?`,
       [clientId]
     );
@@ -368,13 +366,13 @@ export const downloadClientPass = async (req, res) => {
     // SI GOOGLE WALLET -> Rediriger vers l'URL
     if (client.type_wallet === 'google') {
       try {
-        await googleWalletGenerator.createOrUpdateClass(client.company_id, client, client.company_name, client.loyalty_type);
-        const saveUrl = await googleWalletGenerator.createLoyaltyObject(client.id, client.company_id, `${client.prenom} ${client.nom}`, client.loyalty_type === 'stamps' ? (client.stamps_collected || 0) : (client.points || 0), client, client.loyalty_type);
+        await googleWalletGenerator.createOrUpdateClass(client.company_id, client, client.company_name, 'points');
+        const saveUrl = await googleWalletGenerator.createLoyaltyObject(client.id, client.company_id, `${client.prenom} ${client.nom}`, client.points || 0, client, 'points');
         
         // Assurer que la référence existe en base pour les mises à jour
         const [existing] = await db.query('SELECT id FROM wallet_cards WHERE client_id = ? AND pass_serial_number LIKE "GOOGLE_%"', [client.id]);
         if (existing.length === 0) {
-          const googleToken = `GOOGLE_${uuidv4()}`;
+          const googleToken = `GOOGLE_${randomUUID()}`;
           await db.query(
             `INSERT INTO wallet_cards (client_id, company_id, pass_serial_number, authentication_token, points_balance, stamps_balance, qr_code_value)
              VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -382,9 +380,8 @@ export const downloadClientPass = async (req, res) => {
                pass_serial_number = VALUES(pass_serial_number),
                authentication_token = VALUES(authentication_token),
                points_balance = VALUES(points_balance),
-               stamps_balance = VALUES(stamps_balance),
                last_updated = NOW()`,
-            [client.id, client.company_id, `GOOGLE_${client.id}`, googleToken, client.loyalty_type === 'stamps' ? 0 : (client.points || 0), client.loyalty_type === 'stamps' ? (client.stamps_collected || 0) : 0, client.id.toString()]
+            [client.id, client.company_id, `GOOGLE_${client.id}`, googleToken, client.points || 0, 0, client.id.toString()]
           );
         }
 
@@ -399,15 +396,20 @@ export const downloadClientPass = async (req, res) => {
     let serialNumber = client.id.toString().replace(/-/g, '').substring(0, 20).toUpperCase();
     let authenticationToken = 'TOKEN_' + client.id.toString().replace(/-/g, '') + 'APPLEWALLET';
 
+    const [tiers] = await db.query(
+      'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
+      [client.company_id]
+    );
+
     const passData = {
       clientId: client.id,
       firstName: client.prenom,
       lastName: client.nom,
       phoneNumber: client.telephone,
       companyName: client.company_name,
-      loyaltyType: client.loyalty_type || 'points',
-      balance: (client.loyalty_type === 'stamps') ? (client.stamps_collected || 0) : (client.points || 0),
-      stampMaxCount: 10,
+      loyaltyType: 'points',
+      balance: client.points || 0,
+      rewardTiers: tiers,
       createdAt: new Date(),
       qrCodeValue: client.id.toString(),
     };

@@ -602,12 +602,31 @@ export const handleScan = async (req, res) => {
       }
     }
 
+    // Détection du prochain palier (pour le message de motivation)
+    const [nextTiers] = await pool.query(
+      'SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required > ? ORDER BY points_required ASC LIMIT 1',
+      [empresaId, newPoints]
+    );
+    let nextTier = nextTiers.length > 0 ? nextTiers[0] : null;
+
+    if (!nextTier) {
+       // Check static reward if no next tier found
+       const [configRow] = await pool.query('SELECT points_for_reward, reward_title FROM loyalty_config WHERE entreprise_id = ?', [empresaId]);
+       if (configRow.length > 0 && configRow[0].points_for_reward > newPoints) {
+         nextTier = {
+           title: configRow[0].reward_title || 'Récompense',
+           points_required: configRow[0].points_for_reward
+         };
+       }
+    }
+
     res.json({ 
       success: true, 
       clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, 
       pointsAdded: pointsToAdd, 
       newPoints: newPoints,
-      availableRewards
+      availableRewards,
+      nextTier
     });
   } catch (err) {
     logger.error('Handle scan error for enterprise: ' + empresaId, { 

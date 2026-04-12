@@ -316,8 +316,8 @@ function ProDashboard() {
       {!loading && (
         <main className="pro-main" style={{ opacity: isSuspended ? 0.4 : 1, pointerEvents: isSuspended ? 'none' : 'auto' }}>
 
-          {/* Flash Messages */}
-          {lastScan && (
+          {/* Flash Messages (Legacy, to keep) */}
+          {lastScan && !lastScan.nextTier && !lastScan.availableRewards && (
             <div className={`pro-alert ${lastScan.success ? 'pro-alert-success' : 'pro-alert-error'}`}>
               {lastScan.success ? (
                 <div><strong>{lastScan.clientName}</strong><p>{lastScan.message}</p></div>
@@ -349,74 +349,163 @@ function ProDashboard() {
                 </div>
               </div>
 
-              {!inputModal && !redeemModal && (
+              {!inputModal && !redeemModal && !lastScan?.nextTier && (
                 <div className="pro-scanner-area">
                   {!scannerActive ? (
-                    <button className="pro-scan-btn" onClick={() => setScannerActive(true)}>
-                      <ScanLine size={28} />
-                      <span>Appuyez pour scanner</span>
+                    <button className="pro-scan-btn-premium" onClick={() => setScannerActive(true)}>
+                      <div className="scan-icon-container">
+                         <ScanLine size={48} />
+                         <div className="scan-pulse"></div>
+                      </div>
+                      <div className="scan-text">
+                        <span>Lancer le scan</span>
+                        <p>Visez le code QR du client</p>
+                      </div>
                     </button>
                   ) : (
-                    <>
-                      <div id="qr-scanner" ref={scannerRef} className="pro-qr-reader"></div>
-                      <button className="pro-btn-secondary" onClick={() => setScannerActive(false)}>
-                        <X size={16} /> Arrêter le scanner
-                      </button>
-                    </>
+                    <div className="scanner-full-overlay">
+                       <div className="scanner-header">
+                          <button onClick={() => setScannerActive(false)} className="scanner-close">
+                            <X size={24} />
+                          </button>
+                          <span>Scan en cours...</span>
+                       </div>
+                       <div className="scanner-view-container">
+                          <div id="qr-scanner" ref={scannerRef} className="pro-qr-reader-premium"></div>
+                          <div className="scanner-frame"></div>
+                       </div>
+                       <div className="scanner-footer">
+                          Positionnez le QR code dans le cadre
+                       </div>
+                    </div>
                   )}
                 </div>
               )}
 
-              {/* Modal de saisie manuelle (si Mode = manuel) */}
+              {/* Modal de saisie manuelle PREMIUM */}
               {inputModal && !redeemModal && (
                 <div className="scan-action-modal">
-                   <div className="pro-modal-box">
-                      <h3>Ajouter des points</h3>
-                      <p>Saisissez le nombre de points à ajouter pour ce client.</p>
-                      <input 
-                        type="number" 
-                        autoFocus
-                        value={pointsToAdd} 
-                        onChange={(e) => setPointsToAdd(e.target.value)} 
-                        placeholder="Ex: 25"
-                        style={{ padding: '12px', fontSize: '18px', width: '100%', border: '2px solid var(--border)', borderRadius: 'var(--radius)', marginTop: '15px' }}
-                      />
-                      <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                        <button className="pro-btn-secondary" style={{flex: 1}} onClick={() => setInputModal(null)}>Annuler</button>
-                        <button className="pro-btn-primary" style={{flex: 1}} onClick={() => handleScanSubmit(inputModal.clientId, pointsToAdd)}>Valider</button>
+                   <div className="pro-modal-box-premium">
+                      <div className="modal-header">
+                        <Users size={24} />
+                        <h3>Ajouter des points</h3>
+                      </div>
+                      
+                      <div className="points-input-section">
+                        <div className="points-current-val">{pointsToAdd || '0'}</div>
+                        <div className="points-shortcuts">
+                          {[5, 10, 20, 50].map(val => (
+                            <button key={val} type="button" onClick={() => setPointsToAdd(val.toString())}>+{val}</button>
+                          ))}
+                        </div>
+                        <input 
+                          type="number" 
+                          autoFocus
+                          value={pointsToAdd} 
+                          onChange={(e) => setPointsToAdd(e.target.value)} 
+                          placeholder="Ou saisissez ici..."
+                          className="manual-points-input"
+                        />
+                      </div>
+
+                      <div className="modal-footer-actions">
+                        <button className="pro-btn-secondary-premium" onClick={() => setInputModal(null)}>Annuler</button>
+                        <button className="pro-btn-primary-premium" onClick={() => handleScanSubmit(inputModal.clientId, pointsToAdd)}>
+                          Confirmer <Check size={18} />
+                        </button>
                       </div>
                    </div>
                 </div>
               )}
 
-              {/* Modal d'évaluation des récompenses atteintes */}
+              {/* Écran de succès et progression Reward */}
+              {lastScan?.success && (lastScan.nextTier || lastScan.availableRewards) && (
+                <div className="scan-action-modal">
+                   <div className="pro-modal-box-premium success-view">
+                      <div className="success-check-anim">
+                        <div className="circle-check">
+                          <Check size={40} />
+                        </div>
+                      </div>
+
+                      <h2 className="success-title">Points Ajoutés !</h2>
+                      <p className="success-subtitle"><strong>{lastScan.clientName}</strong> dispose maintenant de <strong>{lastScan.newPoints} pts</strong></p>
+
+                      {/* Barre de progression vers le prochain palier */}
+                      {lastScan.nextTier && (
+                        <div className="reward-progress-card">
+                           <div className="progress-info">
+                              <span>Prochain cadeau : <strong>{lastScan.nextTier.title}</strong></span>
+                              <span className="pts-remaining">Encore <strong>{lastScan.nextTier.points_required - lastScan.newPoints}</strong> pts</span>
+                           </div>
+                           <div className="progress-bar-bg">
+                              <div 
+                                className="progress-bar-fill" 
+                                style={{ width: `${Math.min(100, (lastScan.newPoints / lastScan.nextTier.points_required) * 100)}%` }}
+                              ></div>
+                           </div>
+                        </div>
+                      )}
+
+                      {/* Bouton pour voir les récompenses si dispo */}
+                      {(lastScan.availableRewards?.length > 0) ? (
+                        <div className="unlocked-section">
+                           <div className="unlocked-header">
+                              <Award size={18} />
+                              <span>{lastScan.availableRewards.length} Cadeau(x) prêt(s)</span>
+                           </div>
+                           <button className="pro-btn-reward-claim" onClick={() => {
+                              setRedeemModal({
+                                clientId: lastScan.clientId,
+                                clientName: lastScan.clientName,
+                                rewards: lastScan.availableRewards
+                              });
+                           }}>
+                             Utiliser un cadeau maintenant
+                           </button>
+                        </div>
+                      ) : (
+                        <button className="pro-btn-finish" onClick={() => setLastScan(null)}>
+                          Terminer
+                        </button>
+                      )}
+                      
+                      {!lastScan.availableRewards?.length && (
+                        <button className="close-final-btn" onClick={() => setLastScan(null)}><X size={20} /></button>
+                      )}
+                   </div>
+                </div>
+              )}
+
+              {/* Modal de sélection cadeau PREMIUM */}
               {redeemModal && (
                 <div className="scan-action-modal">
-                   <div className="pro-modal-box" style={{ borderColor: 'var(--accent)', borderWidth: '3px', borderStyle: 'solid' }}>
-                      <Award size={48} color="var(--accent)" style={{ margin: '0 auto 15px', display: 'block' }} />
-                      <h3 style={{ textAlign: 'center' }}>Palier Atteint !</h3>
-                      <p style={{ textAlign: 'center', marginBottom: '20px' }}><strong>{redeemModal.clientName}</strong> peut bénéficier de :</p>
+                   <div className="pro-modal-box-premium reward-selection">
+                      <div className="modal-header">
+                        <Award size={24} color="var(--accent)" />
+                        <h3>Choisir un cadeau</h3>
+                      </div>
                       
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div className="reward-scroll-list">
                         {redeemModal.rewards.map(r => (
-                          <button 
-                            key={r.id} 
-                            className="pro-btn-primary" 
-                            style={{ background: 'var(--accent)', display: 'flex', justifyContent: 'space-between' }}
-                            onClick={() => handleRedeem(r.id)}
-                          >
-                            <span>{r.title}</span>
-                            <span style={{ opacity: 0.8, fontSize: '12px' }}>-{r.points_required} pts</span>
-                          </button>
+                          <div key={r.id} className="reward-item-premium">
+                             <div className="reward-item-info">
+                                <strong>{r.title}</strong>
+                                <span>Coût : {r.points_required} pts</span>
+                             </div>
+                             <button className="claim-item-btn" onClick={() => handleRedeem(r.id)}>
+                               Valider
+                             </button>
+                          </div>
                         ))}
                       </div>
 
                       <button 
-                        className="pro-btn-secondary" 
-                        style={{ width: '100%', marginTop: '20px' }} 
-                        onClick={() => setRedeemModal(null)}
+                        className="pro-btn-secondary-premium" 
+                        style={{ width: '100%', marginTop: '15px' }} 
+                        onClick={() => { setRedeemModal(null); setLastScan(null); }}
                       >
-                        Conserver les points pour plus tard
+                         Plus tard
                       </button>
                    </div>
                 </div>

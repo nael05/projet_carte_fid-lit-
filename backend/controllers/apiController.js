@@ -340,14 +340,14 @@ export const changePassword = async (req, res) => {
   }
 };
 
+
 export const getProInfo = async (req, res) => {
   const empresaId = req.user.id;
 
   try {
     const [rows] = await pool.query(
-      `SELECT e.id, e.nom, e.email, e.recompense_definition, e.loyalty_type,
+      `SELECT e.id, e.nom, e.email, e.recompense_definition,
               lc.points_per_purchase, lc.points_for_reward,
-              lc.stamps_count, lc. lc.
               lc.reward_title, lc.reward_description,
               lc.push_notifications_enabled
        FROM entreprises e
@@ -361,14 +361,10 @@ export const getProInfo = async (req, res) => {
     }
 
     const proInfo = rows[0];
-    // S'assurer que les valeurs numériques sont bien des nombres
     const safeProInfo = {
       ...proInfo,
       points_per_purchase: Number(proInfo.points_per_purchase || 0),
-      points_for_reward: Number(proInfo.points_for_reward || 10),
-      stamps_count: Number(proInfo.stamps_count || 10),
-      stamps_per_purchase: Number(proInfo.stamps_per_purchase || 1),
-      stamps_for_reward: Number(proInfo.stamps_for_reward || 10),
+      points_for_reward: Number(proInfo.points_for_reward || 0),
       push_notifications_enabled: Boolean(proInfo.push_notifications_enabled)
     };
 
@@ -507,7 +503,8 @@ export const getClients = async (req, res) => {
 };
 
 export const handleScan = async (req, res) => {
-  const { clientId, pointsToAdd: bodyPoints } = req.body;
+  const { clientId, points_to_add } = req.body;
+  const bodyPoints = typeof points_to_add === 'number' ? points_to_add : Number(points_to_add);
   const empresaId = req.user.id;
 
   if (!clientId) {
@@ -579,107 +576,6 @@ export const handleScan = async (req, res) => {
   }
 };
 
-export const adjustPoints = async (req, res) => {
-  const { clientId } = req.params;
-  const { adjustment } = req.body;
-  const empresaId = req.user.id;
-
-  if (typeof adjustment !== 'number') {
-    return res.status(400).json({ error: 'Ajustement numérique requis' });
-  }
-
-  try {
-    const [clientRows] = await pool.query(
-      'SELECT points, nom FROM clients WHERE id = ? AND entreprise_id = ?',
-      [clientId, empresaId]
-    );
-
-    if (clientRows.length === 0) {
-      return res.status(404).json({ error: 'Client non trouvé ou non autorisé' });
-    }
-
-    const { points } = clientRows[0];
-    const newPoints = Math.max(0, Number(points || 0) + Number(adjustment));
-
-    await pool.query(
-      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
-      [newPoints, clientId, empresaId]
-    );
-
-    try {
-      const [walletRows] = await pool.query(
-        'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
-        [clientId, empresaId]
-      );
-      if (walletRows.length > 0) {
-        const wallet = walletRows[0];
-        await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
-        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
-        if (regs.length > 0) {
-          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
-        }
-      }
-      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
-    } catch (e) {
-      console.warn('Wallet sync failed', e.message);
-    }
-
-    res.json({ success: true, newPoints });
-  } catch (err) {
-    console.error('Adjust points error', err);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
-
-export const updateReward = async (req, res) => {
-  const { recompense_definition } = req.body;
-  const empresaId = req.user.id;
-
-  if (!recompense_definition) {
-    return res.status(400).json({ error: 'Texte de récompense requis' });
-  }
-
-  try {
-    await pool.query(
-      'UPDATE entreprises SET recompense_definition = ? WHERE id = ?',
-      [recompense_definition, empresaId]
-    );
-
-    res.json({ success: true, message: 'Récompense mise à jour' });
-  } catch (err) {
-    logger.error('Update reward error', { error: err.message });
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
-
-// ===== PUBLIC CLIENT ROUTES =====
-
-export const getCompanyInfo = async (req, res) => {
-  const { companyId } = req.params;
-
-  try {
-    const [rows] = await pool.query(
-      `SELECT 
-        e.id, 
-        e.nom, 
-        e.recompense_definition,
-        COALESCE(lc.loyalty_type, 'points') as loyalty_type
-       FROM entreprises e
-       LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
-       WHERE e.id = ? AND e.statut = "actif"`,
-      [companyId]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Entreprise non trouvée ou inactive' });
-    }
-
-    res.json(rows[0]);
-  } catch (err) {
-    logger.error('Get company info error', { error: err.message });
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
 
 export const registerClientAndGeneratePass = async (req, res) => {
   const { entrepriseId } = req.params;
@@ -694,12 +590,8 @@ export const registerClientAndGeneratePass = async (req, res) => {
   }
 
   try {
-    // Vérifier que l'entreprise existe, récupérer son info ET le type de loyauté
     const [companyRows] = await pool.query(
-      `SELECT e.id, e.nom, COALESCE(lc.loyalty_type, 'points') as loyalty_type
-       FROM entreprises e
-       LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
-       WHERE e.id = ? AND e.statut = "actif"`,
+      'SELECT id, nom FROM entreprises WHERE id = ? AND statut = "actif"',
       [entrepriseId]
     );
 
@@ -707,12 +599,7 @@ export const registerClientAndGeneratePass = async (req, res) => {
       return res.status(404).json({ error: 'Entreprise non trouvée ou inactive' });
     }
 
-    const companyName = companyRows[0].nom;
-    const loyaltyType = companyRows[0].loyalty_type || 'points';
-
-    // Créer le client avec un UUID unique
     const clientId = randomUUID();
-
     await pool.query(
       'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, points, type_wallet) VALUES (?, ?, ?, ?, ?, 0, ?)',
       [clientId, entrepriseId, nom, prenom, telephone, type_wallet]
@@ -720,20 +607,6 @@ export const registerClientAndGeneratePass = async (req, res) => {
     
     logger.info(`✅ Client créé: ${clientId} - ${prenom} ${nom}`);
 
-    // Charger la customization de la carte pour ce type de loyauté
-    const [customization] = await pool.query(
-      'SELECT * FROM card_customization WHERE company_id = ? AND loyalty_type = ?',
-      [entrepriseId, loyaltyType]
-    );
-
-    const cardConfig = customization.length > 0 ? customization[0] : {
-      card_background_color: '#1f2937',
-      card_text_color: '#ffffff',
-      card_accent_color: '#3b82f6',
-      card_logo_url: null
-    };
-
-    // Wallet generation a été refactorisé dans les nouveaux controllers (walletAppController)
     res.status(201).json({
       success: true,
       clientId,
@@ -745,6 +618,7 @@ export const registerClientAndGeneratePass = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
+
 
 // ===== CARD CUSTOMIZATION CONTROLLERS =====
 

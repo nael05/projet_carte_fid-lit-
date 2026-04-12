@@ -3,102 +3,74 @@ import fs from 'fs';
 const filePath = 'controllers/apiController.js';
 let content = fs.readFileSync(filePath, 'utf8');
 
-// The file is currently corrupted with two handleScan logical flows merged.
-// I will find the first export const handleScan and the first export const adjustPoints
-// and replace everything in between with a single, clean handleScan function.
+// Identifier le bloc corrompu
+// Le bloc commence à la fin de adjustPoints et se termine à la fin de registerClientAndGeneratePass
 
-const startMarker = "export const handleScan = async (req, res) => {";
-const endMarker = "export const adjustPoints = async (req, res) => {";
+const startMarker = 'export const adjustPoints';
+const endMarker = "note: 'Pour ajouter au wallet, utiliser POST /api/app/wallet/create'\n    });\n  } catch (err) {\n    logger.error('Register client error', { error: err.message });\n    res.status(500).json({ error: 'Erreur serveur' });\n  }\n};";
 
-const startIndex = content.indexOf(startMarker);
-const endIndex = content.indexOf(endMarker);
+// On va plutôt chercher la fonction entière registerClientAndGeneratePass pour la réécrire proprement
+const registerFuncStartIdx = content.indexOf("export const registerClientAndGeneratePass");
+// Si non trouvé, c'est qu'il a été effacé par erreur. 
+// On va chercher la ligne 824-825 approximativement ou le texte orphelin.
 
-if (startIndex !== -1 && endIndex !== -1) {
-    const cleanHandleScan = `export const handleScan = async (req, res) => {
-  const { clientId, pointsToAdd: bodyPoints } = req.body;
-  const empresaId = req.user.id;
+const orphanText = "'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, points, type_wallet) VALUES (?, ?, ?, ?, ?, 0, ?)'";
+const orphanIdx = content.indexOf(orphanText);
 
-  if (!clientId) {
-    return res.status(400).json({ error: 'clientId requis' });
+if (orphanIdx !== -1) {
+    const beforeOrphan = content.substring(0, content.lastIndexOf("export const", orphanIdx));
+    const afterOrphan = content.substring(content.indexOf("};", orphanIdx + orphanText.length) + 2);
+    
+    // On va aussi chercher où s'arrête le bloc corrompu (la fin de la fonction catch)
+    const endOfRegister = content.indexOf("};", content.indexOf("logger.error('Register client error'", orphanIdx));
+    const definitiveAfter = content.substring(endOfRegister + 2);
+
+    const cleanRegister = `
+export const registerClientAndGeneratePass = async (req, res) => {
+  const { entrepriseId } = req.params;
+  const { nom, prenom, telephone, type_wallet } = req.body;
+
+  if (!nom || !prenom || !telephone || !type_wallet) {
+    return res.status(400).json({ error: 'Tous les champs sont requis' });
+  }
+
+  if (!['apple', 'google'].includes(type_wallet)) {
+    return res.status(400).json({ error: 'Type de wallet invalide' });
   }
 
   try {
-    const [clientRows] = await pool.query(
-      'SELECT nom, prenom, points FROM clients WHERE id = ? AND entreprise_id = ?',
-      [clientId, empresaId]
+    const [companyRows] = await pool.query(
+      'SELECT id, nom FROM entreprises WHERE id = ? AND statut = "actif"',
+      [entrepriseId]
     );
 
-    if (clientRows.length === 0) {
-      return res.status(404).json({ error: 'Client non trouvé ou non autorisé' });
+    if (companyRows.length === 0) {
+      return res.status(404).json({ error: 'Entreprise non trouvée ou inactive' });
     }
 
-    const [config] = await pool.query(
-      'SELECT points_adding_mode, points_per_purchase, reward_title FROM loyalty_config WHERE entreprise_id = ?',
-      [empresaId]
-    );
-
-    if (config.length === 0) {
-      return res.status(400).json({ error: 'Configuration de fidélité non trouvée' });
-    }
-
-    const loyaltyConfig = config[0];
-    let pointsToAdd = loyaltyConfig.points_per_purchase || 10;
-    if (loyaltyConfig.points_adding_mode === 'manual' && typeof bodyPoints === 'number') {
-      pointsToAdd = bodyPoints;
-    }
-
-    const currentPoints = clientRows[0].points || 0;
-    const newPoints = currentPoints + pointsToAdd;
-
+    const clientId = randomUUID();
     await pool.query(
-      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
-      [newPoints, clientId, empresaId]
+      'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, points, type_wallet) VALUES (?, ?, ?, ?, ?, 0, ?)',
+      [clientId, entrepriseId, nom, prenom, telephone, type_wallet]
     );
+    
+    logger.info(\`✅ Client créé: \${clientId} - \${prenom} \${nom}\`);
 
-    const transactionId = randomUUID();
-    await pool.query(
-      "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
-      [transactionId, clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
-    );
-
-    // Sync Wallet
-    try {
-      const [walletRows] = await pool.query(
-        'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
-        [clientId, empresaId]
-      );
-      if (walletRows.length > 0) {
-        const wallet = walletRows[0];
-        await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
-        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
-        if (regs.length > 0) {
-          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
-        }
-      }
-      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
-    } catch (e) { 
-      console.warn('Wallet sync failed', e.message); 
-    }
-
-    res.json({ success: true, clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, pointsAdded: pointsToAdd, newPoints: newPoints });
+    res.status(201).json({
+      success: true,
+      clientId,
+      message: 'Client créé avec succès',
+      note: 'Pour ajouter au wallet, utiliser POST /api/app/wallet/create'
+    });
   } catch (err) {
-    console.error('Handle scan error', err);
+    logger.error('Register client error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
-
 `;
 
-    const before = content.substring(0, startIndex);
-    const after = content.substring(endIndex);
-    
-    content = before + cleanHandleScan + after;
-    
-    // Final check for the adjustPoints function itself, ensure it's also clean
-    // (It should have been refactored by the previous successful run)
-    
-    fs.writeFileSync(filePath, content);
-    console.log('Corruption fixed and handleScan refactored.');
+    fs.writeFileSync(filePath, beforeOrphan + cleanRegister + definitiveAfter);
+    console.log('Fixed registerClientAndGeneratePass successfully.');
 } else {
-    console.error('Markers not found', { startIndex, endIndex });
+    console.log('Orphan text not found.');
 }

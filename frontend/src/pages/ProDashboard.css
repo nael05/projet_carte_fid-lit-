@@ -391,7 +391,6 @@
   color: #ef4444;
   background: rgba(239, 68, 68, 0.05);
 }
-}
 .pro-action-btn:hover { background: var(--bg-subtle); color: var(--text-primary); }
 .pro-action-btn:active { background: var(--bg-hover); }
 .pro-action-btn.pro-action-add {

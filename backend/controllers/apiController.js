@@ -578,11 +578,36 @@ export const handleScan = async (req, res) => {
       console.warn('Wallet sync failed', e.message); 
     }
 
+    // Détection des récompenses disponibles
+    let availableRewards = [];
+    const [tiers] = await pool.query(
+      'SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required <= ? ORDER BY points_required ASC', 
+      [empresaId, newPoints]
+    );
+
+    if (tiers.length > 0) {
+      availableRewards = tiers;
+    } else {
+      // Fallback sur la récompense statique si configurée
+      const [configRow] = await pool.query(
+        'SELECT points_for_reward, reward_title FROM loyalty_config WHERE entreprise_id = ?',
+        [empresaId]
+      );
+      if (configRow.length > 0 && configRow[0].points_for_reward > 0 && newPoints >= configRow[0].points_for_reward) {
+        availableRewards = [{
+          id: 'static',
+          title: configRow[0].reward_title || 'Récompense',
+          points_required: configRow[0].points_for_reward
+        }];
+      }
+    }
+
     res.json({ 
       success: true, 
       clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, 
       pointsAdded: pointsToAdd, 
-      newPoints: newPoints 
+      newPoints: newPoints,
+      availableRewards
     });
   } catch (err) {
     logger.error('Handle scan error for enterprise: ' + empresaId, { 

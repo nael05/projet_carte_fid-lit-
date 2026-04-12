@@ -14,6 +14,29 @@ async function sync() {
       console.log('✅ La colonne updated_at existe déjà.');
     }
 
+    // Vérifier si la table transaction_history existe
+    console.log('Vérification de la table transaction_history...');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transaction_history (
+        id varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+        client_id varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+        entreprise_id varchar(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+        type enum('add_points','redeem_points','add_stamps','redeem_stamps','reward_unlocked') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+        points_change int DEFAULT NULL,
+        stamps_change int DEFAULT NULL,
+        description varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+        created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_client (client_id),
+        KEY idx_entreprise (entreprise_id),
+        KEY idx_type (type),
+        KEY idx_created (created_at),
+        CONSTRAINT transaction_history_ibfk_1 FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE CASCADE,
+        CONSTRAINT transaction_history_ibfk_2 FOREIGN KEY (entreprise_id) REFERENCES entreprises (id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ Table transaction_history prête.');
+
   } catch (err) {
     console.error('❌ Erreur lors de la synchronisation:', err.message);
   } finally {

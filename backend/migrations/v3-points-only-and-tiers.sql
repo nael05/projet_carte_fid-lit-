@@ -1,6 +1,6 @@
--- Passage au système 100% Points et Paliers Dynamiques
 
--- 1. Ajout des colonnes de mode d'ajout de points dans loyalty_config
+
+
 SET @dbname = DATABASE();
 SET @tablename = 'loyalty_config';
 SET @columnname = 'points_adding_mode';
@@ -16,7 +16,7 @@ PREPARE stmt FROM @preparedStatement;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
--- 2. Création de la table des paliers de récompenses (Reward Tiers)
+
 CREATE TABLE IF NOT EXISTS reward_tiers (
   id VARCHAR(36) PRIMARY KEY,
   entreprise_id VARCHAR(36) NOT NULL,
@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS reward_tiers (
   FOREIGN KEY (entreprise_id) REFERENCES entreprises(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Migration des récompenses uniques existantes vers la nouvelle table
--- Pour éviter les doublons on insère seulement s'il n'y a pas déjà de tiers pour l'entreprise
+
+
 INSERT INTO reward_tiers (id, entreprise_id, points_required, title, description)
 SELECT UUID(), entreprise_id, 
        COALESCE(points_for_reward, 100), 
@@ -38,7 +38,7 @@ FROM loyalty_config
 WHERE entreprise_id NOT IN (SELECT DISTINCT entreprise_id FROM reward_tiers)
   AND (reward_title IS NOT NULL OR reward_description IS NOT NULL);
 
--- 4. Nettoyage des tables et colonnes liées aux tampons (On DROP pour s'assurer que le code n'y touche plus)
+
 DROP TABLE IF EXISTS customer_stamps;
 
--- Cols keep backward compat
+

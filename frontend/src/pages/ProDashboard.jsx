@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Html5QrcodeScanner } from 'html5-qrcode'
+import { Html5Qrcode } from 'html5-qrcode'
 import { QRCodeSVG } from 'qrcode.react'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
@@ -42,6 +42,7 @@ function ProDashboard() {
   const [savingSettings, setSavingSettings] = useState(false)
   const navigate = useNavigate()
   const scannerRef = useRef(null)
+  const scannerInstance = useRef(null)
   const { token, isSuspended, logout } = useAuth()
 
   useEffect(() => {

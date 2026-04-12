@@ -37,11 +37,15 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('companyId')
       localStorage.removeItem('companyName')
       
-      // Rediriger vers login approprié
-      if (userRole === 'admin') {
-        window.location.href = '/master-admin-secret'
-      } else {
-        window.location.href = '/pro/login'
+      // Rediriger vers login approprié (SAUF si on est déjà en train d'essayer de se connecter)
+      const isLoginRequest = error.config.url.includes('login')
+      
+      if (!isLoginRequest) {
+        if (userRole === 'admin') {
+          window.location.href = '/master-admin-secret'
+        } else {
+          window.location.href = '/pro/login'
+        }
       }
     }
     return Promise.reject(error)

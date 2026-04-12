@@ -497,8 +497,11 @@ export const getClients = async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    logger.error('Get clients error', { error: err.message });
-    res.status(500).json({ error: 'Erreur serveur' });
+    logger.error('Get clients error for enterprise: ' + empresaId, { 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erreur lors du chargement de la liste des clients' });
   }
 };
 
@@ -531,12 +534,18 @@ export const handleScan = async (req, res) => {
     }
 
     const loyaltyConfig = config[0];
-    let pointsToAdd = loyaltyConfig.points_per_purchase || 10;
-    if (loyaltyConfig.points_adding_mode === 'manual' && typeof bodyPoints === 'number') {
-      pointsToAdd = bodyPoints;
+    
+    // Sécurisation de l'ajout de points (NaN protection)
+    let pointsToAdd = Number(loyaltyConfig.points_per_purchase) || 10;
+    
+    if (loyaltyConfig.points_adding_mode === 'manual') {
+      const parsedBodyPoints = Number(points_to_add);
+      if (!isNaN(parsedBodyPoints)) {
+        pointsToAdd = parsedBodyPoints;
+      }
     }
 
-    const currentPoints = clientRows[0].points || 0;
+    const currentPoints = Number(clientRows[0].points) || 0;
     const newPoints = currentPoints + pointsToAdd;
 
     await pool.query(
@@ -569,10 +578,19 @@ export const handleScan = async (req, res) => {
       console.warn('Wallet sync failed', e.message); 
     }
 
-    res.json({ success: true, clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, pointsAdded: pointsToAdd, newPoints: newPoints });
+    res.json({ 
+      success: true, 
+      clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, 
+      pointsAdded: pointsToAdd, 
+      newPoints: newPoints 
+    });
   } catch (err) {
-    console.error('Handle scan error', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    logger.error('Handle scan error for enterprise: ' + empresaId, { 
+      clientId, 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erreur technique lors du scan' });
   }
 };
 

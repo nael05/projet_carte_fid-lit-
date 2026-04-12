@@ -41,12 +41,4 @@ WHERE entreprise_id NOT IN (SELECT DISTINCT entreprise_id FROM reward_tiers)
 -- 4. Nettoyage des tables et colonnes liées aux tampons (On DROP pour s'assurer que le code n'y touche plus)
 DROP TABLE IF EXISTS customer_stamps;
 
-ALTER TABLE entreprises DROP COLUMN IF EXISTS loyalty_type;
-
-ALTER TABLE loyalty_config DROP COLUMN IF EXISTS loyalty_type;
-ALTER TABLE loyalty_config DROP COLUMN IF EXISTS stamps_count;
-ALTER TABLE loyalty_config DROP COLUMN IF EXISTS stamps_per_purchase;
-ALTER TABLE loyalty_config DROP COLUMN IF EXISTS stamps_for_reward;
-ALTER TABLE loyalty_config DROP COLUMN IF EXISTS reward_title;
-ALTER TABLE loyalty_config DROP COLUMN IF EXISTS reward_description;
-ALTER TABLE loyalty_config DROP COLUMN IF EXISTS points_for_reward;
+-- Cols keep backward compat

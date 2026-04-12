@@ -4,6 +4,7 @@
  * Utilise le package 'apn' officiel
  */
 
+import 'dotenv/config';
 import apn from 'apn';
 import logger from './logger.js';
 

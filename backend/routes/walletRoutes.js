@@ -17,6 +17,12 @@ import logger from '../utils/logger.js';
 
 const router = express.Router();
 
+// Diagnostic middleware pour les routes Apple (debug 404)
+router.use('/wallet/v1/*', (req, res, next) => {
+  logger.info(`🔍 [APPLE WALLET REQ] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // ============================================================================
 // GROUPE 1: API FRONTEND (utilisée par notre application)
 // Prefix: /app/wallet

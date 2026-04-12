@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import winston from 'winston';
 
 const isDev = process.env.NODE_ENV !== 'production';

@@ -4,6 +4,7 @@
  * Utilise @walletpass/pass-js (supporte P12 nativement)
  */
 
+import 'dotenv/config';
 import { Template } from '@walletpass/pass-js';
 import fs from 'fs';
 import path from 'path';
@@ -32,6 +33,11 @@ export class PassGenerator {
     this.teamId = process.env.APPLE_TEAM_ID;
     this.passTypeId = process.env.APPLE_PASS_TYPE_ID;
     this.webserviceUrl = process.env.APPLE_WALLET_WEBSERVICE_URL;
+    
+    // Normaliser l'URL (enlever le slash final s'il existe pour éviter les 404)
+    if (this.webserviceUrl && this.webserviceUrl.endsWith('/')) {
+      this.webserviceUrl = this.webserviceUrl.slice(0, -1);
+    }
 
     // Sécurité: Si certPath est manquant, on ne marque pas comme chargé
     if (!this.certPath) {

@@ -391,14 +391,7 @@
   color: #ef4444;
   background: rgba(239, 68, 68, 0.05);
 }
-  border: none;
-  border-right: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: var(--transition);
-  font-family: var(--font-family);
 }
-.pro-action-btn:last-child { border-right: none; }
 .pro-action-btn:hover { background: var(--bg-subtle); color: var(--text-primary); }
 .pro-action-btn:active { background: var(--bg-hover); }
 .pro-action-btn.pro-action-add {

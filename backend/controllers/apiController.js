@@ -495,6 +495,7 @@ export const getClients = async (req, res) => {
        ORDER BY c.created_at DESC`,
       [empresaId]
     );
+    logger.info(`📋 Fetching ${rows.length} clients for enterprise ${empresaId}. First client email: ${rows[0]?.email}`);
     res.json(rows);
   } catch (err) {
     logger.error('Get clients error for enterprise: ' + empresaId, { 

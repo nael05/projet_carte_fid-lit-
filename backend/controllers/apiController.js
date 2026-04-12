@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid/dist/index.js';
+import { randomUUID } from 'crypto';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
@@ -83,7 +83,7 @@ export const createCompany = async (req, res) => {
   }
 
   try {
-    const companyId = uuidv4();
+    const companyId = randomUUID();
     const tempPassword = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
@@ -93,7 +93,7 @@ export const createCompany = async (req, res) => {
     );
 
     // Créer la configuration de fidélité initiale
-    const configId = uuidv4();
+    const configId = randomUUID();
     await pool.query(
       `INSERT INTO loyalty_config (
         id, entreprise_id, loyalty_type, reward_title, reward_description
@@ -581,7 +581,7 @@ export const handleScan = async (req, res) => {
       );
 
       // Enregistrer la transaction
-      const transactionId = uuidv4();
+      const transactionId = randomUUID();
       await pool.query(
         `INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description)
          VALUES (?, ?, ?, 'add_points', ?, ?)`,
@@ -590,7 +590,7 @@ export const handleScan = async (req, res) => {
 
       if (rewardReached) {
         // Enregistrer la transaction de récompense
-        const rewardTransactionId = uuidv4();
+        const rewardTransactionId = randomUUID();
         await pool.query(
           `INSERT INTO transaction_history (id, client_id, entreprise_id, type, description)
            VALUES (?, ?, ?, 'reward_unlocked', ?)`,
@@ -679,7 +679,7 @@ export const handleScan = async (req, res) => {
 
       if (stampRows.length === 0) {
         // Créer l'entrée des tampons
-        const stampId = uuidv4();
+        const stampId = randomUUID();
         await pool.query(
           'INSERT INTO customer_stamps (id, client_id, entreprise_id, stamps_collected) VALUES (?, ?, ?, ?)',
           [stampId, clientId, empresaId, stampsToAdd]
@@ -693,7 +693,7 @@ export const handleScan = async (req, res) => {
       }
 
       // Enregistrer la transaction
-      const transactionId = uuidv4();
+      const transactionId = randomUUID();
       await pool.query(
         `INSERT INTO transaction_history (id, client_id, entreprise_id, type, stamps_change, description)
          VALUES (?, ?, ?, 'add_stamps', ?, ?)`,
@@ -722,7 +722,7 @@ export const handleScan = async (req, res) => {
         );
 
         // Enregistrer la transaction de récompense
-        const rewardTransactionId = uuidv4();
+        const rewardTransactionId = randomUUID();
         await pool.query(
           `INSERT INTO transaction_history (id, client_id, entreprise_id, type, description)
            VALUES (?, ?, ?, 'reward_claimed', ?)`,
@@ -864,7 +864,7 @@ export const adjustPoints = async (req, res) => {
       if (stampExists.length === 0) {
         await pool.query(
           'INSERT INTO customer_stamps (id, client_id, entreprise_id, stamps_collected) VALUES (?, ?, ?, ?)',
-          [uuidv4(), clientId, empresaId, newBalance]
+          [randomUUID(), clientId, empresaId, newBalance]
         );
       } else {
         await pool.query('UPDATE customer_stamps SET stamps_collected = ? WHERE client_id = ? AND entreprise_id = ?', [newBalance, clientId, empresaId]);
@@ -1038,7 +1038,7 @@ export const registerClientAndGeneratePass = async (req, res) => {
     const loyaltyType = companyRows[0].loyalty_type || 'points';
 
     // Créer le client avec un UUID unique
-    const clientId = uuidv4();
+    const clientId = randomUUID();
 
     await pool.query(
       'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, points, type_wallet) VALUES (?, ?, ?, ?, ?, 0, ?)',
@@ -1160,7 +1160,7 @@ export const updateCardCustomization = async (req, res) => {
 
     if (existing.length === 0) {
       // Créer une nouvelle entrée
-      const customizationId = uuidv4();
+      const customizationId = randomUUID();
       await pool.query(
         `INSERT INTO card_customization 
          (id, company_id, loyalty_type, primary_color, text_color, accent_color, secondary_color,

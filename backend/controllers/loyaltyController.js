@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid/dist/index.js';
+import { randomUUID } from 'crypto';
 import pool from '../db.js';
 import logger from '../utils/logger.js';
 import apnService from '../utils/apnService.js';
@@ -90,7 +90,7 @@ export const updateLoyaltyConfig = async (req, res) => {
       );
     } else {
       // Créer
-      const configId = uuidv4();
+      const configId = randomUUID();
       await pool.query(
         `INSERT INTO loyalty_config (
           id, entreprise_id, loyalty_type, points_per_purchase, points_for_reward,
@@ -150,7 +150,7 @@ export const addStamps = async (req, res) => {
     if (stampRows.length === 0) {
       await pool.query(
         'INSERT INTO customer_stamps (id, client_id, entreprise_id, stamps_collected) VALUES (?, ?, ?, ?)',
-        [uuidv4(), clientId, empresaId, stamps_to_add]
+        [randomUUID(), clientId, empresaId, stamps_to_add]
       );
     } else {
       await pool.query(
@@ -187,7 +187,7 @@ export const addStamps = async (req, res) => {
       await pool.query(
         `INSERT INTO transaction_history (id, client_id, entreprise_id, type, description)
          VALUES (?, ?, ?, 'reward_claimed', ?)`,
-        [uuidv4(), clientId, empresaId, `Récompense atteinte et Reset : ${config.reward_title}`]
+        [randomUUID(), clientId, empresaId, `Récompense atteinte et Reset : ${config.reward_title}`]
       );
     }
 
@@ -195,7 +195,7 @@ export const addStamps = async (req, res) => {
     await pool.query(
       `INSERT INTO transaction_history (id, client_id, entreprise_id, type, stamps_change, description)
        VALUES (?, ?, ?, 'stamps_added', ?, ?)`,
-      [uuidv4(), clientId, empresaId, stamps_to_add, `${stamps_to_add} tampon(s) ajouté(s)`]
+      [randomUUID(), clientId, empresaId, stamps_to_add, `${stamps_to_add} tampon(s) ajouté(s)`]
     );
 
     // 📱 Mise à jour Apple Wallet (Stamps)
@@ -316,7 +316,7 @@ export const claimStampReward = async (req, res) => {
     );
 
     // Enregistrer la transaction
-    const transactionId = uuidv4();
+    const transactionId = randomUUID();
     await pool.query(
       `INSERT INTO transaction_history (id, client_id, entreprise_id, type, stamps_change, description)
        VALUES (?, ?, ?, 'stamps_redeemed', ?, ?)`,
@@ -406,7 +406,7 @@ export const sendPushNotification = async (req, res) => {
   }
 
   try {
-    const notificationId = uuidv4();
+    const notificationId = randomUUID();
     const status = schedule_for ? 'scheduled' : 'sent';
     const sentAt = schedule_for ? null : new Date();
 
@@ -441,7 +441,7 @@ export const sendPushNotification = async (req, res) => {
 
     // Créer les entrées de notification pour chaque client
     const pushNotifications = clients.map(client => ({
-      id: uuidv4(),
+      id: randomUUID(),
       client_id: client.id,
       notification_id: notificationId,
       status: 'pending'
@@ -452,7 +452,7 @@ export const sendPushNotification = async (req, res) => {
         `INSERT INTO client_push_notifications 
          (id, client_id, notification_id, status)
          VALUES (?, ?, ?, ?)`,
-        [notification.id, notification.client_id, notification.notification_id, notification.status]
+        [randomUUID(), notification.client_id, notification.notification_id, notification.status]
       );
     }
 

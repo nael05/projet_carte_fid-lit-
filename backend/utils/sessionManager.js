@@ -1,5 +1,4 @@
-import crypto from 'crypto'
-import { v4 as uuidv4 } from 'uuid/dist/index.js';
+import { randomUUID } from 'crypto';
 import pool from '../db.js'
 
 /**
@@ -24,7 +23,7 @@ export const generateDeviceFingerprint = (req) => {
  */
 export const createSession = async (empresaId, deviceId, deviceName, token, expiresIn = '24h') => {
   try {
-    const sessionId = uuidv4()
+    const sessionId = randomUUID()
     
     // Parser l'expiration (ex: '24h' -> millisecondes)
     const expiresMs = expiresIn === '24h' ? 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000

@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid/dist/index.js';
+import { randomUUID } from 'crypto';
 import pool from '../db.js';
 import apnService from '../utils/apnService.js';
 import logger from '../utils/logger.js';
@@ -54,7 +54,7 @@ export const sendNotification = async (req, res) => {
     }
 
     // 2. Créer l'entrée dans push_notifications_sent
-    const notificationId = uuidv4();
+    const notificationId = randomUUID();
     await pool.query(
       `INSERT INTO push_notifications_sent (id, entreprise_id, title, message, target_type, recipients_count, status)
        VALUES (?, ?, ?, ?, 'specific', ?, 'sent')`,
@@ -71,7 +71,7 @@ export const sendNotification = async (req, res) => {
       await pool.query(
         `INSERT INTO client_push_notifications (id, client_id, notification_id, push_token, status, sent_at)
          VALUES (?, ?, ?, ?, ?, NOW())`,
-        [uuidv4(), reg.client_id, notificationId, reg.push_token, result?.sent ? 'sent' : 'failed']
+        [randomUUID(), reg.client_id, notificationId, reg.push_token, result?.sent ? 'sent' : 'failed']
       );
     }
 

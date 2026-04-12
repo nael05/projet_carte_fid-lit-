@@ -4,7 +4,7 @@
  * Supporte Apple Wallet (.pkpass) et Google Wallet (Google Wallet API)
  */
 
-import { v4 as uuidv4 } from 'uuid/dist/index.js';
+import { randomUUID } from 'crypto';
 import { passGenerator } from '../utils/passGenerator.js';
 import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import { apnService } from '../utils/apnService.js';

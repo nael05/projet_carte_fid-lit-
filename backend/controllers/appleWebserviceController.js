@@ -192,9 +192,9 @@ export const getUpdatedPass = async (req, res) => {
 
     // 1️⃣ Récupérer les données du client à jour
     const [clientRows] = await db.query(
-      `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.stamps_collected, c.created_at,
-              wc.pass_serial_number, wc.authentication_token, wc.points_balance, wc.stamps_balance,
-              e.id as company_id, e.nom as company_name, e.loyalty_type,
+      `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.created_at,
+              wc.pass_serial_number, wc.authentication_token, wc.points_balance,
+              e.id as company_id, e.nom as company_name,
               cc.apple_logo_url, cc.apple_icon_url, cc.apple_background_color,
               cc.apple_text_color, cc.apple_label_color, cc.apple_pass_description,
               cc.apple_organization_name
@@ -219,10 +219,8 @@ export const getUpdatedPass = async (req, res) => {
       lastName: data.nom,
       phoneNumber: data.telephone,
       companyName: data.company_name,
-      loyaltyType: data.loyalty_type || 'points',
-      // Utiliser les valeurs à jour de la BD
-      balance: data.loyalty_type === 'stamps' ? data.stamps_balance : data.points_balance,
-      stampMaxCount: 10,
+      loyaltyType: 'points',
+      balance: data.points_balance,
       createdAt: data.created_at,
       qrCodeValue: data.id.toString(),
     };

@@ -26,9 +26,8 @@ export const createWalletPass = async (req, res) => {
     // 1️⃣ Récupérer le client + entreprise + customization + loyalty_config
     const [clientRows] = await db.query(
       `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.type_wallet,
-              cs.stamps_collected,
-              e.id as company_id, e.nom as company_name, e.loyalty_type,
-              lc.points_for_reward, lc.stamps_for_reward,
+              e.id as company_id, e.nom as company_name,
+              lc.points_for_reward,
               cc.logo_url as apple_logo_url,
               cc.icon_url as apple_icon_url,
               cc.strip_image_url as apple_strip_image_url,
@@ -50,7 +49,6 @@ export const createWalletPass = async (req, res) => {
        LEFT JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
        LEFT JOIN card_customization cc ON e.id = cc.company_id
-       LEFT JOIN customer_stamps cs ON cs.client_id = c.id
        WHERE c.id = ?`,
       [clientId]
     );
@@ -61,7 +59,7 @@ export const createWalletPass = async (req, res) => {
 
     const client = clientRows[0];
     let type_wallet = bodyWalletType || client.type_wallet || 'apple';
-    const { company_id, company_name, loyalty_type, points, stamps_collected, points_for_reward, stamps_for_reward } = client;
+    const { company_id, company_name, points, points_for_reward } = client;
 
     // Mettre à jour en base si le type a changé
     if (bodyWalletType && bodyWalletType !== client.type_wallet) {
@@ -243,6 +241,16 @@ export const addPointsToWallet = async (req, res) => {
       [pass_serial_number]
     );
 
+    const textModulesData = [];
+    if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
+       const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
+       textModulesData.push({
+          header: 'Vos Paliers de Récompenses',
+          body: tiersList,
+          id: 'rewards_module'
+       });
+    }
+
     let notificationsSent = 0;
     if (registrations && registrations.length > 0) {
       const pushTokens = registrations.map((r) => r.push_token);
@@ -366,8 +374,13 @@ export const downloadClientPass = async (req, res) => {
     // SI GOOGLE WALLET -> Rediriger vers l'URL
     if (client.type_wallet === 'google') {
       try {
+        const [tiers] = await db.query(
+          'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
+          [client.company_id]
+        );
+
         await googleWalletGenerator.createOrUpdateClass(client.company_id, client, client.company_name, 'points');
-        const saveUrl = await googleWalletGenerator.createLoyaltyObject(client.id, client.company_id, `${client.prenom} ${client.nom}`, client.points || 0, client, 'points');
+        const saveUrl = await googleWalletGenerator.createLoyaltyObject(client.id, client.company_id, `${client.prenom} ${client.nom}`, client.points || 0, client, tiers);
         
         // Assurer que la référence existe en base pour les mises à jour
         const [existing] = await db.query('SELECT id FROM wallet_cards WHERE client_id = ? AND pass_serial_number LIKE "GOOGLE_%"', [client.id]);

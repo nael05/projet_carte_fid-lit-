@@ -347,7 +347,7 @@ export const getProInfo = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT e.id, e.nom, e.email, e.recompense_definition, e.loyalty_type,
               lc.points_per_purchase, lc.points_for_reward,
-              lc.stamps_count, lc.stamps_per_purchase, lc.stamps_for_reward,
+              lc.stamps_count, lc. lc.
               lc.reward_title, lc.reward_description,
               lc.push_notifications_enabled
        FROM entreprises e
@@ -488,35 +488,18 @@ export const getClients = async (req, res) => {
 
     const loyaltyType = configRows.length > 0 ? configRows[0].loyalty_type : 'points';
 
-    if (loyaltyType === 'points') {
-      const [rows] = await pool.query(
-        `SELECT c.id, c.nom, c.prenom, c.telephone, c.points, c.type_wallet,
-                (SELECT COUNT(*) FROM apple_pass_registrations r 
-                 JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number 
-                 WHERE w.client_id = c.id) as device_count
-         FROM clients c 
-         WHERE c.entreprise_id = ? 
-         ORDER BY c.created_at DESC`,
-        [empresaId]
-      );
-      res.json(rows);
-    } else {
-      // Pour les tampons, joindre avec la table customer_stamps
-      const [rows] = await pool.query(
-        `SELECT c.id, c.nom, c.prenom, c.telephone, c.type_wallet,
-                COALESCE(cs.stamps_collected, 0) as stamps_collected,
-                COALESCE(cs.stamps_redeemed, 0) as stamps_redeemed,
-                (SELECT COUNT(*) FROM apple_pass_registrations r 
-                 JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number 
-                 WHERE w.client_id = c.id) as device_count
-         FROM clients c
-         LEFT JOIN customer_stamps cs ON c.id = cs.client_id AND cs.entreprise_id = c.entreprise_id
-         WHERE c.entreprise_id = ? 
-         ORDER BY c.created_at DESC`,
-        [empresaId]
-      );
-      res.json(rows);
-    }
+    const [rows] = await pool.query(
+      `SELECT c.id, c.nom, c.prenom, c.telephone, c.type_wallet,
+              c.points as points,
+              (SELECT COUNT(*) FROM apple_pass_registrations r 
+               JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number 
+               WHERE w.client_id = c.id) as device_count
+       FROM clients c
+       WHERE c.entreprise_id = ? 
+       ORDER BY c.created_at DESC`,
+      [empresaId]
+    );
+    res.json(rows);
   } catch (err) {
     logger.error('Get clients error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
@@ -524,7 +507,7 @@ export const getClients = async (req, res) => {
 };
 
 export const handleScan = async (req, res) => {
-  const { clientId } = req.body;
+  const { clientId, pointsToAdd: bodyPoints } = req.body;
   const empresaId = req.user.id;
 
   if (!clientId) {
@@ -532,7 +515,6 @@ export const handleScan = async (req, res) => {
   }
 
   try {
-    // Vérifier que le client appartient bien à cette entreprise (isolation des données)
     const [clientRows] = await pool.query(
       'SELECT nom, prenom, points FROM clients WHERE id = ? AND entreprise_id = ?',
       [clientId, empresaId]
@@ -542,9 +524,8 @@ export const handleScan = async (req, res) => {
       return res.status(404).json({ error: 'Client non trouvé ou non autorisé' });
     }
 
-    // Obtenir la configuration de fidélité
     const [config] = await pool.query(
-      'SELECT loyalty_type, points_per_purchase, points_for_reward, stamps_per_purchase, stamps_for_reward, reward_title FROM loyalty_config WHERE entreprise_id = ?',
+      'SELECT points_adding_mode, points_per_purchase, reward_title FROM loyalty_config WHERE entreprise_id = ?',
       [empresaId]
     );
 
@@ -553,256 +534,47 @@ export const handleScan = async (req, res) => {
     }
 
     const loyaltyConfig = config[0];
-    const loyaltyType = loyaltyConfig.loyalty_type;
-    const response = {
-      clientName: `${clientRows[0].prenom} ${clientRows[0].nom}`,
-      rewardTitle: loyaltyConfig.reward_title
-    };
-
-    if (loyaltyType === 'points') {
-      // Incrémenter les points
-      const pointsToAdd = loyaltyConfig.points_per_purchase || 1;
-      const pointsForReward = loyaltyConfig.points_for_reward || 10;
-      
-      const currentPoints = clientRows[0].points || 0;
-      let newPoints = currentPoints + pointsToAdd;
-      let rewardReached = false;
-
-      // Vérifier si le palier de récompense est atteint
-      if (newPoints >= pointsForReward) {
-        rewardReached = true;
-        newPoints = newPoints % pointsForReward; // Reset au surplus (souvent 0)
-      }
-
-      // Mettre à jour les points du client
-      await pool.query(
-        'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
-        [newPoints, clientId, empresaId]
-      );
-
-      // Enregistrer la transaction
-      const transactionId = randomUUID();
-      await pool.query(
-        `INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description)
-         VALUES (?, ?, ?, 'add_points', ?, ?)`,
-        [transactionId, clientId, empresaId, pointsToAdd, `${pointsToAdd} point(s) ajouté(s)`]
-      );
-
-      if (rewardReached) {
-        // Enregistrer la transaction de récompense
-        const rewardTransactionId = randomUUID();
-        await pool.query(
-          `INSERT INTO transaction_history (id, client_id, entreprise_id, type, description)
-           VALUES (?, ?, ?, 'reward_unlocked', ?)`,
-          [rewardTransactionId, clientId, empresaId, `Récompense atteinte: ${loyaltyConfig.reward_title}`]
-        );
-      }
-
-      response.newPoints = newPoints;
-      response.success = true;
-      response.rewardUnlocked = rewardReached;
-      response.message = rewardReached 
-        ? `Palier atteint ! (${loyaltyConfig.reward_title})`
-        : `${pointsToAdd} point(s) ajouté(s)! (Total: ${newPoints})`;
-
-      // 📱 Mise à jour Apple Wallet (Points)
-      try {
-        const [walletRows] = await pool.query(
-          'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
-          [clientId, empresaId]
-        );
-
-        if (walletRows.length > 0) {
-          const wallet = walletRows[0];
-          
-          // Mettre à jour le solde dans wallet_cards
-          await pool.query(
-            'UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?',
-            [newPoints, wallet.id]
-          );
-
-          // Log de mise à jour du pass
-          await pool.query(
-            `INSERT INTO pass_update_logs (
-              wallet_card_id, pass_serial_number, action, value, old_balance, new_balance, description, triggered_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [wallet.id, wallet.pass_serial_number, rewardReached ? 'reward_reset' : 'add_points', pointsToAdd, currentPoints, newPoints, rewardReached ? 'Récompense et Reset' : 'Scan QR Code', 'pro_scan']
-          );
-
-          // Récupérer les tokens d'enregistrement
-          const [registrations] = await pool.query(
-            'SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?',
-            [wallet.pass_serial_number]
-          );
-
-          if (registrations.length > 0) {
-            const pushTokens = registrations.map(r => r.push_token);
-            
-            if (rewardReached) {
-              // Notification d'alerte (Visible) pour la récompense
-              for (const token of pushTokens) {
-                await apnService.sendAlertNotification(
-                  token, 
-                  "Félicitations ! 🎁", 
-                  `Vous avez gagné votre récompense : ${loyaltyConfig.reward_title}`,
-                  { action: 'reward', company: response.clientName }
-                );
-              }
-            } else {
-              // Mise à jour silencieuse pour changer le score sur la carte
-              await apnService.sendBulkUpdateNotifications(pushTokens);
-            }
-            logger.info(`📱 Notification push envoyée pour scan (client: ${clientId}, reward: ${rewardReached})`);
-          }
-        }
-      } catch (walletErr) {
-        logger.error('Erreur mise à jour wallet après scan (points):', walletErr.message);
-      }
-
-      // 📱 Mise à jour Google Wallet (Points)
-      try {
-        await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
-        logger.info(`📱 Points Google Wallet synchronisés après scan pour client ${clientId}`);
-      } catch (googleErr) {
-        logger.warn('Échec synchro Google Wallet après scan (points):', googleErr.message);
-      }
-
-    } else if (loyaltyType === 'stamps') {
-      // Ajouter des tampons
-      const stampsToAdd = loyaltyConfig.stamps_per_purchase || 1;
-      
-      // Obtenir ou créer les tampons du client
-      const [stampRows] = await pool.query(
-        'SELECT id, stamps_collected FROM customer_stamps WHERE client_id = ? AND entreprise_id = ?',
-        [clientId, empresaId]
-      );
-
-      if (stampRows.length === 0) {
-        // Créer l'entrée des tampons
-        const stampId = randomUUID();
-        await pool.query(
-          'INSERT INTO customer_stamps (id, client_id, entreprise_id, stamps_collected) VALUES (?, ?, ?, ?)',
-          [stampId, clientId, empresaId, stampsToAdd]
-        );
-      } else {
-        // Ajouter aux tampons existants
-        await pool.query(
-          'UPDATE customer_stamps SET stamps_collected = stamps_collected + ? WHERE client_id = ? AND entreprise_id = ?',
-          [stampsToAdd, clientId, empresaId]
-        );
-      }
-
-      // Enregistrer la transaction
-      const transactionId = randomUUID();
-      await pool.query(
-        `INSERT INTO transaction_history (id, client_id, entreprise_id, type, stamps_change, description)
-         VALUES (?, ?, ?, 'add_stamps', ?, ?)`,
-        [transactionId, clientId, empresaId, stampsToAdd, `${stampsToAdd} tampon(s) ajouté(s)`]
-      );
-
-      // Récupérer l'état actuel après ajout
-      const [updatedStamps] = await pool.query(
-        'SELECT stamps_collected FROM customer_stamps WHERE client_id = ? AND entreprise_id = ?',
-        [clientId, empresaId]
-      );
-
-      let newStamps = Number(updatedStamps[0].stamps_collected || 0);
-      const stampsForReward = Number(loyaltyConfig.stamps_for_reward || 10);
-      let rewardReached = false;
-
-      // Vérifier si le palier de récompense est atteint
-      if (newStamps >= stampsForReward) {
-        rewardReached = true;
-        newStamps = 0; // Reset à 0
-        
-        // Mettre à jour au solde 0 en base
-        await pool.query(
-          'UPDATE customer_stamps SET stamps_collected = 0 WHERE client_id = ? AND entreprise_id = ?',
-          [clientId, empresaId]
-        );
-
-        // Enregistrer la transaction de récompense
-        const rewardTransactionId = randomUUID();
-        await pool.query(
-          `INSERT INTO transaction_history (id, client_id, entreprise_id, type, description)
-           VALUES (?, ?, ?, 'reward_claimed', ?)`,
-          [rewardTransactionId, clientId, empresaId, `Récompense atteinte et Reset : ${loyaltyConfig.reward_title}`]
-        );
-      }
-
-      response.newStamps = newStamps;
-      response.success = true;
-      response.rewardUnlocked = rewardReached;
-      response.message = rewardReached 
-        ? `Palier atteint ! (${loyaltyConfig.reward_title})`
-        : `${stampsToAdd} tampon(s) ajouté(s)! (Total: ${newStamps})`;
-
-      // 📱 Mise à jour Apple Wallet (Stamps)
-      try {
-        const [walletRows] = await pool.query(
-          'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
-          [clientId, empresaId]
-        );
-
-        if (walletRows.length > 0) {
-          const wallet = walletRows[0];
-          
-          // Mettre à jour le solde dans wallet_cards
-          await pool.query(
-            'UPDATE wallet_cards SET stamps_balance = ?, last_updated = NOW() WHERE id = ?',
-            [newStamps, wallet.id]
-          );
-
-          // Log de mise à jour du pass
-          await pool.query(
-            `INSERT INTO pass_update_logs (
-              wallet_card_id, pass_serial_number, action, value, old_balance, new_balance, description, triggered_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [wallet.id, wallet.pass_serial_number, rewardReached ? 'reward_reset' : 'add_stamps', stampsToAdd, rewardReached ? stampsForReward : (newStamps - stampsToAdd), newStamps, rewardReached ? 'Récompense et Reset' : 'Scan QR Code', 'pro_scan']
-          );
-
-          // Envoyer les notifications push
-          const [registrations] = await pool.query(
-            'SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?',
-            [wallet.pass_serial_number]
-          );
-
-          if (registrations.length > 0) {
-            const pushTokens = registrations.map(r => r.push_token);
-            
-            if (rewardReached) {
-              // Notification d'alerte (Visible)
-              for (const token of pushTokens) {
-                await apnService.sendAlertNotification(
-                  token, 
-                  "Félicitations ! 🎁", 
-                  `Vous avez gagné votre récompense : ${loyaltyConfig.reward_title}`,
-                  { action: 'reward', company: response.clientName }
-                );
-              }
-            } else {
-              // Mise à jour silencieuse
-              await apnService.sendBulkUpdateNotifications(pushTokens);
-            }
-            logger.info(`📱 Push envoyé pour scan stamps (client: ${clientId}, reward: ${rewardReached})`);
-          }
-        }
-      } catch (walletErr) {
-        logger.error('Erreur mise à jour wallet après scan (stamps):', walletErr.message);
-      }
-
-      // 📱 Mise à jour Google Wallet (Stamps)
-      try {
-        await googleWalletGenerator.updateLoyaltyPoints(clientId, newStamps);
-        logger.info(`📱 Tampons Google Wallet synchronisés après scan pour client ${clientId}`);
-      } catch (googleErr) {
-        logger.warn('Échec synchro Google Wallet après scan (stamps):', googleErr.message);
-      }
+    let pointsToAdd = loyaltyConfig.points_per_purchase || 10;
+    if (loyaltyConfig.points_adding_mode === 'manual' && typeof bodyPoints === 'number') {
+      pointsToAdd = bodyPoints;
     }
 
-    res.json(response);
+    const currentPoints = clientRows[0].points || 0;
+    const newPoints = currentPoints + pointsToAdd;
+
+    await pool.query(
+      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
+      [newPoints, clientId, empresaId]
+    );
+
+    const transactionId = randomUUID();
+    await pool.query(
+      "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
+      [transactionId, clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
+    );
+
+    // Sync Wallet
+    try {
+      const [walletRows] = await pool.query(
+        'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
+        [clientId, empresaId]
+      );
+      if (walletRows.length > 0) {
+        const wallet = walletRows[0];
+        await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
+        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
+        if (regs.length > 0) {
+          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+        }
+      }
+      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
+    } catch (e) { 
+      console.warn('Wallet sync failed', e.message); 
+    }
+
+    res.json({ success: true, clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, pointsAdded: pointsToAdd, newPoints: newPoints });
   } catch (err) {
-    logger.error('Handle scan error', { error: err.message });
+    console.error('Handle scan error', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -817,13 +589,8 @@ export const adjustPoints = async (req, res) => {
   }
 
   try {
-    // 1️⃣ Récupérer la config et les données actuelles (points ou tampons)
     const [clientRows] = await pool.query(
-      `SELECT c.points, cs.stamps_collected, e.loyalty_type, e.nom as company_name
-       FROM clients c
-       LEFT JOIN entreprises e ON c.entreprise_id = e.id
-       LEFT JOIN customer_stamps cs ON cs.client_id = c.id AND cs.entreprise_id = c.entreprise_id
-       WHERE c.id = ? AND c.entreprise_id = ?`,
+      'SELECT points, nom FROM clients WHERE id = ? AND entreprise_id = ?',
       [clientId, empresaId]
     );
 
@@ -831,129 +598,35 @@ export const adjustPoints = async (req, res) => {
       return res.status(404).json({ error: 'Client non trouvé ou non autorisé' });
     }
 
-    const { points, stamps_collected, loyalty_type } = clientRows[0];
-    let newBalance = 0;
-    let balanceField = '';
-    let rewardReached = false;
-    let rewardTitle = '';
+    const { points } = clientRows[0];
+    const newPoints = Math.max(0, Number(points || 0) + Number(adjustment));
 
-    // Récupérer la config pour le seuil
-    const [configRows] = await pool.query(
-      'SELECT points_for_reward, stamps_for_reward, reward_title FROM loyalty_config WHERE entreprise_id = ?',
-      [empresaId]
+    await pool.query(
+      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
+      [newPoints, clientId, empresaId]
     );
-    const config = configRows[0] || { points_for_reward: 10, stamps_for_reward: 10, reward_title: 'Cadeau' };
-    rewardTitle = config.reward_title;
 
-    if (loyalty_type === 'stamps') {
-      // Ajustement des TAMPONS
-      const threshold = Number(config.stamps_for_reward || 10);
-      newBalance = Number(stamps_collected || 0) + Number(adjustment);
-      
-      if (newBalance >= threshold && adjustment > 0) {
-        rewardReached = true;
-        newBalance = 0; // Reset à 0
-      } else {
-        newBalance = Math.max(0, newBalance);
-      }
-      
-      balanceField = 'stamps_balance';
-
-      // Mettre à jour customer_stamps
-      const [stampExists] = await pool.query('SELECT id FROM customer_stamps WHERE client_id = ? AND entreprise_id = ?', [clientId, empresaId]);
-      if (stampExists.length === 0) {
-        await pool.query(
-          'INSERT INTO customer_stamps (id, client_id, entreprise_id, stamps_collected) VALUES (?, ?, ?, ?)',
-          [randomUUID(), clientId, empresaId, newBalance]
-        );
-      } else {
-        await pool.query('UPDATE customer_stamps SET stamps_collected = ? WHERE client_id = ? AND entreprise_id = ?', [newBalance, clientId, empresaId]);
-      }
-    } else {
-      // Ajustement des POINTS
-      const threshold = Number(config.points_for_reward || 10);
-      newBalance = Number(points || 0) + Number(adjustment);
-
-      if (newBalance >= threshold && adjustment > 0) {
-        rewardReached = true;
-        newBalance = 0; // Reset à 0
-      } else {
-        newBalance = Math.max(0, newBalance);
-      }
-
-      balanceField = 'points_balance';
-
-      await pool.query(
-        'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
-        [newBalance, clientId, empresaId]
-      );
-    }
-
-    // 2️⃣ Mettre à jour Apple Wallet
     try {
       const [walletRows] = await pool.query(
         'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
         [clientId, empresaId]
       );
-
       if (walletRows.length > 0) {
         const wallet = walletRows[0];
-        
-        await pool.query(
-          `UPDATE wallet_cards SET ${balanceField} = ?, last_updated = NOW() WHERE id = ?`,
-          [newBalance, wallet.id]
-        );
-
-        // Log de mise à jour
-        await pool.query(
-          `INSERT INTO pass_update_logs (
-            wallet_card_id, pass_serial_number, action, value, old_balance, new_balance, description, triggered_by
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            wallet.id, 
-            wallet.pass_serial_number, 
-            rewardReached ? 'reward_reset' : (adjustment > 0 ? 'add_manual' : 'remove_manual'), 
-            adjustment, 
-            rewardReached ? (loyalty_type === 'stamps' ? stamps_collected : points) : (newBalance - adjustment), 
-            newBalance, 
-            rewardReached ? `Récompense atteinte et Reset : ${rewardTitle}` : 'Ajustement manuel par le pro', 
-            'pro_adjust'
-          ]
-        );
-
-        // Envoyer les notifications push
-        const [registrations] = await pool.query(
-          'SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?',
-          [wallet.pass_serial_number]
-        );
-
-        if (registrations.length > 0) {
-          const pushTokens = registrations.map(r => r.push_token);
-          
-          if (rewardReached) {
-            // Notification d'alerte (Visible) pour la récompense
-            for (const token of pushTokens) {
-                await apnService.sendAlertNotification(
-                  token, 
-                  "Félicitations ! 🎁", 
-                  `Vous avez gagné votre récompense : ${rewardTitle}`,
-                  { action: 'reward', company: clientRows[0].company_name }
-                );
-            }
-          } else {
-            // Mise à jour silencieuse
-            await apnService.sendBulkUpdateNotifications(pushTokens);
-          }
-          logger.info(`📱 Push envoyé pour ajustement manuel (${loyalty_type}, reward: ${rewardReached})`);
+        await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
+        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
+        if (regs.length > 0) {
+          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
         }
       }
-    } catch (walletErr) {
-      logger.error('Erreur mise à jour wallet après ajustement:', walletErr.message);
+      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
+    } catch (e) {
+      console.warn('Wallet sync failed', e.message);
     }
 
-    res.json({ success: true, newBalance, loyalty_type, message: 'Balance mise à jour' });
+    res.json({ success: true, newPoints });
   } catch (err) {
-    logger.error('Adjust balance error', { error: err.message });
+    console.error('Adjust points error', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

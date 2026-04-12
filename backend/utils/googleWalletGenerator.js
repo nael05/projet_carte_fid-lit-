@@ -65,7 +65,7 @@ class GoogleWalletGenerator {
       ]
     };
 
-    if (heroImageUrl) {
+    if (heroImageUrl && !heroImageUrl.includes('loca.lt')) {
       loyaltyClass.heroImage = {
         sourceUri: { uri: this._getAbsoluteUrl(heroImageUrl) }
       };
@@ -168,7 +168,7 @@ class GoogleWalletGenerator {
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
 
     const textModulesData = [];
-    if (rewardTiers && rewardTiers.length > 0) {
+    if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
        const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
        textModulesData.push({
           header: 'Vos Paliers de Récompenses',

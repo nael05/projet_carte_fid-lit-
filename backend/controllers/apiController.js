@@ -590,7 +590,7 @@ export const handleScan = async (req, res) => {
       error: err.message, 
       stack: err.stack 
     });
-    res.status(500).json({ error: 'Erreur technique lors du scan' });
+    res.status(500).json({ error: 'Erreur SQL [SCAN]: ' + err.message });
   }
 };
 

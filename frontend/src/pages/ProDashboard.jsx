@@ -100,38 +100,52 @@ function ProDashboard() {
     }
   }
 
-  const initScanner = () => {
-    if (scannerRef.current && !scannerRef.current.querySelector('iframe')) {
-      const scanner = new Html5QrcodeScanner(
-        'qr-scanner',
-        { 
-          fps: 15, 
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          rememberLastUsedCamera: false, // On force le nouveau réglage
-          showTorchButtonIfSupported: true,
-          videoConstraints: {
-            facingMode: 'environment'
-          }
+  const initScanner = async () => {
+    if (!scannerRef.current) return;
+    
+    // Si une instance existe déjà, on ne fait rien
+    if (scannerInstance.current) return;
+
+    try {
+      const html5QrCode = new Html5Qrcode('qr-scanner');
+      scannerInstance.current = html5QrCode;
+
+      const config = { 
+        fps: 15, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      };
+
+      // Démarrage immédiat sur la caméra arrière
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+          html5QrCode.stop().then(() => {
+            scannerInstance.current = null;
+            setScannerActive(false);
+            processScan(decodedText);
+          });
         },
-        false
-      )
-      scanner.render(
-        async (decodedText) => {
-          scanner.clear()
-          setScannerActive(false)
-          processScan(decodedText)
-        },
-        (err) => {}
-      )
+        (errorMessage) => {
+          // On ignore les erreurs de scan silencieuses
+        }
+      );
+    } catch (err) {
+      console.error("Erreur démarrage scanner:", err);
+      setScannerActive(false);
+      alert("Impossible d'accéder à la caméra arrière.");
     }
   }
 
-  const destroyScanner = () => {
-    if (scannerRef.current) {
-      Html5QrcodeScanner.getCameras().then(() => {
-        try { Html5QrcodeScanner.prototype.clear?.call({}) } catch (e) {}
-      })
+  const destroyScanner = async () => {
+    if (scannerInstance.current) {
+      try {
+        await scannerInstance.current.stop();
+        scannerInstance.current = null;
+      } catch (e) {
+        console.warn("Erreur stop scanner:", e);
+      }
     }
   }
 

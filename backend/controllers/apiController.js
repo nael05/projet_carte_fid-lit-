@@ -485,7 +485,7 @@ export const getClients = async (req, res) => {
     const loyaltyType = configRows.length > 0 ? configRows[0].loyalty_type : 'points';
 
     const [rows] = await pool.query(
-      `SELECT c.id, c.nom, c.prenom, c.telephone, c.type_wallet,
+      `SELECT c.id, c.nom, c.prenom, c.telephone, c.email, c.type_wallet,
               c.points as points,
               (SELECT COUNT(*) FROM apple_pass_registrations r 
                JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number 
@@ -502,6 +502,35 @@ export const getClients = async (req, res) => {
       stack: err.stack 
     });
     res.status(500).json({ error: 'Erreur lors du chargement de la liste des clients' });
+  }
+};
+
+export const deleteClient = async (req, res) => {
+  const { clientId } = req.params;
+  const empresaId = req.user.id;
+
+  try {
+    // Vérifier que le client appartient bien à l'entreprise
+    const [clientRows] = await pool.query(
+      'SELECT id FROM clients WHERE id = ? AND entreprise_id = ?',
+      [clientId, empresaId]
+    );
+
+    if (clientRows.length === 0) {
+      return res.status(404).json({ error: 'Client non trouvé ou non autorisé' });
+    }
+
+    // Suppression du client (cascades gérées par la DB pour wallet_cards et transaction_history)
+    await pool.query(
+      'DELETE FROM clients WHERE id = ? AND entreprise_id = ?',
+      [clientId, empresaId]
+    );
+
+    logger.info(`🗑️ Client supprimé par le pro ${empresaId}: ${clientId}`);
+    res.json({ success: true, message: 'Client supprimé avec succès' });
+  } catch (err) {
+    logger.error('Delete client error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur lors de la suppression' });
   }
 };
 
@@ -714,31 +743,31 @@ export const getCompanyInfo = async (req, res) => {
 
 export const registerClientAndGeneratePass = async (req, res) => {
   const { entrepriseId } = req.params;
-  const { nom, prenom, telephone, type_wallet } = req.body;
-
-  if (!nom || !prenom || !telephone || !type_wallet) {
-    return res.status(400).json({ error: 'Tous les champs sont requis' });
-  }
-
-  if (!['apple', 'google'].includes(type_wallet)) {
-    return res.status(400).json({ error: 'Type de wallet invalide' });
-  }
-
-  try {
-    const [companyRows] = await pool.query(
-      'SELECT id, nom FROM entreprises WHERE id = ? AND statut = "actif"',
-      [entrepriseId]
-    );
-
-    if (companyRows.length === 0) {
-      return res.status(404).json({ error: 'Entreprise non trouvée ou inactive' });
+    const { nom, prenom, telephone, email, type_wallet } = req.body;
+  
+    if (!nom || !prenom || !telephone || !type_wallet) {
+      return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
-
-    const clientId = randomUUID();
-    await pool.query(
-      'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, points, type_wallet) VALUES (?, ?, ?, ?, ?, 0, ?)',
-      [clientId, entrepriseId, nom, prenom, telephone, type_wallet]
-    );
+  
+    if (!['apple', 'google'].includes(type_wallet)) {
+      return res.status(400).json({ error: 'Type de wallet invalide' });
+    }
+  
+    try {
+      const [companyRows] = await pool.query(
+        'SELECT id, nom FROM entreprises WHERE id = ? AND statut = "actif"',
+        [entrepriseId]
+      );
+  
+      if (companyRows.length === 0) {
+        return res.status(404).json({ error: 'Entreprise non trouvée ou inactive' });
+      }
+  
+      const clientId = randomUUID();
+      await pool.query(
+        'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, email, points, type_wallet) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
+        [clientId, entrepriseId, nom, prenom, telephone, email, type_wallet]
+      );
     
     logger.info(`✅ Client créé: ${clientId} - ${prenom} ${nom}`);
 

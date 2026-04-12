@@ -55,6 +55,7 @@ router.post('/pro/scan', verifyToken, isPro, apiController.handleScan);
 router.put('/pro/adjust-points/:clientId', verifyToken, isPro, apiController.adjustPoints);
 
 router.get('/pro/info', verifyToken, isPro, apiController.getProInfo);
+router.delete('/pro/clients/:clientId', verifyToken, isPro, apiController.deleteClient);
 
 // ===== Loyalty Configuration Routes =====
 router.get('/pro/loyalty/config', verifyToken, isPro, loyaltyController.getLoyaltyConfig);

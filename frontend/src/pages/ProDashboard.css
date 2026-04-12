@@ -328,12 +328,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.pro-client-phone {
+.pro-client-phone, .pro-client-email {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pro-client-points {
   display: flex;
@@ -368,6 +371,26 @@
   justify-content: center;
   padding: 10px;
   background: none;
+  border: none;
+  border-right: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.pro-action-btn:last-child {
+  border-right: none;
+}
+.pro-action-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.pro-action-add:hover {
+  color: var(--success);
+}
+.pro-action-delete:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
   border: none;
   border-right: 1px solid var(--border-light);
   color: var(--text-secondary);

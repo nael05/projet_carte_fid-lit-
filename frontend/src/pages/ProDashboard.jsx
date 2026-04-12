@@ -6,7 +6,7 @@ import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 import CardCustomizer from '../components/CardCustomizer'
-import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Award, Check, Settings, Save, Trash2 } from 'lucide-react'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2 } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {
@@ -217,6 +217,22 @@ function ProDashboard() {
       alert(err.response?.data?.error || 'Erreur lors du rachat')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteClient = async (clientId, clientName) => {
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer le client ${clientName} ? Cette action supprimera également sa carte de fidélité et son historique.`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/pro/clients/${clientId}`);
+      // Mettre à jour la liste locale
+      setClients(prev => prev.filter(c => c.id !== clientId));
+      setLastScan({ success: true, message: `Le client ${clientName} a été supprimé.` });
+    } catch (err) {
+      console.error('Erreur suppression client:', err);
+      setPageError(err.response?.data?.error || 'Erreur lors de la suppression du client');
     }
   }
 
@@ -565,6 +581,7 @@ function ProDashboard() {
                         <div className="pro-client-details">
                           <span className="pro-client-name">{client.prenom} {client.nom}</span>
                           <span className="pro-client-phone"><Phone size={12} /> {client.telephone}</span>
+                          {client.email && <span className="pro-client-email"><Mail size={12} /> {client.email}</span>}
                         </div>
                         <div className="pro-client-points">
                           <span className="pro-points-value">{client.points || 0}</span>
@@ -574,6 +591,7 @@ function ProDashboard() {
                       <div className="pro-client-actions">
                         <button className="pro-action-btn" onClick={() => adjustPoints(client.id, -1)} title="-1"><Minus size={16} /></button>
                         <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(client.id, 1)} title="+1"><Plus size={16} /></button>
+                        <button className="pro-action-btn pro-action-delete" onClick={() => handleDeleteClient(client.id, `${client.prenom} ${client.nom}`)} title="Supprimer client"><Trash2 size={16} /></button>
                       </div>
                     </div>
                   ))}

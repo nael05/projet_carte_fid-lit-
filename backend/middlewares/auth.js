@@ -5,7 +5,7 @@ import logger from '../utils/logger.js';
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key_change_in_production';
 
 export const generateToken = (userId, role) => {
-  return jwt.sign({ id: userId, role }, JWT_SECRET, { expiresIn: '24h' });
+  return jwt.sign({ id: userId, role }, JWT_SECRET, { expiresIn: '7d' });
 };
 
 // Wrapper pour middlewares async
@@ -32,7 +32,8 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
         // Si un deviceId est fourni, vérifier la session
         const sessionValid = await verifySessionValidity(decoded.id, deviceId);
         if (!sessionValid) {
-          logger.debug('Session expired but JWT valid', { role: 'pro' });
+          logger.warn('Session expired or invalid for pro', { userId: decoded.id, deviceId });
+          return res.status(401).json({ error: 'Session expirée' });
         }
         // Stocker le deviceId pour les logs
         req.user.deviceId = deviceId;
@@ -42,7 +43,7 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     next();
   } catch (err) {
     logger.warn('Invalid token attempt', { error: err.message });
-    return res.status(401).json({ error: 'Token invalide ou expiré' });
+    return res.status(401).json({ error: 'Session invalide ou expirée' });
   }
 });
 

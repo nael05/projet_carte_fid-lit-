@@ -79,17 +79,20 @@ export const verifySessionValidity = async (empresaId, deviceId) => {
       return null
     }
     
-    // Mettre à jour last_activity (max 1 fois par minute pour éviter trop de requêtes)
+    // Mettre à jour last_activity et prolonger l'expiration (Sliding Session)
+    // On repousse de 24h à chaque activité pour rester connecté si utilisé
     const lastActivityTime = new Date(session.last_activity)
     const now = new Date()
-    if (now - lastActivityTime > 60000) { // 1 minute
+    
+    if (now - lastActivityTime > 60000) { // 1 minute entre deux MAJ max pour perf
+      const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
       await pool.query(
-        'UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
-        [session.id]
+        'UPDATE sessions SET last_activity = CURRENT_TIMESTAMP, expires_at = ? WHERE id = ?',
+        [newExpiresAt, session.id]
       )
     }
     
-    return session
+    return session;
   } catch (err) {
     console.error('❌ [SESSION] Erreur vérification session:', err.message)
     return null

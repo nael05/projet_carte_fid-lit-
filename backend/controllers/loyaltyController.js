@@ -67,9 +67,12 @@ export const updateLoyaltyConfig = async (req, res) => {
           updated_at = NOW()
          WHERE entreprise_id = ?`,
         [
-          points_adding_mode, points_per_purchase,
-          apple_wallet_key, google_wallet_key,
-          push_notifications_enabled, empresaId
+          points_adding_mode || null, 
+          points_per_purchase || null,
+          apple_wallet_key || null, 
+          google_wallet_key || null,
+          push_notifications_enabled !== undefined ? push_notifications_enabled : null, 
+          empresaId
         ]
       );
     } else {
@@ -80,8 +83,12 @@ export const updateLoyaltyConfig = async (req, res) => {
           apple_wallet_key, google_wallet_key, push_notifications_enabled
         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
-          configId, empresaId, points_adding_mode || 'auto', points_per_purchase || 10,
-          apple_wallet_key || '', google_wallet_key || '',
+          configId, 
+          empresaId, 
+          points_adding_mode || 'auto', 
+          points_per_purchase || 10,
+          apple_wallet_key || '', 
+          google_wallet_key || '',
           push_notifications_enabled !== false
         ]
       );
@@ -89,8 +96,11 @@ export const updateLoyaltyConfig = async (req, res) => {
 
     res.json({ success: true, message: 'Configuration de fidélité mise à jour' });
   } catch (err) {
-    logger.error('Update loyalty config error', { error: err.message });
-    res.status(500).json({ error: 'Erreur serveur' });
+    logger.error('Update loyalty config error for enterprise: ' + empresaId, { 
+      error: err.message, 
+      stack: err.stack 
+    });
+    res.status(500).json({ error: 'Erreur serveur lors de la mise à jour de la configuration' });
   }
 };
 

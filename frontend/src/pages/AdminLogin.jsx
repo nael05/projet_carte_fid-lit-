@@ -111,7 +111,7 @@ function AdminLogin() {
         </form>
 
         <div className="login-footer">
-          <p>Identifiants: master_admin / AdminPassword123!</p>
+          <p>Identifiants: admin / admin</p>
         </div>
       </div>
     </div>

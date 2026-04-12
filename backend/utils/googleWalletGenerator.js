@@ -161,11 +161,21 @@ class GoogleWalletGenerator {
     }
   }
 
-  async createLoyaltyObject(clientId, empresaId, clientName, currentPoints, config, loyaltyType = 'points') {
+  async createLoyaltyObject(clientId, empresaId, clientName, currentPoints, config, rewardTiers = []) {
     if (!this.client || !this.credentials) return null;
 
     const classId = `${this.issuerId}.${empresaId}_loyalty_class`;
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
+
+    const textModulesData = [];
+    if (rewardTiers && rewardTiers.length > 0) {
+       const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
+       textModulesData.push({
+          header: 'Vos Paliers de Récompenses',
+          body: tiersList,
+          id: 'rewards_module'
+       });
+    }
 
     const loyaltyObject = {
       id: objectId,
@@ -174,9 +184,10 @@ class GoogleWalletGenerator {
       accountName: clientName,
       state: 'ACTIVE',
       loyaltyPoints: {
-        label: (config.loyalty_type === 'stamps' ? 'Tampons' : 'Points'),
+        label: 'Points',
         balance: { string: currentPoints.toString() }
       },
+      textModulesData: textModulesData,
       barcode: {
         type: 'QR_CODE',
         value: clientId.toString(),

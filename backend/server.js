@@ -124,13 +124,10 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   logger.info(`✅ Backend démarré sur http://localhost:${PORT}`);
   logger.info(`📍 Environnement: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`🔒 CORS origins: ${allowedOrigins.join(', ')}`);
-  
-  // Test configurations au démarrage
   setTimeout(() => {
     try {
       import('./utils/passGenerator.js').then((module) => {
-        module.passGenerator.validateConfiguration();
+        if (module.default) module.default.validateConfiguration();
       });
       import('./utils/apnService.js').then((module) => {
         logger.info('✅ Configuration APNs initialisée');

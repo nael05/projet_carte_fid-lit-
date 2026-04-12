@@ -5,7 +5,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import { passGenerator } from '../utils/passGenerator.js';
+import passGenerator from '../utils/passGenerator.js';
 import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import { apnService } from '../utils/apnService.js';
 import db from '../db.js';
@@ -77,25 +77,25 @@ export const createWalletPass = async (req, res) => {
     // LOGIQUE GOOGLE WALLET
     if (type_wallet === 'google') {
       try {
-        await googleWalletGenerator.createOrUpdateClass(company_id, client, company_name, loyalty_type);
-        const saveUrl = await googleWalletGenerator.createLoyaltyObject(client.id, company_id, `${client.prenom} ${client.nom}`, loyalty_type === 'stamps' ? (stamps_collected || 0) : (points || 0), client, loyalty_type);
+        const [tiers] = await db.query('SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC', [company_id]);
+        await googleWalletGenerator.createOrUpdateClass(company_id, client, company_name);
+        const saveUrl = await googleWalletGenerator.createLoyaltyObject(client.id, company_id, `${client.prenom} ${client.nom}`, points || 0, client, tiers);
 
         // Sauvegarder/Mettre à jour la référence dans wallet_cards pour permettre les mises à jour ultérieures
         const googleSerial = `GOOGLE_${client.id}`;
         const [existing] = await db.query('SELECT id FROM wallet_cards WHERE client_id = ? AND pass_serial_number LIKE "GOOGLE_%"', [client.id]);
         
         if (existing.length === 0) {
-          const googleToken = `GOOGLE_${uuidv4()}`;
+          const googleToken = `GOOGLE_${randomUUID()}`;
           await db.query(
-            `INSERT INTO wallet_cards (client_id, company_id, pass_serial_number, authentication_token, points_balance, stamps_balance, qr_code_value)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO wallet_cards (client_id, company_id, pass_serial_number, authentication_token, points_balance, qr_code_value)
+             VALUES (?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE 
                pass_serial_number = VALUES(pass_serial_number),
                authentication_token = VALUES(authentication_token),
                points_balance = VALUES(points_balance),
-               stamps_balance = VALUES(stamps_balance),
                last_updated = NOW()`,
-            [client.id, company_id, googleSerial, googleToken, loyalty_type === 'stamps' ? 0 : (points || 0), loyalty_type === 'stamps' ? (stamps_collected || 0) : 0, client.id.toString()]
+            [client.id, company_id, googleSerial, googleToken, points || 0, client.id.toString()]
           );
         }
 
@@ -125,21 +125,23 @@ export const createWalletPass = async (req, res) => {
     }
 
     // 3️⃣ Générer un serial number unique et token d'authentification
-    const serialNumber = uuidv4().replace(/-/g, '').substring(0, 20).toUpperCase();
-    const authenticationToken = uuidv4();
+    const serialNumber = randomUUID().replace(/-/g, '').substring(0, 20).toUpperCase();
+    const authenticationToken = randomUUID();
 
     // 4️⃣ Préparer données pour la génération du pass
+    const [tiers] = await db.query(
+      'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
+      [company_id]
+    );
+
     const passData = {
       clientId: client.id,
       firstName: client.prenom,
       lastName: client.nom,
       phoneNumber: client.telephone,
       companyName: company_name,
-      loyaltyType: loyalty_type || 'points',
-      balance: loyalty_type === 'stamps' ? (stamps_collected || 0) : (points || 0),
-      pointsGoal: points_for_reward || 10,
-      stampsGoal: stamps_for_reward || 10,
-      stampMaxCount: stamps_for_reward || 10,
+      balance: points || 0,
+      rewardTiers: tiers,
       createdAt: client.created_at || new Date(),
       qrCodeValue: client.id.toString(),
     };
@@ -168,15 +170,14 @@ export const createWalletPass = async (req, res) => {
     await db.query(
       `INSERT INTO wallet_cards (
         client_id, company_id, pass_serial_number, authentication_token,
-        points_balance, stamps_balance, qr_code_value
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        points_balance, qr_code_value
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
       [
         client.id,
         company_id,
         serialNumber,
         authenticationToken,
-        loyalty_type === 'stamps' ? 0 : (points || 0),
-        loyalty_type === 'stamps' ? (stamps_collected || 0) : 0,
+        points || 0,
         client.id.toString(),
       ]
     );

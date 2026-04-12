@@ -11,7 +11,7 @@
  */
 
 import db from '../db.js';
-import { passGenerator } from '../utils/passGenerator.js';
+import passGenerator from '../utils/passGenerator.js';
 import logger from '../utils/logger.js';
 
 /**

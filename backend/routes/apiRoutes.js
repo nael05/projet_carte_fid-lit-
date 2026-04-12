@@ -53,16 +53,19 @@ router.put('/pro/change-password', verifyToken, isPro, apiController.changePassw
 router.get('/pro/clients', verifyToken, isPro, apiController.getClients);
 router.post('/pro/scan', verifyToken, isPro, apiController.handleScan);
 router.put('/pro/adjust-points/:clientId', verifyToken, isPro, apiController.adjustPoints);
-router.put('/pro/update-reward', verifyToken, isPro, apiController.updateReward);
+
 router.get('/pro/info', verifyToken, isPro, apiController.getProInfo);
 
 // ===== Loyalty Configuration Routes =====
 router.get('/pro/loyalty/config', verifyToken, isPro, loyaltyController.getLoyaltyConfig);
 router.put('/pro/loyalty/config', verifyToken, isPro, loyaltyController.updateLoyaltyConfig);
 
-// ===== Stamps System Routes =====
-router.post('/pro/stamps/add/:clientId', verifyToken, isPro, loyaltyController.addStamps);
-router.post('/pro/stamps/claim/:clientId', verifyToken, isPro, loyaltyController.claimStampReward);
+// ===== Reward Tiers Routes =====
+router.get('/pro/reward-tiers', verifyToken, isPro, loyaltyController.getRewardTiers);
+router.post('/pro/reward-tiers', verifyToken, isPro, loyaltyController.createRewardTier);
+router.put('/pro/reward-tiers/:id', verifyToken, isPro, loyaltyController.updateRewardTier);
+router.delete('/pro/reward-tiers/:id', verifyToken, isPro, loyaltyController.deleteRewardTier);
+router.post('/pro/redeem-reward', verifyToken, isPro, apiController.redeemReward);
 
 // ===== Push Notifications Routes =====
 router.post('/pro/notifications/send', verifyToken, isPro, loyaltyController.sendPushNotification);

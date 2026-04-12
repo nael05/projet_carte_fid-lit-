@@ -6,7 +6,7 @@ import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 import CardCustomizer from '../components/CardCustomizer'
-import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, ChevronRight, User, Phone, Award, Check, Bell, Send, History, Settings, Save } from 'lucide-react'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Award, Check, Settings, Save, Trash2 } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {
@@ -14,9 +14,8 @@ function ProDashboard() {
   const [clients, setClients] = useState([])
   const [scannerActive, setScannerActive] = useState(false)
   const [lastScan, setLastScan] = useState(null)
-  const [reward, setReward] = useState(null)
+  
   const [proInfo, setProInfo] = useState(null)
-  const [loyaltyType, setLoyaltyType] = useState('points')
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
   const [customization, setCustomization] = useState(null)
@@ -24,12 +23,22 @@ function ProDashboard() {
 
   const [copied, setCopied] = useState(false)
   const [clientSearch, setClientSearch] = useState('')
-  const [sendingPush, setSendingPush] = useState(false)
+
+  // Scanner extra flows
+  const [inputModal, setInputModal] = useState(null); // { clientId }
+  const [pointsToAdd, setPointsToAdd] = useState('');
+  const [redeemModal, setRedeemModal] = useState(null); // { clientId, clientName, rewards }
+
+  // Loyalty Settings
   const [loyaltyConfig, setLoyaltyConfig] = useState({
-    points_for_reward: 10,
-    reward_title: '',
-    reward_description: ''
+    points_adding_mode: 'auto',
+    points_per_purchase: 10,
+    reward_tiers: []
   })
+  
+  // Tiers Form
+  const [newTier, setNewTier] = useState({ points_required: '', title: '' })
+  
   const [savingSettings, setSavingSettings] = useState(false)
   const navigate = useNavigate()
   const scannerRef = useRef(null)
@@ -57,18 +66,15 @@ function ProDashboard() {
     try {
       const response = await api.get('/pro/info')
       setProInfo(response.data)
-      setLoyaltyType(response.data.loyalty_type || 'points')
       try {
-        const lt = response.data.loyalty_type || 'points'
-        const customResp = await api.get(`/pro/card-customization/${response.data.id}?loyaltyType=${lt}`)
+        const customResp = await api.get(`/pro/card-customization/${response.data.id}?loyaltyType=points`)
         setCustomization(customResp.data)
       } catch (err) {
-        console.log('Pas de personnalisation, utiliser les valeurs par défaut')
+        console.log('Pas de personnalisation, utiliser valeurs par défaut')
       }
       setLoading(false)
     } catch (err) {
-      console.error('Erreur chargement pro info:', err)
-      setPageError('Erreur lors du chargement des informations entreprise')
+      setPageError('Erreur lors du chargement des informations')
       setLoading(false)
     }
   }
@@ -78,8 +84,19 @@ function ProDashboard() {
       const response = await api.get('/pro/clients')
       setClients(response.data)
     } catch (err) {
-      console.error('Erreur chargement clients:', err)
       setPageError('Erreur lors du chargement de la liste des clients')
+    }
+  }
+
+  const loadLoyaltyConfig = async () => {
+    try {
+      const resp = await api.get('/pro/loyalty/config')
+      setLoyaltyConfig({
+        ...resp.data,
+        reward_tiers: resp.data.reward_tiers || []
+      })
+    } catch (err) {
+      console.error('Erreur chargement config loyauté:', err)
     }
   }
 
@@ -98,14 +115,11 @@ function ProDashboard() {
       )
       scanner.render(
         async (decodedText) => {
-          // On arrête le scanner dès qu'on a un résultat
           scanner.clear()
           setScannerActive(false)
-          handleScan(decodedText)
+          processScan(decodedText)
         },
-        (err) => {
-          // On ignore les erreurs de lecture continue (non détection)
-        }
+        (err) => {}
       )
     }
   }
@@ -118,30 +132,71 @@ function ProDashboard() {
     }
   }
 
-  const handleScan = async (clientId) => {
+  const processScan = (clientId) => {
+    if (loyaltyConfig.points_adding_mode === 'manual') {
+      setInputModal({ clientId })
+    } else {
+      handleScanSubmit(clientId, loyaltyConfig.points_per_purchase)
+    }
+  }
+
+  const handleScanSubmit = async (clientId, points) => {
     try {
       setLoading(true)
-      const response = await api.post('/pro/scan', { clientId })
+      setInputModal(null)
+      setPointsToAdd('')
+      
+      const payload = { clientId }
+      if (points !== undefined && points !== null) {
+        payload.points_to_add = points
+      }
+
+      const response = await api.post('/pro/scan', payload)
+      
       const successData = {
         success: true,
         clientName: response.data.clientName,
-        rewardUnlocked: response.data.rewardUnlocked,
-        rewardTitle: response.data.rewardTitle
+        message: response.data.message
       }
-      if (loyaltyType === 'points') {
-        successData.points = response.data.newPoints
-        successData.message = response.data.message
-      } else {
-        successData.stamps = response.data.newStamps
-        successData.message = response.data.message
-      }
+      
       setLastScan(successData)
-      setReward(response.data.rewardUnlocked ? response.data.rewardTitle : null)
       setTimeout(() => setLastScan(null), 5000)
       loadClients()
+
+      if (response.data.availableRewards && response.data.availableRewards.length > 0) {
+        setRedeemModal({
+          clientId,
+          clientName: response.data.clientName,
+          rewards: response.data.availableRewards
+        })
+      }
     } catch (err) {
       setLastScan({ success: false, error: err.response?.data?.error || 'Erreur scan' })
-      setTimeout(() => setLastScan(null), 3000)
+      setTimeout(() => setLastScan(null), 4000)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRedeem = async (rewardTierId) => {
+    try {
+      setLoading(true)
+      const response = await api.post('/pro/redeem-reward', { 
+        clientId: redeemModal.clientId, 
+        rewardTierId 
+      })
+      
+      setLastScan({ success: true, clientName: redeemModal.clientName, message: response.data.message })
+      setTimeout(() => setLastScan(null), 5000)
+      loadClients()
+
+      if (response.data.availableRewards && response.data.availableRewards.length > 0) {
+        setRedeemModal({ ...redeemModal, rewards: response.data.availableRewards })
+      } else {
+        setRedeemModal(null)
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Erreur lors du rachat')
     } finally {
       setLoading(false)
     }
@@ -156,7 +211,6 @@ function ProDashboard() {
     }
   }
 
-
   const handleLogout = () => { logout(); navigate('/pro/login') }
 
   const handleCopyLink = () => {
@@ -165,23 +219,13 @@ function ProDashboard() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-
-  const loadLoyaltyConfig = async () => {
-    try {
-      const resp = await api.get('/pro/loyalty/config')
-      setLoyaltyConfig(resp.data)
-    } catch (err) {
-      console.error('Erreur chargement config loyauté:', err)
-    }
-  }
-
   const handleSaveLoyaltyConfig = async (e) => {
     e.preventDefault()
     try {
       setSavingSettings(true)
       await api.put('/pro/loyalty/config', loyaltyConfig)
-      alert('Paramètres de fidélité mis à jour !')
-      loadProInfo() // Refresh proInfo for loyaltyType etc
+      alert('Paramètres enregistrés !')
+      loadLoyaltyConfig()
     } catch (err) {
       alert(err.response?.data?.error || 'Erreur lors de la sauvegarde')
     } finally {
@@ -189,7 +233,32 @@ function ProDashboard() {
     }
   }
 
+  const handleAddTier = async () => {
+    if (!newTier.points_required || !newTier.title) return
+    try {
+      setSavingSettings(true)
+      await api.post('/pro/reward-tiers', newTier)
+      setNewTier({ points_required: '', title: '' })
+      loadLoyaltyConfig()
+    } catch (err) {
+      alert(err.response?.data?.error || "Erreur lors de l'ajout")
+    } finally {
+      setSavingSettings(false)
+    }
+  }
 
+  const handleDeleteTier = async (id) => {
+    if (!window.confirm('Supprimer ce palier ?')) return
+    try {
+      setSavingSettings(true)
+      await api.delete(`/pro/reward-tiers/${id}`)
+      loadLoyaltyConfig()
+    } catch (err) {
+      alert('Erreur lors de la suppression')
+    } finally {
+      setSavingSettings(false)
+    }
+  }
 
   const filteredClients = clients.filter(c => {
     if (!clientSearch) return true
@@ -213,7 +282,7 @@ function ProDashboard() {
           <div className="pro-avatar">{(localStorage.getItem('companyName') || 'E')[0]}</div>
           <div>
             <h1 className="pro-company-name">{localStorage.getItem('companyName')}</h1>
-            <span className="pro-badge">{loyaltyType === 'points' ? 'Points' : 'Tampons'} · {clients.length} client{clients.length !== 1 ? 's' : ''}</span>
+            <span className="pro-badge">Points · {clients.length} client(s)</span>
           </div>
         </div>
         <button className="pro-topbar-btn" onClick={handleLogout} title="Déconnexion">
@@ -221,7 +290,6 @@ function ProDashboard() {
         </button>
       </header>
 
-      {/* ===== SUSPENDED BANNER ===== */}
       {isSuspended && (
         <div className="pro-suspended-banner">
           <AlertCircle size={20} />
@@ -232,7 +300,6 @@ function ProDashboard() {
         </div>
       )}
 
-      {/* ===== LOADING ===== */}
       {loading && (
         <div className="pro-loading">
           <Loader2 size={28} className="pro-spin" />
@@ -240,25 +307,16 @@ function ProDashboard() {
         </div>
       )}
 
-      {/* ===== ERROR ===== */}
       {pageError && (
         <div className="pro-alert pro-alert-error">
           <AlertCircle size={18} /> <span>{pageError}</span>
         </div>
       )}
 
-      {/* ===== MAIN CONTENT ===== */}
       {!loading && (
         <main className="pro-main" style={{ opacity: isSuspended ? 0.4 : 1, pointerEvents: isSuspended ? 'none' : 'auto' }}>
 
-          {/* Scan feedback toasts */}
-          {reward && (
-            <div className="pro-alert pro-alert-success">
-              <Award size={18} />
-              <div><strong>Palier atteint !</strong><p>{reward}</p></div>
-              <button className="pro-alert-close" onClick={() => setReward(null)}><X size={16} /></button>
-            </div>
-          )}
+          {/* Flash Messages */}
           {lastScan && (
             <div className={`pro-alert ${lastScan.success ? 'pro-alert-success' : 'pro-alert-error'}`}>
               {lastScan.success ? (
@@ -270,7 +328,7 @@ function ProDashboard() {
             </div>
           )}
 
-          {/* ===== DESKTOP TABS (hidden on mobile) ===== */}
+          {/* Desktop Tabs */}
           <div className="pro-tabs-desktop">
             {tabs.map(t => (
               <button key={t.id} className={`pro-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
@@ -280,46 +338,103 @@ function ProDashboard() {
             ))}
           </div>
 
-          {/* ==================== SCANNER ==================== */}
+          {/* ====== SCANNER ====== */}
           {activeTab === 'scanner' && (
             <div className="pro-section">
               <div className="pro-section-header">
                 <ScanLine size={22} />
                 <div>
                   <h2>Scanner QR Code</h2>
-                  <p>Scannez le QR code client pour {loyaltyType === 'points' ? 'ajouter des points' : 'valider un tampon'}</p>
+                  <p>Attribution de points</p>
                 </div>
               </div>
-              <div className="pro-scanner-area">
-                {!scannerActive ? (
-                  <button className="pro-scan-btn" onClick={() => setScannerActive(true)}>
-                    <ScanLine size={28} />
-                    <span>Appuyez pour scanner</span>
-                  </button>
-                ) : (
-                  <>
-                    <div id="qr-scanner" ref={scannerRef} className="pro-qr-reader"></div>
-                    <button className="pro-btn-secondary" onClick={() => setScannerActive(false)}>
-                      <X size={16} /> Arrêter le scanner
+
+              {!inputModal && !redeemModal && (
+                <div className="pro-scanner-area">
+                  {!scannerActive ? (
+                    <button className="pro-scan-btn" onClick={() => setScannerActive(true)}>
+                      <ScanLine size={28} />
+                      <span>Appuyez pour scanner</span>
                     </button>
-                  </>
-                )}
-              </div>
+                  ) : (
+                    <>
+                      <div id="qr-scanner" ref={scannerRef} className="pro-qr-reader"></div>
+                      <button className="pro-btn-secondary" onClick={() => setScannerActive(false)}>
+                        <X size={16} /> Arrêter le scanner
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Modal de saisie manuelle (si Mode = manuel) */}
+              {inputModal && !redeemModal && (
+                <div className="scan-action-modal">
+                   <div className="pro-modal-box">
+                      <h3>Ajouter des points</h3>
+                      <p>Saisissez le nombre de points à ajouter pour ce client.</p>
+                      <input 
+                        type="number" 
+                        autoFocus
+                        value={pointsToAdd} 
+                        onChange={(e) => setPointsToAdd(e.target.value)} 
+                        placeholder="Ex: 25"
+                        style={{ padding: '12px', fontSize: '18px', width: '100%', border: '2px solid var(--border)', borderRadius: 'var(--radius)', marginTop: '15px' }}
+                      />
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                        <button className="pro-btn-secondary" style={{flex: 1}} onClick={() => setInputModal(null)}>Annuler</button>
+                        <button className="pro-btn-primary" style={{flex: 1}} onClick={() => handleScanSubmit(inputModal.clientId, pointsToAdd)}>Valider</button>
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {/* Modal d'évaluation des récompenses atteintes */}
+              {redeemModal && (
+                <div className="scan-action-modal">
+                   <div className="pro-modal-box" style={{ borderColor: 'var(--accent)', borderWidth: '3px', borderStyle: 'solid' }}>
+                      <Award size={48} color="var(--accent)" style={{ margin: '0 auto 15px', display: 'block' }} />
+                      <h3 style={{ textAlign: 'center' }}>Palier Atteint !</h3>
+                      <p style={{ textAlign: 'center', marginBottom: '20px' }}><strong>{redeemModal.clientName}</strong> peut bénéficier de :</p>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {redeemModal.rewards.map(r => (
+                          <button 
+                            key={r.id} 
+                            className="pro-btn-primary" 
+                            style={{ background: 'var(--accent)', display: 'flex', justifyContent: 'space-between' }}
+                            onClick={() => handleRedeem(r.id)}
+                          >
+                            <span>{r.title}</span>
+                            <span style={{ opacity: 0.8, fontSize: '12px' }}>-{r.points_required} pts</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <button 
+                        className="pro-btn-secondary" 
+                        style={{ width: '100%', marginTop: '20px' }} 
+                        onClick={() => setRedeemModal(null)}
+                      >
+                        Conserver les points pour plus tard
+                      </button>
+                   </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ==================== CLIENTS ==================== */}
+          {/* ====== CLIENTS ====== */}
           {activeTab === 'clients' && (
             <div className="pro-section">
               <div className="pro-section-header">
                 <Users size={22} />
                 <div>
                   <h2>Clients ({clients.length})</h2>
-                  <p>Gérez vos clients et leurs {loyaltyType === 'points' ? 'points' : 'tampons'}</p>
+                  <p>Gérez vos clients et leur cagnotte</p>
                 </div>
               </div>
 
-              {/* Search */}
               <div className="pro-search-bar">
                 <input
                   type="text"
@@ -329,7 +444,6 @@ function ProDashboard() {
                 />
               </div>
 
-              {/* Client Cards (mobile-friendly) */}
               {filteredClients.length === 0 ? (
                 <div className="pro-empty">
                   <Users size={40} />
@@ -346,21 +460,13 @@ function ProDashboard() {
                           <span className="pro-client-phone"><Phone size={12} /> {client.telephone}</span>
                         </div>
                         <div className="pro-client-points">
-                          <span className="pro-points-value">
-                            {loyaltyType === 'points'
-                              ? client.points
-                              : `${client.stamps_collected || 0}/${proInfo?.stamps_count || 10}`}
-                          </span>
-                          <span className="pro-points-label">{loyaltyType === 'points' ? 'pts' : 'tampons'}</span>
+                          <span className="pro-points-value">{client.points || 0}</span>
+                          <span className="pro-points-label">pts</span>
                         </div>
                       </div>
                       <div className="pro-client-actions">
-                        <button className="pro-action-btn" onClick={() => adjustPoints(client.id, -1)} title="-1">
-                          <Minus size={16} />
-                        </button>
-                        <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(client.id, 1)} title="+1">
-                          <Plus size={16} />
-                        </button>
+                        <button className="pro-action-btn" onClick={() => adjustPoints(client.id, -1)} title="-1"><Minus size={16} /></button>
+                        <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(client.id, 1)} title="+1"><Plus size={16} /></button>
                       </div>
                     </div>
                   ))}
@@ -369,14 +475,14 @@ function ProDashboard() {
             </div>
           )}
 
-          {/* ==================== RECRUTER ==================== */}
+          {/* ====== RECRUTER ====== */}
           {activeTab === 'register' && (
             <div className="pro-section">
               <div className="pro-section-header">
                 <LinkIcon size={22} />
                 <div>
                   <h2>Recruter des clients</h2>
-                  <p>Partagez ce QR ou ce lien pour inscrire vos clients</p>
+                  <p>Partagez ce QR ou lien</p>
                 </div>
               </div>
               <div className="pro-recruit-content">
@@ -387,13 +493,9 @@ function ProDashboard() {
                     <div className="pro-qr-placeholder"><Loader2 size={24} className="pro-spin" /></div>
                   )}
                 </div>
-                <p className="pro-recruit-hint">Faites scanner ce QR à vos clients ou partagez le lien ci-dessous</p>
+                <p className="pro-recruit-hint">Lien d'inscription client</p>
                 <div className="pro-link-copy">
-                  <input
-                    type="text"
-                    readOnly
-                    value={proInfo ? `${window.location.origin}/join/${proInfo.id}` : ''}
-                  />
+                  <input type="text" readOnly value={proInfo ? `${window.location.origin}/join/${proInfo.id}` : ''} />
                   <button className="pro-copy-btn" onClick={handleCopyLink}>
                     {copied ? <><Check size={16} /> Copié</> : <><Copy size={16} /> Copier</>}
                   </button>
@@ -402,133 +504,108 @@ function ProDashboard() {
             </div>
           )}
 
-          {/* ==================== DESIGN ==================== */}
+          {/* ====== DESIGN ====== */}
           {activeTab === 'design' && (
             <div className="pro-section">
               <div className="pro-section-header">
                 <Palette size={22} />
                 <div>
                   <h2>Design de la carte</h2>
-                  <p>Personnalisez l'apparence de votre carte Wallet</p>
+                  <p>Wallet Customizer</p>
                 </div>
               </div>
               <CardCustomizer proInfo={proInfo} />
             </div>
           )}
 
-          {/* ==================== RÉGLAGES ==================== */}
+          {/* ====== RÉGLAGES ====== */}
           {activeTab === 'settings' && (
             <div className="pro-section">
               <div className="pro-section-header">
                 <Settings size={22} />
                 <div>
-                  <h2>Paramètres de Fidélité</h2>
-                  <p>Configurez les paliers et les récompenses</p>
+                  <h2>Paramètres</h2>
+                  <p>Configuration de votre programme Fidélité</p>
                 </div>
               </div>
 
               <div className="pro-settings-container">
                 <form className="pro-settings-form" onSubmit={handleSaveLoyaltyConfig}>
                   <div className="pro-settings-card">
-                    <h3>Type de programme</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-                      <div className="pro-badge" style={{ 
-                        background: 'var(--accent-light)', 
-                        color: 'var(--accent)', 
-                        padding: '6px 14px', 
-                        borderRadius: '20px',
-                        fontSize: '14px',
-                        fontWeight: '700',
-                        textTransform: 'capitalize'
-                      }}>
-                        {loyaltyConfig.loyalty_type === 'stamps' ? 'Tampons (Stamps)' : 'Points'}
-                      </div>
-                      <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>
-                        Contactez l'administrateur pour changer le type de programme.
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pro-settings-card">
-                    <h3>Fonctionnement</h3>
+                    <h3>Mode d'attribution</h3>
                     <div className="pro-form-row">
                       <div className="pro-form-group">
-                        <label>{loyaltyConfig.loyalty_type === 'points' ? 'Points par passage' : 'Tampons par passage'}</label>
-                        <input 
-                          type="number" 
-                          min="1"
-                          value={loyaltyConfig.loyalty_type === 'points' ? loyaltyConfig.points_per_purchase : loyaltyConfig.stamps_per_purchase}
-                          onChange={e => setLoyaltyConfig({
-                            ...loyaltyConfig, 
-                            [loyaltyConfig.loyalty_type === 'points' ? 'points_per_purchase' : 'stamps_per_purchase']: parseInt(e.target.value)
-                          })}
-                        />
+                        <label>Mode au Scan</label>
+                        <select 
+                          value={loyaltyConfig.points_adding_mode} 
+                          onChange={(e) => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: e.target.value})}
+                          style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-light)' }}
+                        >
+                          <option value="auto">Automatique (Points Fixes)</option>
+                          <option value="manual">Manuel (Saisie à chaque scan)</option>
+                        </select>
                       </div>
-                      <div className="pro-form-group">
-                        <label>{loyaltyConfig.loyalty_type === 'points' ? 'Points pour un cadeau' : 'Seuil de récompense'}</label>
-                        {loyaltyConfig.loyalty_type === 'points' ? (
+                      
+                      {loyaltyConfig.points_adding_mode === 'auto' && (
+                        <div className="pro-form-group">
+                          <label>Points fixes par passage</label>
                           <input 
                             type="number" 
                             min="1"
-                            value={loyaltyConfig.points_for_reward || 10}
-                            onChange={e => setLoyaltyConfig({
-                              ...loyaltyConfig, 
-                              points_for_reward: parseInt(e.target.value)
-                            })}
+                            value={loyaltyConfig.points_per_purchase}
+                            onChange={e => setLoyaltyConfig({...loyaltyConfig, points_per_purchase: parseInt(e.target.value)})}
                           />
-                        ) : (
-                          <div className="pro-read-only-box" style={{ 
-                            padding: '12px 16px', 
-                            background: 'var(--bg-subtle)', 
-                            borderRadius: 'var(--radius-sm)',
-                            fontSize: '15px',
-                            fontWeight: '600',
-                            color: 'var(--text-secondary)',
-                            border: '1px solid var(--border-light)'
-                          }}>
-                            10 tampons (Fixe)
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
-                    <p className="pro-hint">Le client verra sa progression sur sa carte (ex: 15 / 20 points).</p>
+                    <button type="submit" className="pro-btn-primary" style={{ marginTop: '15px' }} disabled={savingSettings}>
+                      {savingSettings ? <Loader2 size={16} className="pro-spin" /> : <Save size={16} />} Enregistrer Mode
+                    </button>
                   </div>
-
-                  <div className="pro-settings-card">
-                    <h3>Récompense</h3>
-                    <div className="pro-form-group">
-                      <label>Nom du cadeau ou de l'offre</label>
-                      <input 
-                        type="text" 
-                        placeholder="Ex: Un café offert" 
-                        value={loyaltyConfig.reward_title || ''}
-                        onChange={e => setLoyaltyConfig({...loyaltyConfig, reward_title: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="pro-form-group">
-                      <label>Description (optionnel)</label>
-                      <textarea 
-                        placeholder="Détails de l'offre..." 
-                        rows={2}
-                        value={loyaltyConfig.reward_description || ''}
-                        onChange={e => setLoyaltyConfig({...loyaltyConfig, reward_description: e.target.value})}
-                      ></textarea>
-                    </div>
-                  </div>
-
-                  <button type="submit" className="pro-btn-primary" disabled={savingSettings}>
-                    {savingSettings ? <Loader2 size={18} className="pro-spin" /> : <Save size={18} />}
-                    Enregistrer les paramètres
-                  </button>
                 </form>
+
+                <div className="pro-settings-card" style={{ marginTop: '20px' }}>
+                  <h3>Paliers de Récompenses</h3>
+                  <p className="pro-hint">Définissez des seuils de points et les cadeaux associés. Vos clients pourront les débloquer une fois le score atteint.</p>
+                  
+                  <div className="tiers-list" style={{ marginTop: '15px' }}>
+                    {loyaltyConfig.reward_tiers.map(tier => (
+                      <div key={tier.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-subtle)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-light)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <strong style={{ background: 'var(--accent)', color: 'white', padding: '4px 8px', borderRadius: '6px', fontSize: '13px' }}>{tier.points_required} pts</strong>
+                          <span>{tier.title}</span>
+                        </div>
+                        <button onClick={() => handleDeleteTier(tier.id)} style={{ color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Trash2 size={18} /></button>
+                      </div>
+                    ))}
+                    {loyaltyConfig.reward_tiers.length === 0 && (
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+                        Aucun palier défini
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '15px', alignItems: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Points requis</label>
+                      <input type="number" placeholder="ex: 50" value={newTier.points_required} onChange={e => setNewTier({...newTier, points_required: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-light)', width: '100%', boxSizing: 'border-box' }}/>
+                    </div>
+                    <div style={{ flex: 2 }}>
+                      <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Nom de l'offre</label>
+                      <input type="text" placeholder="ex: Café offert" value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-light)', width: '100%', boxSizing: 'border-box' }}/>
+                    </div>
+                    <button className="pro-btn-secondary" onClick={handleAddTier} disabled={savingSettings}>
+                      <Plus size={18} /> Ajouter
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </main>
       )}
 
-      {/* ===== MOBILE BOTTOM NAV ===== */}
+      {/* Mobile NavBar */}
       <nav className="pro-bottom-nav">
         {tabs.map(t => (
           <button key={t.id} className={`pro-bnav-item ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
@@ -538,7 +615,7 @@ function ProDashboard() {
         ))}
       </nav>
 
-      {/* ===== CLIENT DETAIL MODAL ===== */}
+      {/* Modal Client (Ajustement) */}
       {selectedClientCard && (
         <div className="modal-backdrop" style={{ zIndex: 1000 }} onClick={() => setSelectedClientCard(null)}>
           <div className="pro-modal" onClick={e => e.stopPropagation()}>
@@ -547,7 +624,7 @@ function ProDashboard() {
             <h3>{selectedClientCard.prenom} {selectedClientCard.nom}</h3>
             <div className="pro-modal-info">
               <div className="pro-modal-row"><Phone size={14} /><span>{selectedClientCard.telephone}</span></div>
-              <div className="pro-modal-row"><Award size={14} /><span>{loyaltyType === 'points' ? `${selectedClientCard.points} points` : `${selectedClientCard.stamps_collected || 0}/${proInfo?.stamps_count || 10} tampons`}</span></div>
+              <div className="pro-modal-row"><Award size={14} /><span>{selectedClientCard.points || 0} pts</span></div>
             </div>
             <div className="pro-modal-actions">
               <button className="pro-action-btn" onClick={() => adjustPoints(selectedClientCard.id, -1)}><Minus size={16} /></button>
@@ -556,8 +633,6 @@ function ProDashboard() {
           </div>
         </div>
       )}
-
-      {/* ===== WALLET MODAL (SUPPRIMÉ) ===== */}
     </div>
   )
 }

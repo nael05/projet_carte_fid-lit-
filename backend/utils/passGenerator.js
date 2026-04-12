@@ -11,7 +11,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import logger from './logger.js';
 import axios from 'axios';
-import { generateStampStrip } from './stampImageGenerator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,7 +38,6 @@ export class PassGenerator {
       this.webserviceUrl = this.webserviceUrl.slice(0, -1);
     }
 
-    // Sécurité: Si certPath est manquant, on ne marque pas comme chargé
     if (!this.certPath) {
       logger.error('❌ APPLE_CERT_PATH est manquant dans .env. La génération de pass va échouer.');
       return false;
@@ -63,24 +61,23 @@ export class PassGenerator {
    */
   validateConfiguration() {
     if (!this._loadConfig()) {
-      logger.warn('⚠️ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant). La génération de pass Apple sera indisponible.');
+      logger.warn('⚠️ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant).');
       return false;
     }
     
     if (!fs.existsSync(this.certPath)) {
-      logger.warn(`⚠️ CERTIFICAT APPLE MANQUANT: ${this.certPath}. La génération de pass Apple sera indisponible.`);
+      logger.warn(`⚠️ CERTIFICAT APPLE MANQUANT: ${this.certPath}.`);
       return false;
     }
 
     const requiredEnvs = ['APPLE_TEAM_ID', 'APPLE_PASS_TYPE_ID', 'APPLE_WALLET_WEBSERVICE_URL'];
     for (const env of requiredEnvs) {
       if (!process.env[env]) {
-        logger.warn(`⚠️ VARIABLE ENV APPLE MANQUANTE: ${env}. La génération de pass Apple sera indisponible.`);
+        logger.warn(`⚠️ VARIABLE ENV APPLE MANQUANTE: ${env}.`);
         return false;
       }
     }
 
-    logger.info('✅ Configuration Apple Wallet validée');
     return true;
   }
 
@@ -91,16 +88,12 @@ export class PassGenerator {
     if (!urlOrPath) return null;
     
     try {
-      // 1. Si c'est un chemin local (relatif à la racine du backend)
       if (urlOrPath.startsWith('uploads/')) {
         const fullPath = path.resolve(__dirname, '..', urlOrPath);
         if (fs.existsSync(fullPath)) {
           return fs.readFileSync(fullPath);
         }
-        logger.warn(`Image locale manquante sur le disque: ${fullPath}`);
       }
-
-      // 2. Si c'est une URL HTTP
       if (urlOrPath.startsWith('http')) {
         const response = await axios.get(urlOrPath, { 
           responseType: 'arraybuffer',
@@ -108,16 +101,14 @@ export class PassGenerator {
         });
         return Buffer.from(response.data, 'binary');
       }
-
       return null;
     } catch (e) {
-      logger.warn(`Impossible de charger l'image: ${urlOrPath} (${e.message})`);
       return null;
     }
   }
 
   /**
-   * Helper pour extraire le PEM pur (enlève les Bag Attributes générés par OpenSSL)
+   * Helper pour extraire le PEM pur
    */
   extractPEM(buffer) {
     const str = buffer.toString('utf8');
@@ -136,7 +127,6 @@ export class PassGenerator {
       const certificateBuffer = fs.readFileSync(this.certPath);
       const keyBuffer = fs.readFileSync(this.keyPath);
 
-      // Créer le Template
       const template = new Template("storeCard", {
         passTypeIdentifier: this.passTypeId,
         teamIdentifier: this.teamId,
@@ -149,22 +139,18 @@ export class PassGenerator {
         authenticationToken: authToken,
       });
 
-      // Nettoyer les PEMs (enlever les attributes OpenSSL)
       const cleanCert = this.extractPEM(certificateBuffer);
       const cleanKey = this.extractPEM(keyBuffer);
 
       template.setCertificate(cleanCert);
       template.setPrivateKey(cleanKey, this.certPassword || undefined);
 
-      // Ajouter les images si présentes (supporte les nouveaux chemins relatifs)
       const logoBuffer = await this.fetchImageBuffer(customization?.apple_logo_url);
       if (logoBuffer) {
         await template.images.add("logo", logoBuffer);
       } else {
         const defaultLogo = await this.fetchImageBuffer('https://dummyimage.com/160x50/000/fff.png&text=Logo');
-        if (defaultLogo) {
-            await template.images.add("logo", defaultLogo);
-        }
+        if (defaultLogo) await template.images.add("logo", defaultLogo);
       }
 
       const iconBuffer = await this.fetchImageBuffer(customization?.apple_icon_url);
@@ -172,40 +158,18 @@ export class PassGenerator {
         await template.images.add("icon", iconBuffer);
       } else {
         const defaultIcon = await this.fetchImageBuffer('https://dummyimage.com/29x29/000/fff.png&text=Icon');
-        if (defaultIcon) {
-            await template.images.add("icon", defaultIcon);
-        }
+        if (defaultIcon) await template.images.add("icon", defaultIcon);
       }
 
       const stripBuffer = await this.fetchImageBuffer(customization?.apple_strip_image_url);
-      
-      if (clientData.loyaltyType === 'stamps') {
-        // En mode TAMPONS, on génère TOUJOURS le strip dynamique
-        // mais on lui passe le stripBuffer (la photo) comme fond si elle existe
-        const accentColor = customization?.apple_label_color || '#3b82f6';
-        const bgColor = customization?.apple_background_color || '#1f2937';
-        const stampStrip = await generateStampStrip(
-          Number(clientData.balance || 0),
-          Number(clientData.stampMaxCount || 10),
-          accentColor,
-          '#4b5563',  // couleur des cercles vides
-          bgColor,
-          stripBuffer // Le fond optionnel (SI null, fond uni utilisé)
-        );
-        if (stampStrip) {
-          await template.images.add("strip", stampStrip);
-        }
-      } else if (stripBuffer) {
-        // En mode POINTS, on utilise juste la photo si elle existe
+      if (stripBuffer) {
         await template.images.add("strip", stripBuffer);
       }
 
-      // Création du passe individuel à partir du template
       const pass = template.createPass({
         serialNumber: String(serialNumber),
       });
 
-      // Géolocalisation (Premium Feature)
       if (customization?.latitude && customization?.longitude) {
         pass.locations.add({
           latitude: Number(customization.latitude),
@@ -214,27 +178,19 @@ export class PassGenerator {
         });
       }
 
-      // Titre de la récompense (Visible sur le devant)
-      if (clientData.rewardTitle) {
-        pass.headerFields.add({
-          key: 'reward',
-          label: 'OFFRE',
-          value: clientData.rewardTitle
-        });
-      }
+      pass.headerFields.add({
+        key: 'points_header',
+        label: 'POINTS',
+        value: `${clientData.balance || 0}`
+      });
 
-      // Champs principal
-      if (clientData.loyaltyType !== 'stamps') {
-        const goal = clientData.pointsGoal || 10;
-        pass.primaryFields.add({
-          key: 'balance',
-          label: 'Points',
-          value: `${clientData.balance} / ${goal}`,
-          changeMessage: 'Nouveaux points: +%@',
-        });
-      }
+      pass.primaryFields.add({
+        key: 'balance',
+        label: 'Votre Cagnotte',
+        value: `${clientData.balance || 0} pts`,
+        changeMessage: 'Votre solde est maintenant de %@ pts',
+      });
 
-      // Champs auxiliaires
       pass.auxiliaryFields.add({
         key: 'client_name',
         label: 'Client',
@@ -249,88 +205,80 @@ export class PassGenerator {
         });
       }
 
-      // Champs secondaires
-      pass.secondaryFields.add({
-        key: 'phone',
-        label: 'Téléphone',
-        value: clientData.phoneNumber || 'N/A',
+      pass.backFields.add({
+        key: 'company_info',
+        label: 'Entreprise',
+        value: clientData.companyName || 'Boutique',
       });
+      
+      // Ajout des paliers de récompenses sur la face arrière
+      if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
+        const tiersList = clientData.rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
+        pass.backFields.add({
+          key: 'rewards_tiers',
+          label: 'Vos Paliers de Récompenses',
+          value: tiersList
+        });
+      } else if (clientData.rewardTitle) {
+        pass.backFields.add({
+          key: 'reward_info',
+          label: 'Récompense Initiale',
+          value: clientData.rewardTitle
+        });
+      }
 
-      // Barcode
       pass.barcodes = [
         {
-          format: 'PKBarcodeFormatQR',
-          messageEncoding: 'iso-8859-1',
-          message: String(clientData.qrCodeValue),
-          altText: `ID: ${clientData.clientId}`,
+          format: "PKBarcodeFormatQR",
+          message: String(clientData.clientId),
+          messageEncoding: "iso-8859-1",
+          altText: String(clientData.cardNumber || clientData.clientId)
         }
       ];
 
-      // Texte du logo
-      if (customization?.logo_text) {
-        pass.logoText = customization.logo_text;
-      }
-
-      // Champs au verso (Back Fields)
-      if (customization?.back_fields_info) {
-        pass.backFields.add({
-          key: 'info',
-          label: 'À propos',
-          value: customization.back_fields_info
-        });
-      }
-
-      if (customization?.back_fields_terms) {
-        pass.backFields.add({
-          key: 'terms',
-          label: 'Conditions Générales',
-          value: customization.back_fields_terms
-        });
-      }
-
-      if (customization?.back_fields_website) {
-        pass.backFields.add({
-          key: 'website',
-          label: 'Site Web',
-          value: customization.back_fields_website
-        });
-      }
-
-      // Générer le buffer du fichier .pkpass
-      const passBuffer = await pass.asBuffer();
-
-      logger.info(`✅ Pass généré avec succès (serial: ${serialNumber})`);
-      return passBuffer;
+      return await pass.asBuffer();
     } catch (error) {
-      logger.error(`❌ Erreur génération pass: ${error.message}`);
+      logger.error('❌ Erreur lors de la génération Apple Wallet Pass', {
+        clientId: clientData.clientId,
+        errorMessage: error.message
+      });
       throw error;
     }
   }
 
-  async generateUpdatedPass(clientData, customization, serialNumber, authToken) {
-    logger.info(`🔄 Génération pass mis à jour (serial: ${serialNumber})`);
-    return this.generateLoyaltyPass(clientData, customization, serialNumber, authToken);
-  }
+  /**
+   * Recharge un buffer avec d'anciennes données pour les mises à jour push
+   */
+  async updatePassFields(passBuffer, updates) {
+    try {
+      this._loadConfig();
+      const certificateBuffer = fs.readFileSync(this.certPath);
+      const keyBuffer = fs.readFileSync(this.keyPath);
+      
+      const cleanCert = this.extractPEM(certificateBuffer);
+      const cleanKey = this.extractPEM(keyBuffer);
 
-  static ensurePassDirectory() {
-    const passDir = path.join(__dirname, '../passes');
-    if (!fs.existsSync(passDir)) {
-      fs.mkdirSync(passDir, { recursive: true });
+      const pass = await Template.load(passBuffer);
+      pass.setCertificate(cleanCert);
+      pass.setPrivateKey(cleanKey, this.certPassword || undefined);
+      
+      pass.primaryFields.forEach(field => {
+        if (field.key === 'balance' && updates.balance !== undefined) {
+          field.value = `${updates.balance} pts`;
+        }
+      });
+      pass.headerFields.forEach(field => {
+        if (field.key === 'points_header' && updates.balance !== undefined) {
+          field.value = `${updates.balance}`;
+        }
+      });
+      
+      return await pass.asBuffer();
+    } catch (error) {
+      logger.error('Failed to update pass fields:', error.message);
+      throw error;
     }
-    return passDir;
   }
 }
 
-let instance = null;
-
-function getInstance() {
-  if (!instance) {
-    instance = new PassGenerator();
-  }
-  return instance;
-}
-
-// Export direct de l'instance (le singleton)
-const passGenerator = getInstance();
-export { passGenerator };
-export default passGenerator;
+export default new PassGenerator();

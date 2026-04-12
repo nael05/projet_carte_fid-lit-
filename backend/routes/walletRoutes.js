@@ -11,7 +11,7 @@ import express from 'express';
 import * as walletAppController from '../controllers/walletAppController.js';
 import * as appleWebserviceController from '../controllers/appleWebserviceController.js';
 import { verifyToken, isPro } from '../middlewares/auth.js';
-import { passGenerator } from '../utils/passGenerator.js';
+import passGenerator from '../utils/passGenerator.js';
 import db from '../db.js';
 import logger from '../utils/logger.js';
 

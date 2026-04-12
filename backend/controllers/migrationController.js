@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const runMigrations = async (req, res) => {
   try {
     // Lire le fichier migration
-    const migrationPath = path.join(__dirname, '../migrations/fix-schema-v2.sql');
+    const migrationPath = path.join(__dirname, '../migrations/v3-points-only-and-tiers.sql');
     
     if (!fs.existsSync(migrationPath)) {
       return res.status(404).json({ error: 'Migration file not found' });

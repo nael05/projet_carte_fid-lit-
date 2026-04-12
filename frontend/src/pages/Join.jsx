@@ -124,7 +124,7 @@ function Join() {
 
       // Redirection automatique via GET vers la route téléchargement natif
       setTimeout(() => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
         window.location.href = `${apiUrl}/app/wallet/client-download/${clientId}`;
       }, 1500)
     } catch (err) {

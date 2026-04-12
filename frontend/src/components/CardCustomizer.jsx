@@ -155,7 +155,7 @@ const CardCustomizer = ({ proInfo }) => {
     const cleanPath = relativeMatch ? relativeMatch[0] : url.replace(/^\//, '');
     
     // Use API base URL directly (which already includes /api)
-    let baseUrl = api.defaults.baseURL || 'http://localhost:5000/api';
+    let baseUrl = api.defaults.baseURL || '/api';
     baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if any
     
     return `${baseUrl}/${cleanPath}`;

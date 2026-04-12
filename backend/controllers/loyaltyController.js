@@ -100,7 +100,8 @@ export const updateLoyaltyConfig = async (req, res) => {
       error: err.message, 
       stack: err.stack 
     });
-    res.status(500).json({ error: 'Erreur serveur lors de la mise à jour de la configuration' });
+    // On renvoie l'erreur précise pour le debug
+    res.status(500).json({ error: 'Erreur SQL: ' + err.message });
   }
 };
 

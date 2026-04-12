@@ -57,24 +57,37 @@ export const updateLoyaltyConfig = async (req, res) => {
     );
 
     if (existing.length > 0) {
-      await pool.query(
-        `UPDATE loyalty_config SET 
-          points_adding_mode = COALESCE(?, points_adding_mode),
-          points_per_purchase = COALESCE(?, points_per_purchase),
-          apple_wallet_key = COALESCE(?, apple_wallet_key),
-          google_wallet_key = COALESCE(?, google_wallet_key),
-          push_notifications_enabled = COALESCE(?, push_notifications_enabled),
-          updated_at = NOW()
-         WHERE entreprise_id = ?`,
-        [
-          points_adding_mode || null, 
-          points_per_purchase || null,
-          apple_wallet_key || null, 
-          google_wallet_key || null,
-          push_notifications_enabled !== undefined ? push_notifications_enabled : null, 
-          empresaId
-        ]
-      );
+      // Construction dynamique de la requête d'UPDATE
+      const updates = [];
+      const params = [];
+
+      if (points_adding_mode !== undefined) {
+        updates.push('points_adding_mode = ?');
+        params.push(points_adding_mode);
+      }
+      if (points_per_purchase !== undefined) {
+        updates.push('points_per_purchase = ?');
+        params.push(points_per_purchase);
+      }
+      if (apple_wallet_key !== undefined) {
+        updates.push('apple_wallet_key = ?');
+        params.push(apple_wallet_key);
+      }
+      if (google_wallet_key !== undefined) {
+        updates.push('google_wallet_key = ?');
+        params.push(google_wallet_key);
+      }
+      if (push_notifications_enabled !== undefined) {
+        updates.push('push_notifications_enabled = ?');
+        params.push(push_notifications_enabled ? 1 : 0);
+      }
+
+      if (updates.length > 0) {
+        updates.push('updated_at = NOW()');
+        params.push(empresaId);
+        const sql = `UPDATE loyalty_config SET ${updates.join(', ')} WHERE entreprise_id = ?`;
+        await pool.query(sql, params);
+      }
     } else {
       const configId = randomUUID();
       await pool.query(
@@ -89,7 +102,7 @@ export const updateLoyaltyConfig = async (req, res) => {
           points_per_purchase || 10,
           apple_wallet_key || '', 
           google_wallet_key || '',
-          push_notifications_enabled !== false
+          push_notifications_enabled !== false ? 1 : 0
         ]
       );
     }
@@ -100,8 +113,8 @@ export const updateLoyaltyConfig = async (req, res) => {
       error: err.message, 
       stack: err.stack 
     });
-    // On renvoie l'erreur précise pour le debug
-    res.status(500).json({ error: 'Erreur SQL: ' + err.message });
+    // Message V3 pour confirmer que le code est bien à jour sur le serveur
+    res.status(500).json({ error: 'Erreur SQL [V3]: ' + err.message });
   }
 };
 

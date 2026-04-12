@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid/dist/index.js';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';

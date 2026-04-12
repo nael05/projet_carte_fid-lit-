@@ -57,21 +57,25 @@ export class PassGenerator {
    */
   validateConfiguration() {
     if (!this._loadConfig()) {
-      throw new Error('❌ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant)');
+      logger.warn('⚠️ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant). La génération de pass Apple sera indisponible.');
+      return false;
     }
     
     if (!fs.existsSync(this.certPath)) {
-      throw new Error(`❌ CERTIFICAT MANQUANT: ${this.certPath}`);
+      logger.warn(`⚠️ CERTIFICAT APPLE MANQUANT: ${this.certPath}. La génération de pass Apple sera indisponible.`);
+      return false;
     }
 
     const requiredEnvs = ['APPLE_TEAM_ID', 'APPLE_PASS_TYPE_ID', 'APPLE_WALLET_WEBSERVICE_URL'];
     for (const env of requiredEnvs) {
       if (!process.env[env]) {
-        throw new Error(`❌ VARIABLE ENV MANQUANTE: ${env}`);
+        logger.warn(`⚠️ VARIABLE ENV APPLE MANQUANTE: ${env}. La génération de pass Apple sera indisponible.`);
+        return false;
       }
     }
 
     logger.info('✅ Configuration Apple Wallet validée');
+    return true;
   }
 
   /**

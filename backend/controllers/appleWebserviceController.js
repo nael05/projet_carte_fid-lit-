@@ -108,11 +108,12 @@ export const registerDevice = async (req, res) => {
     // 4. Insérer ou mettre à jour l'enregistrement du device
     await db.query(
       `INSERT INTO apple_pass_registrations (
-        pass_serial_number, device_library_identifier, push_token
-      ) VALUES (?, ?, ?)
+        pass_serial_number, device_library_identifier, push_token, pass_type_identifier
+      ) VALUES (?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
-        push_token = VALUES(push_token)`,
-      [serialNumber, deviceLibraryIdentifier, pushToken]
+        push_token = VALUES(push_token),
+        pass_type_identifier = VALUES(pass_type_identifier)`,
+      [serialNumber, deviceLibraryIdentifier, pushToken, passTypeIdentifier]
     );
 
     logger.info(`✅ Appareil enregistré avec succès pour le pass ${serialNumber}`);

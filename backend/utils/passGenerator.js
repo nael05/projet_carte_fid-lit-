@@ -81,7 +81,7 @@ export class PassGenerator {
    * Helper pour obtenir le buffer d'une image (URL ou disque local)
    */
   async fetchImageBuffer(urlOrPath) {
-    if (!urlOrPath) return null;
+    if (!urlOrPath || typeof urlOrPath !== 'string') return null;
     
     try {
       if (urlOrPath.startsWith('uploads/')) {

@@ -271,7 +271,7 @@ class GoogleWalletGenerator {
   }
 
   _getAbsoluteUrl(relativeUrl) {
-    if (!relativeUrl) return '';
+    if (!relativeUrl || typeof relativeUrl !== 'string') return '';
     if (relativeUrl.startsWith('http')) return relativeUrl;
     
     const baseUrl = (process.env.BACKEND_URL || '').replace(/\/$/, '');

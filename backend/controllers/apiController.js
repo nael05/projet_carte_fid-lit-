@@ -1005,7 +1005,16 @@ export const updateCardCustomization = async (req, res) => {
       if (empresaRows.length > 0) {
         // On récupère le type pour cibler la bonne classe Google
         const loyaltyType = req.query.loyaltyType || 'points';
-        await googleWalletGenerator.createOrUpdateClass(empresaId, req.body, empresaRows[0].nom, loyaltyType);
+        
+        // Sécuriser les données envoyées à Google
+        const syncConfig = {
+          ...req.body,
+          google_primary_color: req.body.google_primary_color || req.body.primary_color || '#1f2937',
+          google_card_title: (req.body.google_card_title || req.body.card_title || 'Programme Fidélité').substring(0, 50),
+          google_card_subtitle: (req.body.google_card_subtitle || req.body.card_subtitle || 'Merci de votre fidélité').substring(0, 50)
+        };
+
+        await googleWalletGenerator.createOrUpdateClass(empresaId, syncConfig, empresaRows[0].nom, loyaltyType);
         logger.info(`📱 Google Loyalty Class (${loyaltyType}) synchronisée pour l'entreprise ${empresaId}`);
       }
     } catch (googleSyncErr) {

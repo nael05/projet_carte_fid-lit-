@@ -2,20 +2,16 @@ import pool from '../db.js';
 
 async function checkSchema() {
   try {
-    const tables = ['clients', 'loyalty_config', 'wallet_cards', 'transaction_history', 'apple_pass_registrations'];
-    for (const table of tables) {
-      try {
-        const [rows] = await pool.query(`DESCRIBE \`${table}\``);
-        console.log(`Table: ${table}`);
-        console.table(rows);
-      } catch (e) {
-        console.error(`Missing or error for table ${table}:`, e.message);
-      }
-    }
+    const [rows] = await pool.query('DESCRIBE wallet_cards');
+    console.log('--- SCHEMA WALLET_CARDS ---');
+    rows.forEach(row => {
+      console.log(`${row.Field}: ${row.Type}`);
+    });
+    console.log('---------------------------');
+    process.exit(0);
   } catch (err) {
-    console.error('Schema check failed:', err);
-  } finally {
-    process.exit();
+    console.error('Error checking schema:', err.message);
+    process.exit(1);
   }
 }
 

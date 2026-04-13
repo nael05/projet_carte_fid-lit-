@@ -157,13 +157,11 @@ export const createWalletPass = async (req, res) => {
       logo_text: client.logo_text,
     };
 
-    // 5️⃣ Générer le fichier .pkpass
-    const passBuffer = await passGenerator.generateLoyaltyPass(
-      passData,
-      customization,
-      serialNumber,
-      authenticationToken
     );
+
+    if (!passBuffer) {
+      return res.status(503).json({ error: 'Service Apple Wallet temporairement désactivé (certificat manquant)' });
+    }
 
     // 6️⃣ Sauvegarder en BD
     await db.query(

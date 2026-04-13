@@ -24,36 +24,32 @@ export class PassGenerator {
    * Charge la configuration une seule fois de manière paresseuse
    */
   _loadConfig() {
-    if (this.configLoaded) return true;
+    try {
+      if (this.configLoaded) return true;
 
-    this.certPath = process.env.APPLE_CERT_PATH;
-    this.keyPath = process.env.APPLE_KEY_PATH || this.certPath;
-    this.certPassword = process.env.APPLE_CERT_PASSWORD || '';
-    this.teamId = process.env.APPLE_TEAM_ID;
-    this.passTypeId = process.env.APPLE_PASS_TYPE_ID;
-    this.webserviceUrl = process.env.APPLE_WALLET_WEBSERVICE_URL;
-    
-    // Normaliser l'URL (enlever le slash final s'il existe pour éviter les 404)
-    if (this.webserviceUrl && this.webserviceUrl.endsWith('/')) {
-      this.webserviceUrl = this.webserviceUrl.slice(0, -1);
-    }
+      this.certPath = process.env.APPLE_CERT_PATH;
+      this.keyPath = process.env.APPLE_KEY_PATH || this.certPath;
+      this.certPassword = process.env.APPLE_CERT_PASSWORD || '';
+      this.teamId = process.env.APPLE_TEAM_ID;
+      this.passTypeId = process.env.APPLE_PASS_TYPE_ID;
+      this.webserviceUrl = process.env.APPLE_WALLET_WEBSERVICE_URL;
+      
+      // Normaliser l'URL
+      if (typeof this.webserviceUrl === 'string' && this.webserviceUrl.endsWith('/')) {
+        this.webserviceUrl = this.webserviceUrl.slice(0, -1);
+      }
 
-    if (!this.certPath) {
-      logger.error('❌ APPLE_CERT_PATH est manquant dans .env. La génération de pass va échouer.');
+      if (!this.certPath) {
+        logger.warn('⚠️ APPLE_CERT_PATH est manquant. Apple Wallet sera désactivé.');
+        return false;
+      }
+
+      this.configLoaded = true;
+      return true;
+    } catch (err) {
+      logger.error('❌ Erreur chargement config PassGenerator:', err.message);
       return false;
     }
-
-    // Convertir en chemins absolus si relatifs
-    if (typeof this.certPath === 'string' && !path.isAbsolute(this.certPath)) {
-      this.certPath = path.resolve(__dirname, '..', this.certPath);
-    }
-    if (typeof this.keyPath === 'string' && !path.isAbsolute(this.keyPath)) {
-      this.keyPath = path.resolve(__dirname, '..', this.keyPath);
-    }
-
-    this.configLoaded = true;
-    logger.info('⚙️ Configuration PassGenerator chargée avec succès');
-    return true;
   }
 
   /**
@@ -121,7 +117,16 @@ export class PassGenerator {
    */
   async generateLoyaltyPass(clientData, customization, serialNumber, authToken) {
     try {
-      this._loadConfig();
+      if (!this._loadConfig()) {
+        logger.warn('⚠️ PassGenerator non configuré (certificat absent). Génération annulée.');
+        return null;
+      }
+      
+      if (!fs.existsSync(this.certPath)) {
+        logger.warn(`⚠️ Certificat Apple absent du disque: ${this.certPath}`);
+        return null;
+      }
+
       logger.info(`🎫 Génération pass pour client: ${clientData.clientId}`);
 
       const certificateBuffer = fs.readFileSync(this.certPath);

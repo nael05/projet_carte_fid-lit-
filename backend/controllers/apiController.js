@@ -1057,7 +1057,11 @@ export const redeemReward = async (req, res) => {
     await pool.query('UPDATE clients SET points = ? WHERE id = ?', [newPoints, clientId]);
     
     // 2. Sync Wallet Google
-    import('../utils/googleWalletGenerator.js').then(m => m.default.updateLoyaltyPoints(clientId, newPoints).catch(e => {}));
+    try {
+      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
+    } catch (googleError) {
+      logger.warn('Google Wallet sync failed in redeem', googleError.message);
+    }
     
     // 3. Sync Wallet Apple (Fix: manquait précédemment dans redeemReward)
     try {

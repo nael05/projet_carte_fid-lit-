@@ -236,12 +236,12 @@ export const getUpdatedPass = async (req, res) => {
     };
 
     // 3️⃣ Générer le nouveau pass
-    const passBuffer = await passGenerator.generateUpdatedPass(
-      passData,
-      customization,
-      serialNumber,
-      data.authentication_token
     );
+
+    if (!passBuffer) {
+      logger.warn('⚠️ Aucun pass généré (possiblement désactivé).');
+      return res.status(503).json({ error: 'Service temporairement indisponible (Génération Pass)' });
+    }
 
     // 4️⃣ Mettre à jour la date de génération
     const now = new Date();

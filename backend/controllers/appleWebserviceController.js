@@ -197,7 +197,7 @@ export const getUpdatedPass = async (req, res) => {
               cc.apple_organization_name
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
-       JOIN enterprises e ON c.enterprise_id = e.id
+       JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN card_customization cc ON e.id = cc.company_id
        WHERE wc.pass_serial_number = ?`,
       [serialNumber]

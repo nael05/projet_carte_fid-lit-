@@ -291,9 +291,13 @@ export const getUpdatedPass = async (req, res) => {
     // passGenerator est l'instance par défaut importée en haut du fichier
     
     
-    // Forcer HTTPS en production pour Apple Wallet
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
-    const webServiceURL = `${protocol}://${req.get('host')}/api/wallet`;
+    // Forcer l'URL de production pour Apple Wallet
+    // CRITIQUE : Si le serveur tourne derrière un proxy/IP, req.get('host') peut renvoyer 'localhost'
+    // ce qui empêche l'iPhone de contacter le serveur depuis l'extérieur.
+    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    const webServiceURL = `${backendUrl}/api/wallet`;
+    
+    logger.info(`🌐 WebServiceURL pour ce pass : ${webServiceURL}`);
 
     const passBuffer = await passGenerator.generateLoyaltyPass(
       passData,

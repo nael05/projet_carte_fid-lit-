@@ -14,6 +14,9 @@ dotenv.config();
 class GoogleWalletGenerator {
   constructor() {
     this.keyFilePath = path.join(__dirname, '..', process.env.GOOGLE_WALLET_KEY_PATH || 'config/google-wallet-key.json');
+    this.apnKeyPath = process.env.APPLE_APN_KEY_PATH ? path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH) : null;
+    this.apnKeyId = process.env.APPLE_APN_KEY_ID;
+    this.apnTeamId = process.env.APPLE_APN_TEAM_ID;
     this.issuerId = process.env.GOOGLE_WALLET_ISSUER_ID;
     this.client = null;
     this.credentials = null;
@@ -88,19 +91,21 @@ class GoogleWalletGenerator {
           logger.info(`✅ Design Google Wallet mis à jour avec succès!`);
         } catch (patchErr) {
           const errMsg = patchErr.message || '';
-          logger.warn(`⚠️ Échec de la mise à jour complète Google Wallet: ${errMsg}`);
+          logger.warn(`⚠️ Échec de la mise à jour complète Google Wallet (Status APPROVED?): ${errMsg}`);
           
-          // Fallback minimaliste si vraiment bloqué (seulement couleur et logo)
+          // Fallback ultra-minimaliste si bloqué en mode APPROVED
+          // On ne change QUE la couleur et les logos, on renonce au nom du programme s'il bloque
           try {
              const minimalBody = {
                hexBackgroundColor: loyaltyClass.hexBackgroundColor,
-               programLogo: loyaltyClass.programLogo,
-               programName: loyaltyClass.programName
+               programLogo: loyaltyClass.programLogo
              };
+             // Inclure l'image hero si présente
              if (loyaltyClass.heroImage) minimalBody.heroImage = loyaltyClass.heroImage;
              
+             logger.info(`🔄 Tentative de mise à jour ultra-minimale (Couleurs/Logos uniquement)...`);
              await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: minimalBody });
-             logger.info(`✅ Mise à jour minimale réussie (style de base).`);
+             logger.info(`✅ Mise à jour minimale réussie.`);
           } catch (minErr) {
              logger.error(`❌ Échec total de mise à jour du style: ${minErr.message}`);
           }

@@ -48,8 +48,8 @@ class GoogleWalletGenerator {
 
     const loyaltyClass = {
       id: classId,
-      issuerName: (empresaName || 'Fidelyz').substring(0, 20),
-      programName: (config.google_card_title || 'Programme Fidélité').substring(0, 20),
+      issuerName: (empresaName || 'Fidelyz').substring(0, 50),
+      programName: (config.google_card_title || config.card_title || 'Programme Fidélité').substring(0, 50),
       programLogo: logoUrl ? {
         sourceUri: { uri: this._getAbsoluteUrl(logoUrl) }
       } : {
@@ -58,8 +58,8 @@ class GoogleWalletGenerator {
       hexBackgroundColor: bgColor.startsWith('#') ? bgColor : `#${bgColor}`,
       textModulesData: [
         {
-          header: 'Infos',
-          body: config.google_card_subtitle || 'Votre carte de fidélité',
+          header: 'Informations',
+          body: config.google_card_subtitle || config.card_subtitle || 'Votre carte de fidélité numérique.',
           id: 'subtitle_module'
         }
       ]

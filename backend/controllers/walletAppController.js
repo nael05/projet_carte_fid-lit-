@@ -29,13 +29,20 @@ export const createWalletPass = async (req, res) => {
       `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.type_wallet,
               e.id as company_id, e.nom as company_name,
               lc.points_for_reward,
-              cc.logo_url as apple_logo_url,
-              cc.icon_url as apple_icon_url,
-              cc.strip_image_url as apple_strip_image_url,
-              cc.primary_color as apple_background_color,
-              cc.text_color as apple_text_color,
-              cc.accent_color as apple_label_color,
-              cc.card_subtitle as apple_pass_description,
+              cc.logo_url as generic_logo_url,
+              cc.icon_url as generic_icon_url,
+              cc.strip_image_url as generic_strip_image_url,
+              cc.primary_color as generic_primary_color,
+              cc.text_color as generic_text_color,
+              cc.accent_color as generic_accent_color,
+              cc.apple_logo_url,
+              cc.apple_icon_url,
+              cc.apple_strip_image_url,
+              cc.apple_background_color,
+              cc.apple_text_color,
+              cc.apple_label_color,
+              cc.card_subtitle as generic_card_subtitle,
+              cc.apple_pass_description,
               cc.apple_organization_name,
               cc.logo_text,
               cc.google_primary_color,
@@ -45,7 +52,8 @@ export const createWalletPass = async (req, res) => {
               cc.google_card_title,
               cc.google_card_subtitle,
               cc.latitude,
-              cc.longitude
+              cc.longitude,
+              cc.relevant_text
        FROM clients c
        LEFT JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
@@ -146,15 +154,18 @@ export const createWalletPass = async (req, res) => {
     };
 
     const customization = {
-      apple_logo_url: client.apple_logo_url,
-      apple_icon_url: client.apple_icon_url,
-      apple_strip_image_url: client.apple_strip_image_url,
-      apple_background_color: client.apple_background_color,
-      apple_text_color: client.apple_text_color,
-      apple_label_color: client.apple_label_color,
-      apple_pass_description: client.apple_pass_description,
+      apple_logo_url: client.apple_logo_url || client.generic_logo_url,
+      apple_icon_url: client.apple_icon_url || client.generic_icon_url,
+      apple_strip_image_url: client.apple_strip_image_url || client.generic_strip_image_url,
+      apple_background_color: client.apple_background_color || client.generic_primary_color || '#1f2937',
+      apple_text_color: client.apple_text_color || client.generic_text_color || '#ffffff',
+      apple_label_color: client.apple_label_color || client.generic_accent_color || '#a8a8a8',
+      apple_pass_description: client.apple_pass_description || client.generic_card_subtitle || 'Votre Carte de Fidélité',
       apple_organization_name: client.apple_organization_name || company_name,
       logo_text: client.logo_text,
+      latitude: client.latitude,
+      longitude: client.longitude,
+      relevant_text: client.relevant_text,
     };
     // 5️⃣ Générer le pass Apple Wallet
     

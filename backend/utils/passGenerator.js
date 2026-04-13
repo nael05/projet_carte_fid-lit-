@@ -140,6 +140,7 @@ export class PassGenerator {
         backgroundColor: customization?.apple_background_color || 'rgb(31,41,55)',
         labelColor: customization?.apple_label_color || 'rgb(168,168,168)',
         foregroundColor: customization?.apple_text_color || 'rgb(255,255,255)',
+        logoText: customization?.logo_text || clientData.companyName || '',
         webServiceURL: options.webServiceURL || this.webserviceUrl,
         authenticationToken: authToken,
       });
@@ -179,7 +180,7 @@ export class PassGenerator {
         pass.locations.add({
           latitude: Number(customization.latitude),
           longitude: Number(customization.longitude),
-          relevantText: customization.relevant_text || 'Boutique à proximité'
+          relevantText: customization.relevant_text || customization.relevantText || 'Boutique à proximité'
         });
       }
 

@@ -35,8 +35,8 @@ export class APNService {
         keyId: this.apnKeyId,
         teamId: this.apnTeamId,
 
-        // Production ou development
-        production: this.environment === 'production',
+        // Production obligatoirement TRUE pour Apple Wallet (PassKit n'utilise pas la sandbox APNs)
+        production: true,
 
         // Options de retry
         connectionRetryLimit: 3,
@@ -70,29 +70,18 @@ export class APNService {
     }
 
     try {
-      // Créer la notification silencieuse
-      const notification = new apn.Notification({
-        // Pas de contenu visible - juste pour réveiller l'app
-        contentAvailable: true, // iOS background app refresh
-        sound: false,
-        badge: 0,
-        alert: null,
+      // Créer la notification silencieuse pour PassKit
+      const notification = new apn.Notification();
+      
+      // Apple Wallet exige très strictement un payload vide {"aps": {}}
+      notification.rawPayload = { aps: {} };
 
-        // Payload personnalisé (optionnel)
-        // Apple Wallet n'utilise pas de custom payload, mais peut être utile pour le debug
-        payload: {
-          aps: {
-            'content-available': 1,
-          },
-        },
+      // Indiquer explicitement que c'est une notification de background push (obligatoire sous iOS 13+ pour PassKit)
+      notification.pushType = 'background';
 
-        // Options
-        priority: 10, // High priority pour le wallet
-        expiration: Math.floor(Date.now() / 1000) + 3600, // Expire après 1 heure
-
-        // Information pour les logs
-        topic: process.env.APPLE_PASS_TYPE_ID, // Topic = Pass Type ID
-      });
+      // Priorité 5 est requise en pushType 'background' sous iOS 13+ avec "aps": {}
+      notification.priority = 5;
+      notification.topic = process.env.APPLE_PASS_TYPE_ID;
 
       // Envoyer
       const result = await this.provider.send(notification, pushToken);

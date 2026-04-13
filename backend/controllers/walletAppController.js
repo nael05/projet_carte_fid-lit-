@@ -165,9 +165,9 @@ export const createWalletPass = async (req, res) => {
     
     const passBuffer = await passGenerator.generateLoyaltyPass(
       clientData,
+      customization,
       serialNumber,
       authenticationToken,
-      customization,
       { webServiceURL }
     );
 

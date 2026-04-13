@@ -226,14 +226,14 @@ export const getUpdatedPass = async (req, res) => {
     const [clientRows] = await db.query(
       `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.created_at,
               wc.pass_serial_number, wc.authentication_token, wc.points_balance,
-              e.id as company_id, e.nom as company_name,
+              e.id as company_id, e.nom as company_name, e.loyalty_type,
               cc.apple_logo_url, cc.apple_icon_url, cc.apple_background_color,
               cc.apple_text_color, cc.apple_label_color, cc.apple_pass_description,
               cc.apple_organization_name
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
-       LEFT JOIN card_customization cc ON e.id = cc.company_id
+       LEFT JOIN card_customization cc ON e.id = cc.company_id AND cc.loyalty_type = e.loyalty_type
        WHERE wc.pass_serial_number = ?`,
       [serialNumber]
     );
@@ -243,6 +243,7 @@ export const getUpdatedPass = async (req, res) => {
     }
 
     const data = clientRows[0];
+    const loyaltyType = data.loyalty_type || 'points';
 
     // Récupérer les paliers de récompense
     const [tiers] = await db.query(
@@ -268,7 +269,7 @@ export const getUpdatedPass = async (req, res) => {
       lastName: data.nom,
       phoneNumber: data.telephone,
       companyName: data.company_name,
-      loyaltyType: 'points',
+      loyaltyType: loyaltyType,
       balance: currentPoints, // Envoyer le solde réel actuel
       rewardTiers: tiers,
       pointsGained: pointsGained > 0 ? pointsGained : 0,

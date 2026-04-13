@@ -27,7 +27,8 @@ async function ensureSchema() {
     { name: 'google_logo_url', type: 'VARCHAR(1000) DEFAULT NULL' },
     { name: 'google_hero_image_url', type: 'VARCHAR(1000) DEFAULT NULL' },
     { name: 'google_card_title', type: 'VARCHAR(255) DEFAULT "Programme Fidélité"' },
-    { name: 'google_card_subtitle', type: 'VARCHAR(255) DEFAULT "Merci de votre fidélité"' }
+    { name: 'google_card_subtitle', type: 'VARCHAR(255) DEFAULT "Merci de votre fidélité"' },
+    { name: 'updated_at', type: 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP' }
   ];
 
   try {

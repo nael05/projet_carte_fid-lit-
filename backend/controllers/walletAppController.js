@@ -158,7 +158,10 @@ export const createWalletPass = async (req, res) => {
     };
     // 5️⃣ Générer le pass Apple Wallet
     const passGenerator = new PassGenerator();
-    const webServiceURL = `${req.protocol}://${req.get('host')}/api/wallet`;
+    
+    // Forcer HTTPS en production pour Apple Wallet
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
+    const webServiceURL = `${protocol}://${req.get('host')}/api/wallet`;
     
     const passBuffer = await passGenerator.generateLoyaltyPass(
       clientData,

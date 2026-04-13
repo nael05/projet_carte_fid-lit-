@@ -590,21 +590,30 @@ export const handleScan = async (req, res) => {
       [transactionId, clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
     );
 
-    // Sync Wallet
+    // 🔄 Sync TOUS les Wallets (Apple et Google)
     try {
       const [walletRows] = await pool.query(
         'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
         [clientId, empresaId]
       );
-      if (walletRows.length > 0) {
-        const wallet = walletRows[0];
+      
+      for (const wallet of walletRows) {
+        // Sync Base
         await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
-        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
-        if (regs.length > 0) {
-          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+        
+        // Si Apple (pas de préfixe GOOGLE_)
+        if (!wallet.pass_serial_number.startsWith('GOOGLE_')) {
+          const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
+          if (regs.length > 0) {
+            await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+          }
+        } 
+        
+        // Si Google
+        if (wallet.pass_serial_number.startsWith('GOOGLE_')) {
+          await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
         }
       }
-      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
     } catch (e) { 
       console.warn('Wallet sync failed', e.message); 
     }
@@ -703,22 +712,32 @@ export const adjustPoints = async (req, res) => {
       [newPoints, clientId, empresaId]
     );
 
+    // 🔄 Sync TOUS les Wallets (Apple et Google)
     try {
       const [walletRows] = await pool.query(
         'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
         [clientId, empresaId]
       );
-      if (walletRows.length > 0) {
-        const wallet = walletRows[0];
+      
+      for (const wallet of walletRows) {
+        // Sync Base
         await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
-        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
-        if (regs.length > 0) {
-          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+        
+        // Si Apple (pas de préfixe GOOGLE_)
+        if (!wallet.pass_serial_number.startsWith('GOOGLE_')) {
+          const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
+          if (regs.length > 0) {
+            await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+          }
+        } 
+        
+        // Si Google
+        if (wallet.pass_serial_number.startsWith('GOOGLE_')) {
+          await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
         }
       }
-      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
-    } catch (e) {
-      console.warn('Wallet sync failed', e.message);
+    } catch (e) { 
+      console.warn('Wallet sync failed in adjustPoints', e.message); 
     }
 
     // Envoi de la notification Push
@@ -1056,32 +1075,32 @@ export const redeemReward = async (req, res) => {
     // 1. Mise à jour DB clients
     await pool.query('UPDATE clients SET points = ? WHERE id = ?', [newPoints, clientId]);
     
-    // 2. Sync Wallet Google
-    try {
-      await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
-    } catch (googleError) {
-      logger.warn('Google Wallet sync failed in redeem', googleError.message);
-    }
-    
-    // 3. Sync Wallet Apple (Fix: manquait précédemment dans redeemReward)
+    // 🔄 Sync TOUS les Wallets (Apple et Google)
     try {
       const [walletRows] = await pool.query(
         'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
         [clientId, empresaId]
       );
-      if (walletRows.length > 0) {
-        const wallet = walletRows[0];
-        // Mettre à jour le solde sur la carte
+      
+      for (const wallet of walletRows) {
+        // Sync Base
         await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
         
-        // Pousser la notification silencieuse pour forcer le refresh de la carte
-        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
-        if (regs.length > 0) {
-          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+        // Si Apple 
+        if (!wallet.pass_serial_number.startsWith('GOOGLE_')) {
+          const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
+          if (regs.length > 0) {
+            await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+          }
+        } 
+        
+        // Si Google
+        if (wallet.pass_serial_number.startsWith('GOOGLE_')) {
+          await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
         }
       }
-    } catch (syncErr) {
-      logger.error('Apple Wallet sync failed in redeem', syncErr.message);
+    } catch (e) { 
+      console.warn('Wallet sync failed in redeemReward', e.message); 
     }
 
     // 4. Envoi notification visuelle

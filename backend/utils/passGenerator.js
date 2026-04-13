@@ -184,12 +184,6 @@ export class PassGenerator {
         });
       }
 
-      pass.headerFields.add({
-        key: 'points_header',
-        label: 'POINTS',
-        value: `${clientData.balance || 0}`
-      });
-
       let pointsToNextTierStr = '';
       if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
         const currentPoints = clientData.balance || 0;
@@ -204,10 +198,10 @@ export class PassGenerator {
 
       const gainedStr = clientData.pointsGained > 0 ? ` +${clientData.pointsGained} pts.` : '';
 
-      pass.primaryFields.add({
-        key: 'balance',
-        label: 'Votre Cagnotte',
-        value: `${clientData.balance || 0} pts`,
+      pass.headerFields.add({
+        key: 'points_header',
+        label: 'POINTS',
+        value: `${clientData.balance || 0}`,
         changeMessage: `Nouveau solde: %@ pts.${gainedStr}${pointsToNextTierStr}`,
       });
 

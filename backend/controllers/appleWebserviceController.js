@@ -91,8 +91,7 @@ export const registerDevice = async (req, res) => {
         pass_serial_number, device_library_identifier, push_token
       ) VALUES (?, ?, ?)
       ON DUPLICATE KEY UPDATE
-        push_token = VALUES(push_token),
-        registered_at = NOW()`,
+        push_token = VALUES(push_token)`,
       [serialNumber, deviceLibraryIdentifier, pushToken]
     );
 

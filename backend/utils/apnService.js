@@ -101,9 +101,12 @@ export class APNService {
       if (result.failed && result.failed.length > 0) {
         const failure = result.failed[0];
         logger.warn(
-          `⚠️ Notification échouée (token: ${pushToken}): ${failure.error || 'Raison inconnue'}`
+          `⚠️ Notification échouée (token: ${pushToken.substring(0, 10)}...): ${failure.error || 'Raison inconnue'} (Status: ${failure.status || 'N/A'})`
         );
-        return { sent: false, error: failure.error, token: pushToken };
+        if (failure.response) {
+            logger.debug(`Détails échec APNs: ${JSON.stringify(failure.response)}`);
+        }
+        return { sent: false, error: failure.error, status: failure.status, token: pushToken };
       }
 
       logger.info(`✅ Notification envoyée au device (token: ${pushToken.substring(0, 20)}...)`);
@@ -146,6 +149,9 @@ export class APNService {
       if (result.failed && result.failed.length > 0) {
         const failure = result.failed[0];
         logger.warn(`⚠️ Notification alerte échouée: ${failure.error || 'Statut: ' + failure.status}`);
+        if (failure.response) {
+            logger.debug(`Détails échec alerte APNs: ${JSON.stringify(failure.response)}`);
+        }
         return { sent: false, error: failure.error || 'Status ' + failure.status, token: pushToken };
       }
 

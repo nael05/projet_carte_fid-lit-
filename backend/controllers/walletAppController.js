@@ -123,8 +123,8 @@ export const createWalletPass = async (req, res) => {
       });
     }
 
-    // 3️⃣ Générer un serial number unique et token d'authentification
-    const serialNumber = randomUUID().replace(/-/g, '').substring(0, 20).toUpperCase();
+    // 3️⃣ Utiliser l'id client comme serial number pour la cohérence
+    const serialNumber = client.id.replace(/-/g, '').substring(0, 20).toUpperCase();
     const authenticationToken = randomUUID();
 
     // 4️⃣ Préparer données pour la génération du pass

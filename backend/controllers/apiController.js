@@ -1018,6 +1018,15 @@ export const updateCardCustomization = async (req, res) => {
         await googleWalletGenerator.createOrUpdateClass(empresaId, syncConfig, empresaRows[0].nom, loyaltyType);
         logger.info(`📱 Google Loyalty Class (${loyaltyType}) synchronisée pour l'entreprise ${empresaId}`);
       }
+      
+      // 🔄 Forcer la mise à jour de la date sur TOUTES les cartes existantes pour Apple Wallet
+      // Sans cela, l'iPhone ne téléchargera pas le nouveau design car il croira que le pass n'a pas changé.
+      await pool.query(
+        'UPDATE wallet_cards SET last_updated = NOW() WHERE company_id = ?',
+        [empresaId]
+      );
+      logger.info(`🔄 Date de mise à jour forcée pour tous les clients de l'entreprise ${empresaId}`);
+
     } catch (googleSyncErr) {
       logger.error('Erreur synchro Google Wallet design:', { error: googleSyncErr.message });
     }

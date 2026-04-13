@@ -248,10 +248,10 @@ class GoogleWalletGenerator {
         resourceId: objectId,
         requestBody
       });
-      logger.info(`Points mis à jour sur Google Wallet pour ${clientId}: ${newBalance}`);
+      logger.info(`✅ Google Wallet points updated for ${objectId}: ${newBalance} points`);
     } catch (err) {
-      // Fallback Legacy si nécessaire, bien que l'ID soit maintenant unifié
-      logger.error('Erreur mise à jour points Google:', err);
+      logger.error(`❌ Failed to update Google Wallet points for ${objectId}:`, { error: err.message });
+      throw err;
     }
   }
 

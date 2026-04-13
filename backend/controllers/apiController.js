@@ -612,8 +612,9 @@ export const handleScan = async (req, res) => {
         
         // Si Google
         if (wallet.pass_serial_number.startsWith('GOOGLE_')) {
+          logger.info(`🔄 Synchronisation Google Wallet pour le client ${clientId} (nouvelle balance: ${newPoints} pts)`);
           await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
-          logger.info('Google Wallet sync triggered');
+          logger.info('✅ Google Wallet sync triggered successfully');
         }
       }
     } catch (e) { 

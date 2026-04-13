@@ -126,9 +126,9 @@ export const getUpdatedPasses = async (req, res) => {
       `🔍 Vérification passes mis à jour: device=${deviceLibraryIdentifier.substring(0, 20)}..., since=${passesUpdatedSince || 'null'}`
     );
 
-    // Récupérer les passes enregistrés sur ce device
+    // Récupérer les passes enregistrés sur ce device avec leur date de dernière mise à jour de données
     const [registrations] = await db.query(
-      `SELECT DISTINCT apr.pass_serial_number, wc.last_pass_generated_at
+      `SELECT DISTINCT apr.pass_serial_number, wc.last_updated
        FROM apple_pass_registrations apr
        JOIN wallet_cards wc ON apr.pass_serial_number = wc.pass_serial_number
        WHERE apr.device_library_identifier = ?`,
@@ -143,28 +143,28 @@ export const getUpdatedPasses = async (req, res) => {
     // Filtrer par date si fournie
     let updatedPasses = registrations;
     if (passesUpdatedSince) {
+      const sinceDate = new Date(parseInt(passesUpdatedSince));
       updatedPasses = registrations.filter(
-        (p) =>
-          new Date(p.last_pass_generated_at) > new Date(parseInt(passesUpdatedSince))
+        (p) => new Date(p.last_updated) > sinceDate
       );
     }
 
     // Si rien de nouveau, retourner 204
     if (updatedPasses.length === 0) {
-      logger.info(`✅ Aucun pass mis à jour`);
+      logger.info(`✅ Aucun pass mis à jour depuis ${passesUpdatedSince}`);
       return res.status(204).send();
     }
 
     // Retourner la liste des passes mis à jour
     const serialNumbers = updatedPasses.map((p) => p.pass_serial_number);
-    const lastUpdated = Math.floor(
-      Math.max(...updatedPasses.map((p) => new Date(p.last_pass_generated_at).getTime())) / 1000
-    );
+    const lastUpdatedTag = Math.floor(
+      Math.max(...updatedPasses.map((p) => new Date(p.last_updated).getTime()))
+    ).toString();
 
     logger.info(`✅ ${serialNumbers.length} pass(es) mis à jour`);
     res.json({
       serialNumbers,
-      lastUpdated,
+      lastUpdated: lastUpdatedTag,
     });
   } catch (error) {
     logger.error(`❌ Erreur vérification mises à jour: ${error.message}`);

@@ -247,6 +247,13 @@ export class PassGenerator {
   }
 
   /**
+   * Alias pour generateLoyaltyPass, utilisé par le Webservice Apple
+   */
+  async generateUpdatedPass(clientData, customization, serialNumber, authToken) {
+    return this.generateLoyaltyPass(clientData, customization, serialNumber, authToken);
+  }
+
+  /**
    * Recharge un buffer avec d'anciennes données pour les mises à jour push
    */
   async updatePassFields(passBuffer, updates) {

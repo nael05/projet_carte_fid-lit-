@@ -11,6 +11,7 @@ import logger from '../utils/logger.js';
 import { validateLoginInput } from '../utils/inputValidator.js';
 import apnService from '../utils/apnService.js';
 import googleWalletGenerator from '../utils/googleWalletGenerator.js';
+import { sendLoyaltyUpdateNotification } from '../utils/notificationService.js';
 
 // ===== MASTER ADMIN CONTROLLERS =====
 
@@ -650,6 +651,13 @@ export const handleScan = async (req, res) => {
        }
     }
 
+    // Envoi de la notification Push (Contenu visuel demandé par l'utilisateur)
+    try {
+      await sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false);
+    } catch (pushErr) {
+      logger.warn('Push loyalty notification failed', pushErr.message);
+    }
+
     res.json({ 
       success: true, 
       clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, 
@@ -711,6 +719,13 @@ export const adjustPoints = async (req, res) => {
       await googleWalletGenerator.updateLoyaltyPoints(clientId, newPoints);
     } catch (e) {
       console.warn('Wallet sync failed', e.message);
+    }
+
+    // Envoi de la notification Push
+    try {
+      await sendLoyaltyUpdateNotification(clientId, empresaId, adjustment, false);
+    } catch (pushErr) {
+      logger.warn('Push adjust notification failed', pushErr.message);
     }
 
     res.json({ success: true, newPoints });
@@ -1035,11 +1050,44 @@ export const redeemReward = async (req, res) => {
     if (clientRows.length === 0) return res.status(404).json({ error: 'Client introuvable' });
     const currentPoints = clientRows[0].points || 0;
     if (currentPoints < tier.points_required) return res.status(400).json({ error: 'Points insuffisants' });
+    
     const newPoints = currentPoints - tier.points_required;
+    
+    // 1. Mise à jour DB clients
     await pool.query('UPDATE clients SET points = ? WHERE id = ?', [newPoints, clientId]);
+    
+    // 2. Sync Wallet Google
     import('../utils/googleWalletGenerator.js').then(m => m.default.updateLoyaltyPoints(clientId, newPoints).catch(e => {}));
     
-    // On renvoie les récompenses encore disponibles après ce retrait
+    // 3. Sync Wallet Apple (Fix: manquait précédemment dans redeemReward)
+    try {
+      const [walletRows] = await pool.query(
+        'SELECT id, pass_serial_number FROM wallet_cards WHERE client_id = ? AND company_id = ?',
+        [clientId, empresaId]
+      );
+      if (walletRows.length > 0) {
+        const wallet = walletRows[0];
+        // Mettre à jour le solde sur la carte
+        await pool.query('UPDATE wallet_cards SET points_balance = ?, last_updated = NOW() WHERE id = ?', [newPoints, wallet.id]);
+        
+        // Pousser la notification silencieuse pour forcer le refresh de la carte
+        const [regs] = await pool.query('SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?', [wallet.pass_serial_number]);
+        if (regs.length > 0) {
+          await apnService.sendBulkUpdateNotifications(regs.map(r => r.push_token));
+        }
+      }
+    } catch (syncErr) {
+      logger.error('Apple Wallet sync failed in redeem', syncErr.message);
+    }
+
+    // 4. Envoi notification visuelle
+    try {
+      await sendLoyaltyUpdateNotification(clientId, empresaId, -tier.points_required, true);
+    } catch (pushErr) {
+      logger.warn('Push redeem notification failed', pushErr.message);
+    }
+    
+    // 5. On renvoie les récompenses encore disponibles après ce retrait
     const [availableRewards] = await pool.query('SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required <= ? ORDER BY points_required ASC', [empresaId, newPoints]);
     
     res.json({ success: true, message: 'Cadeau validé avec succès ! (-' + tier.points_required + ' pts)', newPoints, availableRewards });

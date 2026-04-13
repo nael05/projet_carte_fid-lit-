@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import passGenerator from '../utils/passGenerator.js';
 import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import { apnService } from '../utils/apnService.js';
+import { sendLoyaltyUpdateNotification } from '../utils/notificationService.js';
 import db from '../db.js';
 import logger from '../utils/logger.js';
 
@@ -226,7 +227,7 @@ export const addPointsToWallet = async (req, res) => {
     const oldBalance = isStamps ? wallet.stamps_balance : wallet.points_balance;
     const newBalance = oldBalance + pointsToAdd;
 
-    await db.query(`UPDATE wallet_cards SET ${isStamps ? 'stamps_balance' : 'points_balance'} = ? WHERE id = ?`, [newBalance, walletId]);
+    await db.query(`UPDATE wallet_cards SET ${isStamps ? 'stamps_balance' : 'points_balance'} = ?, last_updated = NOW() WHERE id = ?`, [newBalance, walletId]);
 
     await db.query(
       `INSERT INTO pass_update_logs (
@@ -266,6 +267,13 @@ export const addPointsToWallet = async (req, res) => {
       } catch (err) {
         logger.error(`❌ Échec synchro Google Wallet pour client ${clientId}: ${err.message}`);
       }
+    }
+
+    // Envoi notification Visuelle
+    try {
+      await sendLoyaltyUpdateNotification(clientId, wallet.entreprise_id, pointsToAdd, false);
+    } catch (pushErr) {
+      logger.warn('Push loyalty notification failed in walletApp', pushErr.message);
     }
 
     res.json({

@@ -78,41 +78,31 @@ class GoogleWalletGenerator {
         
         // Préparer le body pour le patch: supprimer ID et reviewStatus s'ils traînent
         try {
-          // Destructuration stricte pour exclure id et reviewStatus du corps de la requête PATCH
-          // Google rejette souvent le PATCH si 'id' ou 'reviewStatus' sont présents dans le body pour une classe APPROVED.
-          const { id: _, reviewStatus: __, issuerName: ___, programName: ____, ...patchBody } = loyaltyClass;
+          // On n'enlève QUE l'id et le reviewStatus qui sont interdits dans un PATCH
+          const { id: _, reviewStatus: __, ...patchBody } = loyaltyClass;
           
-          logger.info(`🔄 Envoi PATCH (Nettoyé) à Google Wallet pour ${classId}`);
-          logger.debug(`PatchBody: ${JSON.stringify(patchBody, null, 2)}`);
+          logger.info(`🔄 Mise à jour du style Google Wallet (${classId})...`);
+          logger.debug(`PatchBody envoyé: ${JSON.stringify(patchBody)}`);
           
           await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: patchBody });
-          logger.info(`✅ Classe Google Wallet mise à jour avec succès: ${classId}`);
+          logger.info(`✅ Design Google Wallet mis à jour avec succès!`);
         } catch (patchErr) {
           const errMsg = patchErr.message || '';
-          const googleErrors = patchErr.errors || (patchErr.response?.data?.error?.errors);
+          logger.warn(`⚠️ Échec de la mise à jour complète Google Wallet: ${errMsg}`);
           
-          logger.warn(`⚠️ Échec du PATCH Google Wallet (${classId}): ${errMsg}`);
-          if (googleErrors) {
-            logger.warn(`Détails erreurs Google: ${JSON.stringify(googleErrors, null, 2)}`);
-          }
-          
-          // Fallback minimaliste si l'erreur persiste (on ne change que les couleurs et logo)
-          if (errMsg.includes('Invalid review status') || patchErr.code === 400) {
-            try {
-               const minimalBody = {
-                 hexBackgroundColor: loyaltyClass.hexBackgroundColor,
-                 programLogo: loyaltyClass.programLogo
-               };
-               if (loyaltyClass.heroImage) minimalBody.heroImage = loyaltyClass.heroImage;
-               
-               logger.info(`🔄 Tentative de PATCH minimaliste (couleurs/images uniquement) pour ${classId}`);
-               await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: minimalBody });
-               logger.info(`✅ PATCH minimaliste réussi pour ${classId}`);
-            } catch (minErr) {
-               logger.warn(`Échec du patch minimaliste: ${minErr.message}. On poursuit.`);
-            }
-          } else {
-            throw patchErr;
+          // Fallback minimaliste si vraiment bloqué (seulement couleur et logo)
+          try {
+             const minimalBody = {
+               hexBackgroundColor: loyaltyClass.hexBackgroundColor,
+               programLogo: loyaltyClass.programLogo,
+               programName: loyaltyClass.programName
+             };
+             if (loyaltyClass.heroImage) minimalBody.heroImage = loyaltyClass.heroImage;
+             
+             await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: minimalBody });
+             logger.info(`✅ Mise à jour minimale réussie (style de base).`);
+          } catch (minErr) {
+             logger.error(`❌ Échec total de mise à jour du style: ${minErr.message}`);
           }
         }
       } catch (err) {

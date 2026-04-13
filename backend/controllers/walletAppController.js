@@ -391,9 +391,20 @@ export const downloadClientPass = async (req, res) => {
     }
 
     const client = clientRows[0];
+    const requestedType = req.query.type; // ?type=apple ou ?type=google
+    const userAgent = req.headers['user-agent'] || '';
+    const isIOS = /iPhone|iPad|iPod/.test(userAgent);
+
+    // Déterminer le type final : soit forcé par l'URL, soit détecté par l'appareil, soit par défaut en DB
+    let finalType = client.type_wallet;
+    if (requestedType === 'apple' || requestedType === 'google') {
+      finalType = requestedType;
+    } else if (isIOS) {
+      finalType = 'apple';
+    }
 
     // SI GOOGLE WALLET -> Rediriger vers l'URL
-    if (client.type_wallet === 'google') {
+    if (finalType === 'google') {
       try {
         const [tiers] = await db.query(
           'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',

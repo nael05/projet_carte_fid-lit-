@@ -180,7 +180,12 @@ export const createWalletPass = async (req, res) => {
       `INSERT INTO wallet_cards (
         client_id, company_id, pass_serial_number, authentication_token,
         points_balance, qr_code_value
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        pass_serial_number = VALUES(pass_serial_number),
+        authentication_token = VALUES(authentication_token),
+        points_balance = VALUES(points_balance),
+        last_updated = NOW()`,
       [
         client.id,
         company_id,
@@ -424,8 +429,8 @@ export const downloadClientPass = async (req, res) => {
     }
 
     // SI APPLE WALLET -> Générer .pkpass
-    let serialNumber = client.id.toString().replace(/-/g, '').substring(0, 20).toUpperCase();
-    let authenticationToken = 'TOKEN_' + client.id.toString().replace(/-/g, '') + 'APPLEWALLET';
+    const serialNumber = client.id.replace(/-/g, '').substring(0, 20).toUpperCase();
+    const authenticationToken = randomUUID(); // Utiliser un vrai UUID pour la sécurité
 
     const [tiers] = await db.query(
       'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
@@ -458,6 +463,28 @@ export const downloadClientPass = async (req, res) => {
     };
 
     const passBuffer = await passGenerator.generateLoyaltyPass(passData, customization, serialNumber, authenticationToken);
+
+    // 6️⃣ Sauvegarder en BD (CRITIQUE pour Apple Wallet Sync)
+    await db.query(
+      `INSERT INTO wallet_cards (
+        client_id, company_id, pass_serial_number, authentication_token,
+        points_balance, stamps_balance, qr_code_value
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        pass_serial_number = VALUES(pass_serial_number),
+        authentication_token = VALUES(authentication_token),
+        points_balance = VALUES(points_balance),
+        last_updated = NOW()`,
+      [
+        client.id,
+        client.company_id,
+        serialNumber,
+        authenticationToken,
+        client.points || 0,
+        0,
+        client.id.toString(),
+      ]
+    );
 
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
     res.setHeader('Content-Disposition', `attachment; filename="${client.prenom}_${client.nom}_Loyalty.pkpass"`);

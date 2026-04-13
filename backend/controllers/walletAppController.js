@@ -157,14 +157,13 @@ export const createWalletPass = async (req, res) => {
       logo_text: client.logo_text,
     };
     // 5️⃣ Générer le pass Apple Wallet
-    const passGenerator = new PassGenerator();
     
     // Forcer HTTPS en production pour Apple Wallet
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
     const webServiceURL = `${protocol}://${req.get('host')}/api/wallet`;
     
     const passBuffer = await passGenerator.generateLoyaltyPass(
-      clientData,
+      passData,
       customization,
       serialNumber,
       authenticationToken,
@@ -183,7 +182,6 @@ export const createWalletPass = async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         pass_serial_number = VALUES(pass_serial_number),
-        authentication_token = VALUES(authentication_token),
         points_balance = VALUES(points_balance),
         last_updated = NOW()`,
       [
@@ -430,7 +428,10 @@ export const downloadClientPass = async (req, res) => {
 
     // SI APPLE WALLET -> Générer .pkpass
     const serialNumber = client.id.replace(/-/g, '').substring(0, 20).toUpperCase();
-    const authenticationToken = randomUUID(); // Utiliser un vrai UUID pour la sécurité
+    
+    // Récupérer le token existant s'il y en a un pour ne pas casser la synchro APNs
+    const [existingTokenRow] = await db.query('SELECT authentication_token FROM wallet_cards WHERE pass_serial_number = ?', [serialNumber]);
+    const authenticationToken = existingTokenRow.length > 0 ? existingTokenRow[0].authentication_token : randomUUID();
 
     const [tiers] = await db.query(
       'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
@@ -472,7 +473,6 @@ export const downloadClientPass = async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         pass_serial_number = VALUES(pass_serial_number),
-        authentication_token = VALUES(authentication_token),
         points_balance = VALUES(points_balance),
         last_updated = NOW()`,
       [

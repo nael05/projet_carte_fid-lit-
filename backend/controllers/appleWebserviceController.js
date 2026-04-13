@@ -223,7 +223,9 @@ export const getUpdatedPass = async (req, res) => {
       `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.created_at,
               wc.pass_serial_number, wc.authentication_token, wc.points_balance,
               e.id as company_id, e.nom as company_name,
-              cc.*
+              cc.apple_logo_url, cc.apple_icon_url, cc.apple_background_color,
+              cc.apple_text_color, cc.apple_label_color, cc.apple_pass_description,
+              cc.apple_organization_name
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id

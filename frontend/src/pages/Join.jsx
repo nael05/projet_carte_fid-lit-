@@ -69,7 +69,7 @@ function Join() {
       setError('L\'email est requis')
       return false
     }
-    
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
@@ -254,14 +254,14 @@ function Join() {
           <div className="wallet-selector-group">
             <label className="wallet-selector-label">Quel type de smartphone utilisez-vous ?</label>
             <div className="wallet-options">
-              <div 
+              <div
                 className={`wallet-option ${selectedWallet === 'apple' ? 'active' : ''}`}
                 onClick={() => setSelectedWallet('apple')}
               >
                 <Smartphone size={24} />
                 <span>iPhone</span>
               </div>
-              <div 
+              <div
                 className={`wallet-option ${selectedWallet === 'google' ? 'active' : ''}`}
                 onClick={() => setSelectedWallet('google')}
               >

@@ -33,7 +33,7 @@ export class PassGenerator {
       this.teamId = process.env.APPLE_TEAM_ID;
       this.passTypeId = process.env.APPLE_PASS_TYPE_ID;
       this.webserviceUrl = process.env.APPLE_WALLET_WEBSERVICE_URL;
-      
+
       // Normaliser l'URL
       if (typeof this.webserviceUrl === 'string' && this.webserviceUrl.endsWith('/')) {
         this.webserviceUrl = this.webserviceUrl.slice(0, -1);
@@ -60,7 +60,7 @@ export class PassGenerator {
       logger.warn('⚠️ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant).');
       return false;
     }
-    
+
     if (!fs.existsSync(this.certPath)) {
       logger.warn(`⚠️ CERTIFICAT APPLE MANQUANT: ${this.certPath}.`);
       return false;
@@ -82,7 +82,7 @@ export class PassGenerator {
    */
   async fetchImageBuffer(urlOrPath) {
     if (!urlOrPath || typeof urlOrPath !== 'string') return null;
-    
+
     try {
       if (urlOrPath.startsWith('uploads/')) {
         const fullPath = path.resolve(__dirname, '..', urlOrPath);
@@ -91,9 +91,9 @@ export class PassGenerator {
         }
       }
       if (urlOrPath.startsWith('http')) {
-        const response = await axios.get(urlOrPath, { 
+        const response = await axios.get(urlOrPath, {
           responseType: 'arraybuffer',
-          timeout: 5000 
+          timeout: 5000
         });
         return Buffer.from(response.data, 'binary');
       }
@@ -121,7 +121,7 @@ export class PassGenerator {
         logger.warn('⚠️ PassGenerator non configuré (certificat absent). Génération annulée.');
         return null;
       }
-      
+
       if (!fs.existsSync(this.certPath)) {
         logger.warn(`⚠️ Certificat Apple absent du disque: ${this.certPath}`);
         return null;
@@ -224,7 +224,7 @@ export class PassGenerator {
         label: 'Entreprise',
         value: clientData.companyName || 'Boutique',
       });
-      
+
       // Ajout des paliers de récompenses sur la face arrière
       if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
         const tiersList = clientData.rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
@@ -273,18 +273,18 @@ export class PassGenerator {
   async updatePassFields(passBuffer, updates) {
     try {
       if (!this._loadConfig()) {
-         logger.warn('⚠️ Mission impossible: config passGenerator manquante pour updatePassFields');
-         return passBuffer; 
+        logger.warn('⚠️ Mission impossible: config passGenerator manquante pour updatePassFields');
+        return passBuffer;
       }
-      
+
       if (!fs.existsSync(this.certPath) || !fs.existsSync(this.keyPath)) {
-         logger.warn('⚠️ Certificats manquants pour updatePassFields');
-         return passBuffer;
+        logger.warn('⚠️ Certificats manquants pour updatePassFields');
+        return passBuffer;
       }
 
       const certificateBuffer = fs.readFileSync(this.certPath);
       const keyBuffer = fs.readFileSync(this.keyPath);
-      
+
       const cleanCert = this.extractPEM(certificateBuffer);
       const cleanKey = this.extractPEM(keyBuffer);
 
@@ -296,7 +296,7 @@ export class PassGenerator {
       const pass = await Template.load(passBuffer);
       pass.setCertificate(cleanCert);
       pass.setPrivateKey(cleanKey, this.certPassword || undefined);
-      
+
       pass.primaryFields.forEach(field => {
         if (field.key === 'balance' && updates.balance !== undefined) {
           field.value = `${updates.balance} pts`;
@@ -307,7 +307,7 @@ export class PassGenerator {
           field.value = `${updates.balance}`;
         }
       });
-      
+
       return await pass.asBuffer();
     } catch (error) {
       logger.error('Failed to update pass fields:', error.message);

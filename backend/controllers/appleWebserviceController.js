@@ -243,6 +243,17 @@ export const getUpdatedPass = async (req, res) => {
 
     const data = clientRows[0];
 
+    // Récupérer les paliers de récompense
+    const [tiers] = await db.query(
+      'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
+      [data.company_id]
+    );
+
+    // Calculer les points gagnés (différence entre le solde actuel et le dernier envoyé au pass)
+    const currentPoints = Number(data.points) || 0;
+    const lastPointsInPass = Number(data.points_balance) || 0;
+    const pointsGained = currentPoints - lastPointsInPass;
+
     // Vérification stricte du token de sécurité Apple
     if (data.authentication_token !== authToken) {
       logger.warn(`🔒 Token invalide lors de la récupération du pass ${serialNumber}`);
@@ -257,7 +268,9 @@ export const getUpdatedPass = async (req, res) => {
       phoneNumber: data.telephone,
       companyName: data.company_name,
       loyaltyType: 'points',
-      balance: data.points_balance,
+      balance: currentPoints, // Envoyer le solde réel actuel
+      rewardTiers: tiers,
+      pointsGained: pointsGained > 0 ? pointsGained : 0,
       createdAt: data.created_at,
       qrCodeValue: data.id.toString(),
     };
@@ -272,8 +285,9 @@ export const getUpdatedPass = async (req, res) => {
       apple_organization_name: data.apple_organization_name,
     };
 
-    // 3️⃣ Générer le nouveau pass
-    const passGenerator = new PassGenerator();
+    // 3️⃣ Générer le nouveau pass (utilise l'instance globale importée)
+    // passGenerator est l'instance par défaut importée en haut du fichier
+    
     
     // Forcer HTTPS en production pour Apple Wallet
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
@@ -292,12 +306,12 @@ export const getUpdatedPass = async (req, res) => {
       return res.status(503).json({ error: 'Service temporairement indisponible (Génération Pass)' });
     }
 
-    // 4️⃣ Mettre à jour la date de génération
+    // 4️⃣ Mettre à jour la date de génération et le SOLDE synchronisé
     const now = new Date();
-    await db.query('UPDATE wallet_cards SET last_pass_generated_at = ? WHERE pass_serial_number = ?', [
-      now,
-      serialNumber,
-    ]);
+    await db.query(
+      'UPDATE wallet_cards SET last_pass_generated_at = ?, points_balance = ?, last_updated = NOW() WHERE pass_serial_number = ?',
+      [now, currentPoints, serialNumber]
+    );
 
     // 5️⃣ Envoyer le fichier
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');

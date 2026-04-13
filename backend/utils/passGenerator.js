@@ -189,11 +189,25 @@ export class PassGenerator {
         value: `${clientData.balance || 0}`
       });
 
+      let pointsToNextTierStr = '';
+      if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
+        const currentPoints = clientData.balance || 0;
+        const nextTier = clientData.rewardTiers.find(t => t.points_required > currentPoints);
+        if (nextTier) {
+          const lacking = nextTier.points_required - currentPoints;
+          pointsToNextTierStr = ` (Manque ${lacking} pts pour le palier : ${nextTier.title})`;
+        } else {
+          pointsToNextTierStr = ` (Paliers maximum atteints !)`;
+        }
+      }
+
+      const gainedStr = clientData.pointsGained > 0 ? ` +${clientData.pointsGained} pts.` : '';
+
       pass.primaryFields.add({
         key: 'balance',
         label: 'Votre Cagnotte',
         value: `${clientData.balance || 0} pts`,
-        changeMessage: 'Votre solde est maintenant de %@ pts',
+        changeMessage: `Nouveau solde: %@ pts.${gainedStr}${pointsToNextTierStr}`,
       });
 
       pass.auxiliaryFields.add({

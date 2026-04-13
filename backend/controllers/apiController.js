@@ -804,23 +804,23 @@ export const registerClientAndGeneratePass = async (req, res) => {
         return res.status(404).json({ error: 'Entreprise non trouvée ou inactive' });
       }
   
-      const clientId = randomUUID();
-      await pool.query(
-        'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, email, points, type_wallet) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
-        [clientId, entrepriseId, nom, prenom, telephone, email, type_wallet]
-      );
-    
-    logger.info(`✅ Client créé: ${clientId} - ${prenom} ${nom}`);
+    const clientId = randomUUID();
+    await pool.query(
+      'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, email, points, type_wallet) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
+      [clientId, entrepriseId, nom, prenom, telephone, email, type_wallet]
+    );
+  
+    logger.info(`✅ Client créé avec succès: ${clientId} (${prenom} ${nom})`);
 
-    res.status(201).json({
+    // Retour explicite du clientId
+    return res.status(201).json({
       success: true,
-      clientId,
-      message: 'Client créé avec succès',
-      note: 'Pour ajouter au wallet, utiliser POST /api/app/wallet/create'
+      clientId: clientId,
+      message: 'Client créé avec succès'
     });
   } catch (err) {
-    logger.error('Register client error', { error: err.message });
-    res.status(500).json({ error: 'Erreur serveur' });
+    logger.error('Erreur lors de la création du client (SQL/Logic):', { error: err.message });
+    return res.status(500).json({ error: 'Erreur lors de la création de la carte' });
   }
 };
 

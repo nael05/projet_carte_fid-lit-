@@ -110,23 +110,26 @@ function Join() {
         type_wallet: selectedWallet
       })
 
-      console.log('Registration response:', registrationResponse.data)
+      console.log('Registration answer raw:', registrationResponse.data);
 
-      const clientId = registrationResponse.data.clientId
+      const clientId = registrationResponse.data.clientId || registrationResponse.data?.id;
 
       if (!clientId) {
-        setError('Erreur: ID client non reçu')
-        setFormSubmitting(false)
-        return
+        console.error('CRITICAL: clientId missed in response:', registrationResponse.data);
+        setError('Erreur technique: Identifiant client non reçu par le serveur.');
+        setFormSubmitting(false);
+        return;
       }
 
-      setSuccess(`Inscription réussie ! Redirection vers ${selectedWallet === 'apple' ? 'Apple Wallet' : 'Google Wallet'}...`)
+      setSuccess(`Inscription réussie ! Préparation de votre carte...`);
 
       // Redirection automatique via GET vers la route téléchargement natif
       setTimeout(() => {
         const apiUrl = import.meta.env.VITE_API_URL || '/api';
-        window.location.href = `${apiUrl}/app/wallet/client-download/${clientId}`;
-      }, 1500)
+        // Nettoyage de l'URL pour éviter les double slash
+        const baseApi = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+        window.location.href = `${baseApi}/app/wallet/client-download/${clientId}`;
+      }, 1000)
     } catch (err) {
       console.error('Registration error:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de la création de la carte'

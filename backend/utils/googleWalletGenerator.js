@@ -13,7 +13,10 @@ dotenv.config();
 
 class GoogleWalletGenerator {
   constructor() {
-    this.keyFilePath = path.join(__dirname, '..', process.env.GOOGLE_WALLET_KEY_PATH || 'config/google-wallet-key.json');
+    const rawPath = process.env.GOOGLE_WALLET_KEY_PATH || 'certs/google-wallet-key.json';
+    this.keyFilePath = path.isAbsolute(rawPath) 
+      ? rawPath 
+      : path.resolve(__dirname, '..', rawPath);
     this.apnKeyPath = process.env.APPLE_APN_KEY_PATH ? path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH) : null;
     this.apnKeyId = process.env.APPLE_APN_KEY_ID;
     this.apnTeamId = process.env.APPLE_APN_TEAM_ID;

@@ -71,21 +71,22 @@ export const registerDevice = async (req, res) => {
     }
 
     logger.info(
-      `📱 Enregistrement device: serial=${serialNumber}, device=${deviceLibraryIdentifier.substring(0, 20)}...`
+      `📱 Tentative d'enregistrement device: serial=${serialNumber}, device=${deviceLibraryIdentifier.substring(0, 10)}...`
     );
 
     // Vérifier que le pass existe
     const [passRows] = await db.query(
-      'SELECT id FROM wallet_cards WHERE pass_serial_number = ?',
+      'SELECT id, client_id, company_id FROM wallet_cards WHERE pass_serial_number = ?',
       [serialNumber]
     );
 
     if (!passRows || passRows.length === 0) {
+      logger.warn(`⚠️ Enregistrement refusé: Pass ${serialNumber} inconnu en BD`);
       return res.status(404).json({ error: 'Pass not found' });
     }
 
     // Insérer ou mettre à jour l'enregistrement du device
-    const [result] = await db.query(
+    await db.query(
       `INSERT INTO apple_pass_registrations (
         pass_serial_number, device_library_identifier, push_token
       ) VALUES (?, ?, ?)
@@ -95,11 +96,8 @@ export const registerDevice = async (req, res) => {
       [serialNumber, deviceLibraryIdentifier, pushToken]
     );
 
-    const isNew = result.affectedRows === 1 && result.insertId > 0;
-    const statusCode = isNew ? 201 : 200;
-
-    logger.info(`✅ Device enregistré (status: ${statusCode})`);
-    res.status(statusCode).json({ success: true });
+    logger.info(`✅ Appareil enregistré avec succès pour le pass ${serialNumber}`);
+    res.status(201).json({ status: 'success' });
   } catch (error) {
     logger.error(`❌ Erreur enregistrement device: ${error.message}`);
     res.status(500).json({ error: 'Device registration error' });
@@ -319,10 +317,9 @@ export const logAppleWalletErrors = async (req, res) => {
 
     // Enregistrer les logs
     logs.forEach((log) => {
-      logger.warn(`🍎 APPLE WALLET LOG: ${log}`);
+      logger.warn(`🍎 [APPLE WALLET DEVICE LOG]: ${log}`);
     });
 
-    logger.info(`📋 ${logs.length} logs reçus d'Apple Wallet`);
     res.status(200).json({ success: true });
   } catch (error) {
     logger.error(`❌ Erreur traitement logs: ${error.message}`);

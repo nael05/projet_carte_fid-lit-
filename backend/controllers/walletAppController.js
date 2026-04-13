@@ -156,7 +156,16 @@ export const createWalletPass = async (req, res) => {
       apple_organization_name: client.apple_organization_name || company_name,
       logo_text: client.logo_text,
     };
-
+    // 5️⃣ Générer le pass Apple Wallet
+    const passGenerator = new PassGenerator();
+    const webServiceURL = `${req.protocol}://${req.get('host')}/api/wallet`;
+    
+    const passBuffer = await passGenerator.generateLoyaltyPass(
+      clientData,
+      serialNumber,
+      authenticationToken,
+      customization,
+      { webServiceURL }
     );
 
     if (!passBuffer) {

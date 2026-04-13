@@ -115,7 +115,7 @@ export class PassGenerator {
   /**
    * Génère un passe Apple Wallet complet
    */
-  async generateLoyaltyPass(clientData, customization, serialNumber, authToken) {
+  async generateLoyaltyPass(clientData, customization, serialNumber, authToken, options = {}) {
     try {
       if (!this._loadConfig()) {
         logger.warn('⚠️ PassGenerator non configuré (certificat absent). Génération annulée.');
@@ -140,7 +140,7 @@ export class PassGenerator {
         backgroundColor: customization?.apple_background_color || 'rgb(31,41,55)',
         labelColor: customization?.apple_label_color || 'rgb(168,168,168)',
         foregroundColor: customization?.apple_text_color || 'rgb(255,255,255)',
-        webServiceURL: this.webserviceUrl,
+        webServiceURL: options.webServiceURL || this.webserviceUrl,
         authenticationToken: authToken,
       });
 
@@ -263,12 +263,26 @@ export class PassGenerator {
    */
   async updatePassFields(passBuffer, updates) {
     try {
-      this._loadConfig();
+      if (!this._loadConfig()) {
+         logger.warn('⚠️ Mission impossible: config passGenerator manquante pour updatePassFields');
+         return passBuffer; 
+      }
+      
+      if (!fs.existsSync(this.certPath) || !fs.existsSync(this.keyPath)) {
+         logger.warn('⚠️ Certificats manquants pour updatePassFields');
+         return passBuffer;
+      }
+
       const certificateBuffer = fs.readFileSync(this.certPath);
       const keyBuffer = fs.readFileSync(this.keyPath);
       
       const cleanCert = this.extractPEM(certificateBuffer);
       const cleanKey = this.extractPEM(keyBuffer);
+
+      if (!cleanCert || !cleanKey) {
+        logger.error('❌ PEM extraction failed');
+        return passBuffer;
+      }
 
       const pass = await Template.load(passBuffer);
       pass.setCertificate(cleanCert);

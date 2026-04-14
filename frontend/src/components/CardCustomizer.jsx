@@ -422,10 +422,10 @@ const CardCustomizer = ({ proInfo }) => {
           )}
 
           {activeTab === 'infos' && (
-            <div className="upload-grid" style={{ gap: '2rem' }}>
+            <div className="upload-grid" style={{ gap: '2rem', display: 'flex', flexDirection: 'column' }}>
               {/* SECTION 1: IDENTITÉ */}
-              <div className="settings-section">
-                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
+                <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <User size={18} /> Identité de la carte
                 </h4>
                 <div className="upload-grid">
@@ -433,7 +433,7 @@ const CardCustomizer = ({ proInfo }) => {
                     <label>Nom de l'organisation (En-tête Apple)</label>
                     <input 
                       type="text" name="apple_organization_name" 
-                      value={config.apple_organization_name} 
+                      value={config.apple_organization_name || ''} 
                       onChange={handleChange}
                       placeholder={proInfo.nom}
                     />
@@ -442,7 +442,7 @@ const CardCustomizer = ({ proInfo }) => {
                     <label>Sous-titre de la carte</label>
                     <input 
                       type="text" name="card_subtitle" 
-                      value={config.card_subtitle} 
+                      value={config.card_subtitle || ''} 
                       onChange={handleChange}
                       placeholder="Ex: Merci pour votre visite !"
                     />
@@ -451,7 +451,7 @@ const CardCustomizer = ({ proInfo }) => {
                     <label><FileText size={14} style={{verticalAlign:'middle'}}/> Description (Accessibilité)</label>
                     <input 
                       type="text" name="apple_pass_description" 
-                      value={config.apple_pass_description} 
+                      value={config.apple_pass_description || ''} 
                       onChange={handleChange}
                       placeholder="Ex: Carte de fidélité numérique"
                     />
@@ -459,9 +459,9 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
               </div>
 
-              {/* SECTION 2: CONTACT (Interactif) */}
-              <div className="settings-section">
-                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* SECTION 2: CONTACT */}
+              <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
+                <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <PhoneCall size={18} /> Contact & Interactions
                 </h4>
                 <div className="upload-grid">
@@ -469,7 +469,7 @@ const CardCustomizer = ({ proInfo }) => {
                     <label><Phone size={14} style={{verticalAlign:'middle'}}/> Numéro de Téléphone</label>
                     <input 
                       type="text" name="back_fields_phone" 
-                      value={config.back_fields_phone} 
+                      value={config.back_fields_phone || ''} 
                       onChange={handleChange}
                       placeholder="Ex: 01 23 45 67 89"
                     />
@@ -478,7 +478,7 @@ const CardCustomizer = ({ proInfo }) => {
                     <label><Globe size={14} style={{verticalAlign:'middle'}}/> Votre Site Web</label>
                     <input 
                       type="text" name="back_fields_website" 
-                      value={config.back_fields_website} 
+                      value={config.back_fields_website || ''} 
                       onChange={handleChange}
                       placeholder="https://votre-site.com"
                     />
@@ -487,7 +487,7 @@ const CardCustomizer = ({ proInfo }) => {
                     <label><MapPin size={14} style={{verticalAlign:'middle'}}/> Adresse Physique</label>
                     <input 
                       type="text" name="back_fields_address" 
-                      value={config.back_fields_address} 
+                      value={config.back_fields_address || ''} 
                       onChange={handleChange}
                       placeholder="Ex: 12 rue de Rivoli, 75001 Paris"
                     />
@@ -496,8 +496,8 @@ const CardCustomizer = ({ proInfo }) => {
               </div>
 
               {/* SECTION 3: RÉSEAUX SOCIAUX */}
-              <div className="settings-section">
-                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
+                <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <Share2 size={18} /> Réseaux Sociaux
                 </h4>
                 <div className="upload-grid">
@@ -505,7 +505,7 @@ const CardCustomizer = ({ proInfo }) => {
                     <label><Instagram size={14} style={{verticalAlign:'middle'}}/> Instagram</label>
                     <input 
                       type="text" name="back_fields_instagram" 
-                      value={config.back_fields_instagram} 
+                      value={config.back_fields_instagram || ''} 
                       onChange={handleChange}
                       placeholder="@votrecompte"
                     />
@@ -514,16 +514,16 @@ const CardCustomizer = ({ proInfo }) => {
                     <label><Facebook size={14} style={{verticalAlign:'middle'}}/> Facebook</label>
                     <input 
                       type="text" name="back_fields_facebook" 
-                      value={config.back_fields_facebook} 
+                      value={config.back_fields_facebook || ''} 
                       onChange={handleChange}
-                      placeholder="Ex: facebook.com/votrepage"
+                      placeholder="facebook.com/votrepage"
                     />
                   </div>
                   <div className="settings-group">
                     <label>TikTok</label>
                     <input 
                       type="text" name="back_fields_tiktok" 
-                      value={config.back_fields_tiktok} 
+                      value={config.back_fields_tiktok || ''} 
                       onChange={handleChange}
                       placeholder="@votrecompte"
                     />
@@ -532,8 +532,8 @@ const CardCustomizer = ({ proInfo }) => {
               </div>
 
               {/* SECTION 4: TEXTES ET LÉGAL */}
-              <div className="settings-section">
-                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
+                <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <ShieldCheck size={18} /> Légal & Informations
                 </h4>
                 <div className="upload-grid">
@@ -541,18 +541,17 @@ const CardCustomizer = ({ proInfo }) => {
                     <label>Conditions d'utilisation (Verso)</label>
                     <textarea 
                       name="back_fields_terms" 
-                      value={config.back_fields_terms} 
+                      value={config.back_fields_terms || ''} 
                       onChange={handleChange}
                       rows={4}
                       placeholder="Expliquez ici comment utiliser les points..."
                     />
                   </div>
-
                   <div className="settings-group">
                     <label>Informations Complémentaires</label>
                     <textarea 
                       name="back_fields_info" 
-                      value={config.back_fields_info} 
+                      value={config.back_fields_info || ''} 
                       onChange={handleChange}
                       rows={3}
                       placeholder="Horaires, adresse, contact..."

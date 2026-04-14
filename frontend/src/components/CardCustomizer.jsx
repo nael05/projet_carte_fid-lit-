@@ -58,6 +58,14 @@ const CardCustomizer = ({ proInfo }) => {
     }
   }, [proInfo]);
 
+  useEffect(() => {
+    if (activeTab === 'infos') {
+      setPreviewSide('back');
+    } else {
+      setPreviewSide('front');
+    }
+  }, [activeTab]);
+
   const loadCustomization = async () => {
     setLoading(true);
     try {
@@ -637,26 +645,61 @@ const CardCustomizer = ({ proInfo }) => {
               </div>
 
               {/* APPLE BACK */}
-              <div className="card-back">
-                <button className="btn-done-flip" onClick={() => setPreviewSide('front')}>Terminé</button>
-                <div className="back-content">
-                  <div className="back-header">
-                    <h3 style={{ color: '#000', margin: 0 }}>Informations</h3>
+              <div className="card-back" style={{ backgroundColor: '#111', color: '#fff' }}>
+                <div className="back-content" style={{ padding: '1.2rem' }}>
+                  <div className="back-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem', marginBottom: '1rem' }}>
+                    <h3 style={{ color: '#fff', margin: 0, fontSize: '1.2rem' }}>Informations</h3>
+                    <p style={{ margin: '4px 0 0', opacity: 0.6, fontSize: '0.8rem' }}>{config.apple_organization_name || proInfo.nom}</p>
                   </div>
-                  <div className="back-item">
-                    <h4>Conditions</h4>
-                    <p>{config.back_fields_terms || "Cumulez des points pour obtenir des cadeaux."}</p>
-                  </div>
-                  <div className="back-item">
-                    <h4>Description</h4>
-                    <p>{config.back_fields_info || "Votre carte de fidélité numérique."}</p>
-                  </div>
-                  {config.back_fields_website && (
-                    <div className="back-item">
-                      <h4>Site Web</h4>
-                      <p style={{ color: '#007aff', fontWeight: '600' }}>{config.back_fields_website} <ChevronRight size={14} style={{verticalAlign:'middle'}} /></p>
+
+                  <div className="back-scroll-area" style={{ maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {/* CONTACT */}
+                    {(config.back_fields_phone || config.back_fields_website || config.back_fields_address) && (
+                      <div className="back-item-group" style={{ marginBottom: '1.2rem' }}>
+                        {config.back_fields_phone && (
+                          <div className="back-item-premium">
+                            <span className="back-item-label"><Phone size={12} /> TÉLÉPHONE</span>
+                            <p className="back-item-value" style={{ color: '#007aff' }}>{config.back_fields_phone}</p>
+                          </div>
+                        )}
+                        {config.back_fields_website && (
+                          <div className="back-item-premium">
+                            <span className="back-item-label"><Globe size={12} /> SITE WEB</span>
+                            <p className="back-item-value" style={{ color: '#007aff' }}>{config.back_fields_website} <ChevronRight size={10} /></p>
+                          </div>
+                        )}
+                        {config.back_fields_address && (
+                          <div className="back-item-premium">
+                            <span className="back-item-label"><MapPin size={12} /> ADRESSE</span>
+                            <p className="back-item-value">{config.back_fields_address}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* RÉSEAUX SOCIAUX */}
+                    {(config.back_fields_instagram || config.back_fields_facebook || config.back_fields_tiktok) && (
+                      <div className="back-item-group" style={{ marginBottom: '1.2rem' }}>
+                        <span className="back-group-title" style={{ fontSize: '0.7rem', opacity: 0.5, letterSpacing: '1px', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Réseaux Sociaux</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                          {config.back_fields_instagram && <div className="back-social-pill"><Instagram size={12} /> {config.back_fields_instagram}</div>}
+                          {config.back_fields_facebook && <div className="back-social-pill"><Facebook size={12} /> Facebook</div>}
+                          {config.back_fields_tiktok && <div className="back-social-pill">TikTok</div>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TEXTES */}
+                    <div className="back-item-premium">
+                      <span className="back-item-label">DESCRIPTION</span>
+                      <p className="back-item-value" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{config.back_fields_info || "Votre carte de fidélité numérique."}</p>
                     </div>
-                  )}
+
+                    <div className="back-item-premium" style={{ marginTop: '1rem' }}>
+                      <span className="back-item-label">CONDITIONS</span>
+                      <p className="back-item-value" style={{ fontSize: '0.75rem', opacity: 0.7, lineHeight: '1.4' }}>{config.back_fields_terms || "Cumulez des points pour obtenir des cadeaux."}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -450,9 +450,10 @@
 
 .card-back {
   transform: rotateY(180deg);
-  background: #ffffff !important;
-  color: #000000 !important;
+  background: #111 !important;
+  color: #ffffff !important;
   border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .back-content {
@@ -463,16 +464,41 @@
   overflow-y: auto;
 }
 
-.back-item h4 {
-  font-size: 13px;
-  margin-bottom: 4px;
-  color: #888;
-  text-transform: uppercase;
+.back-item-premium {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.back-item p {
+.back-item-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.back-item-value {
   font-size: 14px;
-  line-height: 1.4;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+}
+
+.back-social-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .btn-info-flip {

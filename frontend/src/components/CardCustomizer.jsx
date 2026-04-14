@@ -346,19 +346,7 @@ const CardCustomizer = ({ proInfo }) => {
 
               {platform === 'apple' ? (
                 <>
-                  <div className="upload-item">
-                    <div className="upload-preview">
-                      {config.icon_url ? <img src={getMediaUrl(config.icon_url)} alt="Icon" /> : <RotateCw size={20} />}
-                    </div>
-                    <div className="upload-controls">
-                      <label>Icône App (Apple)</label>
-                      <span className="upload-hint">Format Carré (min 29x29px)</span>
-                      <label className="upload-btn">
-                        <input type="file" hidden onChange={e => handleFileUpload(e, 'icon')} disabled={uploadingType === 'icon'} />
-                        {uploadingType === 'icon' ? 'Envoi...' : 'Choisir une icône'}
-                      </label>
-                    </div>
-                  </div>
+
 
                   <div className="upload-item">
                     <div className="upload-preview">

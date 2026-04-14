@@ -527,9 +527,7 @@ const CardCustomizer = ({ proInfo }) => {
                    <div className="barcode-id-premium">N° Carte : 2BF10B</div>
                 </div>
 
-                <div className="card-tiny-logo">
-                   {config.logo_url && <img src={getMediaUrl(config.logo_url)} alt="Tiny Logo" />}
-                </div>
+
               </div>
 
               {/* APPLE BACK */}

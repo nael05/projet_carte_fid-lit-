@@ -434,46 +434,8 @@ const CardCustomizer = ({ proInfo }) => {
                 />
               </div>
 
-              <div className="settings-group">
-                <label><FileText size={14} style={{verticalAlign:'middle'}}/> Description (Accessibilité)</label>
-                <input 
-                  type="text" name="apple_pass_description" 
-                  value={config.apple_pass_description} 
-                  onChange={handleChange}
-                  placeholder="Ex: Carte de fidélité numérique"
-                />
-              </div>
-
-              <div className="settings-group">
-                <label><Globe size={14} style={{verticalAlign:'middle'}}/> Votre Site Web</label>
-                <input 
-                  type="text" name="back_fields_website" 
-                  value={config.back_fields_website} 
-                  onChange={handleChange}
-                  placeholder="https://votre-site.com"
-                />
-              </div>
-
-              <div className="settings-group">
-                <label>Conditions d'utilisation (Verso)</label>
-                <textarea 
-                  name="back_fields_terms" 
-                  value={config.back_fields_terms} 
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Expliquez ici comment utiliser les points..."
-                />
-              </div>
-
-              <div className="settings-group">
-                <label>Informations Complémentaires</label>
-                <textarea 
-                  name="back_fields_info" 
-                  value={config.back_fields_info} 
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Horaires, adresse, contact..."
-                />
+              <div className="info-alert" style={{ marginTop: '1rem', background: 'rgba(255, 107, 107, 0.1)', border: '1px solid rgba(255, 107, 107, 0.2)', padding: '12px', borderRadius: '8px', color: '#ff6b6b', fontSize: '0.85rem' }}>
+                ⚠️ <strong>Note :</strong> Ces informations sont importantes pour vos clients, mais vous avez choisi de les masquer de l'interface de personnalisation.
               </div>
             </div>
           )}

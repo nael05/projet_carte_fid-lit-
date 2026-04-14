@@ -226,15 +226,7 @@ const CardCustomizer = ({ proInfo }) => {
           {/* APPLE APPEARANCE */}
           {platform === 'apple' && activeTab === 'appearance' && (
             <>
-              <div className="settings-group">
-                <label>Nom de l'organisation</label>
-                <input 
-                  type="text" name="apple_organization_name" 
-                  value={config.apple_organization_name} 
-                  onChange={handleChange}
-                  placeholder={proInfo.nom}
-                />
-              </div>
+
 
               <div className="settings-group">
                 <label>Texte à côté du logo (Optionnel)</label>
@@ -346,19 +338,7 @@ const CardCustomizer = ({ proInfo }) => {
 
               {platform === 'apple' ? (
                 <>
-                  <div className="upload-item">
-                    <div className="upload-preview">
-                      {config.icon_url ? <img src={getMediaUrl(config.icon_url)} alt="Icon" /> : <RotateCw size={20} />}
-                    </div>
-                    <div className="upload-controls">
-                      <label>Icône App (Apple)</label>
-                      <span className="upload-hint">Format Carré (min 29x29px)</span>
-                      <label className="upload-btn">
-                        <input type="file" hidden onChange={e => handleFileUpload(e, 'icon')} disabled={uploadingType === 'icon'} />
-                        {uploadingType === 'icon' ? 'Envoi...' : 'Choisir une icône'}
-                      </label>
-                    </div>
-                  </div>
+
 
                   <div className="upload-item">
                     <div className="upload-preview">

@@ -6,6 +6,7 @@
 
 import 'dotenv/config';
 import apn from 'apn';
+import path from 'path';
 import { fileURLToPath } from 'url';
 import logger from './logger.js';
 

@@ -220,7 +220,7 @@ export class PassGenerator {
       pass.backFields.add({
         key: 'company_info',
         label: 'ENTREPRISE',
-        value: clientData.companyName || 'Boutique',
+        value: customization?.apple_organization_name || clientData.companyName || 'Boutique',
       });
 
       if (customization?.back_fields_website) {

@@ -99,6 +99,7 @@ export class PassGenerator {
       }
       return null;
     } catch (e) {
+      logger.error(`❌ Erreur fetchImageBuffer pour [${urlOrPath}]: ${e.message}`);
       return null;
     }
   }

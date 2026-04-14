@@ -242,10 +242,16 @@ export const getUpdatedPass = async (req, res) => {
     );
 
     if (!clientRows || clientRows.length === 0) {
+      logger.warn(`⚠️ Pass ${serialNumber} introuvable en base.`);
       return res.status(404).json({ error: 'Pass not found' });
     }
 
     const data = clientRows[0];
+    if (!data.apple_background_color) {
+      logger.warn(`⚠️ ATTENTION: Aucune personnalisation trouvée pour l'entreprise ${data.company_id} (${data.company_name}). La carte sera blanche.`);
+    } else {
+      logger.info(`🎨 Personnalisation chargée pour ${data.company_name} (Couleur: ${data.apple_background_color})`);
+    }
     const loyaltyType = data.loyalty_type || 'points';
 
     // Récupérer les paliers de récompense

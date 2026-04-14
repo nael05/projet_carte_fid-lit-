@@ -6,6 +6,7 @@
 
 import 'dotenv/config';
 import apn from 'apn';
+import path from 'path';
 import logger from './logger.js';
 
 export class APNService {

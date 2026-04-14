@@ -1,0 +1,97 @@
+
+--- Table: entreprises ---
+id - varchar(36) - NO - PRI
+nom - varchar(100) - NO - 
+email - varchar(100) - NO - UNI
+mot_de_passe - varchar(255) - NO - 
+temporary_password - varchar(255) - YES - 
+statut - enum('actif','suspendu') - YES - MUL
+recompense_definition - varchar(255) - YES - 
+must_change_password - tinyint(1) - YES - 
+created_at - timestamp - YES - MUL
+updated_at - timestamp - YES - 
+loyalty_type - enum('points','stamps') - YES - 
+
+--- Table: clients ---
+id - varchar(36) - NO - PRI
+entreprise_id - varchar(36) - NO - MUL
+nom - varchar(50) - NO - 
+prenom - varchar(50) - NO - 
+telephone - varchar(20) - NO - MUL
+email - varchar(255) - YES - 
+points - int - YES - 
+type_wallet - enum('apple','google') - NO - 
+created_at - timestamp - YES - MUL
+
+--- Table: wallet_cards ---
+id - int - NO - PRI
+client_id - varchar(36) - NO - MUL
+company_id - varchar(36) - NO - MUL
+pass_serial_number - varchar(100) - NO - UNI
+authentication_token - varchar(255) - NO - UNI
+points_balance - int - YES - 
+stamps_balance - int - YES - 
+qr_code_value - varchar(255) - NO - 
+pass_file_path - varchar(255) - YES - 
+pass_file_expiry - datetime - YES - 
+wallet_added_at - datetime - YES - 
+last_pass_generated_at - datetime - YES - 
+last_updated - datetime - YES - 
+created_at - datetime - YES - 
+
+--- Table: apple_pass_registrations ---
+id - int - NO - PRI
+pass_serial_number - varchar(100) - NO - MUL
+device_library_identifier - varchar(255) - NO - MUL
+push_token - varchar(255) - NO - UNI
+last_notified_at - datetime - YES - 
+last_sync_at - datetime - YES - 
+sync_tag - varchar(100) - YES - 
+registered_at - datetime - YES - 
+pass_type_identifier - varchar(100) - YES - 
+
+--- Table: card_customization ---
+id - varchar(36) - NO - PRI
+company_id - varchar(36) - NO - MUL
+loyalty_type - enum('points','stamps') - NO - 
+primary_color - varchar(7) - YES - 
+secondary_color - varchar(7) - YES - 
+accent_color - varchar(7) - YES - 
+text_color - varchar(7) - YES - 
+logo_url - text - YES - 
+background_pattern - varchar(50) - YES - 
+card_title - varchar(100) - YES - 
+card_subtitle - varchar(100) - YES - 
+footer_text - varchar(100) - YES - 
+show_qr_code - tinyint(1) - YES - 
+show_barcode - tinyint(1) - YES - 
+show_progress_bar - tinyint(1) - YES - 
+apple_wallet_enabled - tinyint(1) - YES - 
+google_wallet_enabled - tinyint(1) - YES - 
+apple_pkpass_id - varchar(100) - YES - 
+google_pass_class_id - varchar(100) - YES - 
+created_at - timestamp - YES - 
+updated_at - timestamp - YES - 
+icon_url - varchar(255) - YES - 
+strip_image_url - varchar(255) - YES - 
+logo_text - varchar(100) - YES - 
+back_fields_info - text - YES - 
+back_fields_terms - text - YES - 
+back_fields_website - varchar(255) - YES - 
+apple_organization_name - varchar(100) - YES - 
+apple_pass_description - varchar(255) - YES - 
+latitude - decimal(10,8) - YES - 
+longitude - decimal(11,8) - YES - 
+relevant_text - varchar(100) - YES - 
+google_primary_color - varchar(7) - YES - 
+google_text_color - varchar(7) - YES - 
+google_logo_url - text - YES - 
+google_hero_image_url - text - YES - 
+google_card_title - varchar(100) - YES - 
+google_card_subtitle - varchar(100) - YES - 
+apple_logo_url - varchar(255) - YES - 
+apple_icon_url - varchar(255) - YES - 
+apple_strip_image_url - varchar(255) - YES - 
+apple_background_color - varchar(50) - YES - 
+apple_text_color - varchar(50) - YES - 
+apple_label_color - varchar(50) - YES - 

@@ -125,8 +125,27 @@ class WalletSyncService {
         logger.info(`   🍎 Apple Push envoyé à ${tokens.length} client(s)`);
       }
 
-      // 4. (Optionnel) Toucher les objets Google Wallet individuels si nécessaire
-      // Note: Normalement class changes propagation suffit, mais on pourrait boucler si petits volumes.
+      // 4. Forcer la mise à jour visuelle pour Google Wallet (Touch des objets individuels)
+      const [googleWallets] = await db.query(
+        'SELECT client_id FROM wallet_cards WHERE company_id = ? AND pass_serial_number LIKE "GOOGLE_%"',
+        [companyId]
+      );
+
+      if (googleWallets.length > 0) {
+        // Pour Google, on récupère le nouveau solde et les paliers pour forcer un rafraîchissement de l'objet
+        const [rewardTiers] = await db.query(
+          'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
+          [companyId]
+        );
+
+        for (const wallet of googleWallets) {
+          const [clientData] = await db.query('SELECT points FROM clients WHERE id = ?', [wallet.client_id]);
+          if (clientData.length > 0) {
+            await googleWalletGenerator.updateLoyaltyObject(wallet.client_id, companyId, clientData[0].points, rewardTiers);
+          }
+        }
+        logger.info(`   🤖 Google Wallet objects touchés (${googleWallets.length} clients)`);
+      }
       
       return { success: true, recipients: registrations.length };
     } catch (error) {

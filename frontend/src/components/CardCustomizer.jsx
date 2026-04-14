@@ -262,15 +262,7 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
               </div>
 
-              <div className="settings-group">
-                <label>Sous-titre de la carte</label>
-                <input 
-                  type="text" name="card_subtitle" 
-                  value={config.card_subtitle} 
-                  onChange={handleChange}
-                  placeholder="Ex: Merci pour votre visite !"
-                />
-              </div>
+
             </>
           )}
 

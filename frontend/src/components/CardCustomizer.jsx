@@ -415,6 +415,26 @@ const CardCustomizer = ({ proInfo }) => {
           {activeTab === 'infos' && (
             <div className="upload-grid">
               <div className="settings-group">
+                <label>Nom de l'organisation (En-tête Apple)</label>
+                <input 
+                  type="text" name="apple_organization_name" 
+                  value={config.apple_organization_name} 
+                  onChange={handleChange}
+                  placeholder={proInfo.nom}
+                />
+              </div>
+
+              <div className="settings-group">
+                <label>Sous-titre de la carte</label>
+                <input 
+                  type="text" name="card_subtitle" 
+                  value={config.card_subtitle} 
+                  onChange={handleChange}
+                  placeholder="Ex: Merci pour votre visite !"
+                />
+              </div>
+
+              <div className="settings-group">
                 <label><FileText size={14} style={{verticalAlign:'middle'}}/> Description (Accessibilité)</label>
                 <input 
                   type="text" name="apple_pass_description" 

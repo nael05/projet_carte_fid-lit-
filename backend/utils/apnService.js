@@ -10,7 +10,7 @@ import logger from './logger.js';
 
 export class APNService {
   constructor() {
-    this.apnKeyPath = process.env.APPLE_APN_KEY_PATH;
+    this.apnKeyPath = process.env.APPLE_APN_KEY_PATH ? path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH) : null;
     this.apnKeyId = process.env.APPLE_APN_KEY_ID;
     this.apnTeamId = process.env.APPLE_APN_TEAM_ID;
     this.environment = process.env.APPLE_APN_ENVIRONMENT || 'development';
@@ -70,9 +70,7 @@ export class APNService {
     }
 
     try {
-      // Créer la notification silencieuse pour PassKit
       const notification = new apn.Notification();
-
       // Apple Wallet exige très strictement un payload vide {"aps": {}}
       notification.rawPayload = { aps: {} };
 

@@ -232,23 +232,35 @@ class GoogleWalletGenerator {
     }
   }
 
-  async updateLoyaltyPoints(clientId, newBalance, loyaltyType = 'points') {
+  async updateLoyaltyObject(clientId, empresaId, newBalance, rewardTiers = []) {
     if (!this.client) return;
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
+    
     try {
+      const textModulesData = [];
+      if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
+        const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
+        textModulesData.push({
+          header: 'Vos Paliers de Récompenses',
+          body: tiersList,
+          id: 'rewards_module'
+        });
+      }
+
       const requestBody = {
         loyaltyPoints: {
           balance: { string: newBalance.toString() }
-        }
+        },
+        textModulesData: textModulesData
       };
 
       await this.client.loyaltyobject.patch({
         resourceId: objectId,
         requestBody
       });
-      logger.info(`✅ Google Wallet points updated for ${objectId}: ${newBalance} points`);
+      logger.info(`✅ Google Wallet object updated for ${objectId}: ${newBalance} points + ${rewardTiers.length} tiers`);
     } catch (err) {
-      logger.error(`❌ Failed to update Google Wallet points for ${objectId}:`, { error: err.message });
+      logger.error(`❌ Failed to update Google Wallet object for ${objectId}:`, { error: err.message });
       throw err;
     }
   }

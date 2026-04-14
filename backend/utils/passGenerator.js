@@ -190,7 +190,8 @@ export class PassGenerator {
       pass.headerFields.add({
         key: 'points_header',
         label: 'POINTS',
-        value: `${clientData.balance || 0}`
+        value: `${clientData.balance || 0}`,
+        changeMessage: "Solde mis à jour : %@ points"
       });
 
       // 2. Bonjour [Prénom] & Détails (Secondary Fields - Pour être sous la bannière sur iOS)
@@ -286,7 +287,8 @@ export class PassGenerator {
         pass.backFields.add({
           key: 'rewards_tiers',
           label: 'PALIERS DE RÉCOMPENSES',
-          value: tiersList
+          value: tiersList,
+          changeMessage: "Liste des récompenses mise à jour !"
         });
       }
 

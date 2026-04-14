@@ -235,7 +235,7 @@ export const getUpdatedPass = async (req, res) => {
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
-       LEFT JOIN card_customization cc ON e.id = cc.company_id AND cc.loyalty_type = e.loyalty_type
+       LEFT JOIN card_customization cc ON e.id = cc.company_id AND (cc.loyalty_type = e.loyalty_type OR cc.loyalty_type IS NULL)
        WHERE wc.pass_serial_number = ?`,
       [serialNumber]
     );
@@ -322,11 +322,11 @@ export const getUpdatedPass = async (req, res) => {
       return res.status(503).json({ error: 'Service temporairement indisponible (Génération Pass)' });
     }
 
-    // 4️⃣ Mettre à jour la date de génération et le SOLDE synchronisé
+    // 4️⃣ Mettre à jour la date de génération et le SOLDE synchronisé (Précision ms)
     const now = new Date();
     await db.query(
-      'UPDATE wallet_cards SET last_pass_generated_at = ?, points_balance = ?, last_updated = NOW() WHERE pass_serial_number = ?',
-      [now, currentPoints, serialNumber]
+      'UPDATE wallet_cards SET last_pass_generated_at = NOW(3), points_balance = ?, last_updated = NOW(3) WHERE pass_serial_number = ?',
+      [currentPoints, serialNumber]
     );
 
     // 5️⃣ Envoyer le fichier

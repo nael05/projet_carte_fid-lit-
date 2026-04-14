@@ -9,6 +9,7 @@ import passGenerator from '../utils/passGenerator.js';
 import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import { apnService } from '../utils/apnService.js';
 import { sendLoyaltyUpdateNotification } from '../utils/notificationService.js';
+import walletSyncService from '../utils/walletSyncService.js';
 import db from '../db.js';
 import logger from '../utils/logger.js';
 
@@ -264,42 +265,10 @@ export const addPointsToWallet = async (req, res) => {
       [walletId, pass_serial_number, isStamps ? 'add_stamps' : 'add_points', pointsToAdd, oldBalance, newBalance, reason || 'API update', 'admin_api']
     );
 
-    const [registrations] = await db.query(
-      'SELECT push_token FROM apple_pass_registrations WHERE pass_serial_number = ?',
-      [pass_serial_number]
+    // 🔄 Synchronisation Centralisée (Apple & Google)
+    walletSyncService.syncClientWallet(clientId, wallet.entreprise_id).catch(err => 
+      logger.error(`❌ Sync failed in addPointsToWallet: ${err.message}`)
     );
-
-    const [rewardTiers] = await db.query(
-      'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
-      [wallet.entreprise_id]
-    );
-
-    const textModulesData = [];
-    if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
-       const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
-       textModulesData.push({
-          header: 'Vos Paliers de Récompenses',
-          body: tiersList,
-          id: 'rewards_module'
-       });
-    }
-
-    let notificationsSent = 0;
-    if (registrations && registrations.length > 0) {
-      const pushTokens = registrations.map((r) => r.push_token);
-      const notificationResults = await apnService.sendBulkUpdateNotifications(pushTokens);
-      notificationsSent = notificationResults.sent;
-    }
-
-    // MISE À JOUR GOOGLE WALLET
-    if (pass_serial_number.startsWith('GOOGLE_')) {
-      try {
-        await googleWalletGenerator.updateLoyaltyPoints(clientId, newBalance, loyalty_type);
-        logger.info(`✅ Points Google Wallet synchronisés pour client ${clientId}`);
-      } catch (err) {
-        logger.error(`❌ Échec synchro Google Wallet pour client ${clientId}: ${err.message}`);
-      }
-    }
 
     // Envoi notification Visuelle
     try {

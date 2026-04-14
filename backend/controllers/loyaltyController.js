@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import pool from '../db.js';
 import logger from '../utils/logger.js';
 import apnService from '../utils/apnService.js';
+import walletSyncService from '../utils/walletSyncService.js';
 
 // ===== LOYALTY CONFIGURATION CONTROLLERS =====
 
@@ -148,6 +149,10 @@ export const createRewardTier = async (req, res) => {
       `INSERT INTO reward_tiers (id, entreprise_id, points_required, title, description) VALUES (?, ?, ?, ?, ?)`,
       [id, empresaId, points_required, title, description || '']
     );
+
+    // 🔄 Sync Wallets (Background)
+    walletSyncService.syncCompanyWallets(empresaId).catch(err => logger.error('Sync failed tier create', err));
+
     res.status(201).json({ success: true, id, message: 'Palier ajouté' });
   } catch (err) {
     logger.error('Create reward tier error', { error: err.message });
@@ -165,6 +170,10 @@ export const updateRewardTier = async (req, res) => {
       `UPDATE reward_tiers SET points_required = COALESCE(?, points_required), title = COALESCE(?, title), description = COALESCE(?, description) WHERE id = ? AND entreprise_id = ?`,
       [points_required, title, description, tierId, empresaId]
     );
+
+    // 🔄 Sync Wallets (Background)
+    walletSyncService.syncCompanyWallets(empresaId).catch(err => logger.error('Sync failed tier update', err));
+
     res.json({ success: true, message: 'Palier mis à jour' });
   } catch (err) {
     logger.error('Update reward tier error', { error: err.message });
@@ -181,6 +190,10 @@ export const deleteRewardTier = async (req, res) => {
       `DELETE FROM reward_tiers WHERE id = ? AND entreprise_id = ?`,
       [tierId, empresaId]
     );
+
+    // 🔄 Sync Wallets (Background)
+    walletSyncService.syncCompanyWallets(empresaId).catch(err => logger.error('Sync failed tier delete', err));
+
     res.json({ success: true, message: 'Palier supprimé' });
   } catch (err) {
     logger.error('Delete reward tier error', { error: err.message });

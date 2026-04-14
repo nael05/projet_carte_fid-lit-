@@ -217,10 +217,6 @@ export class PassGenerator {
         }
       ];
 
-      // 5. Back Infos
-      // --- DOS DE LA CARTE (Back Fields) ---
-      
-      // 1. Entreprise & Site Web
       pass.backFields.add({
         key: 'company_info',
         label: 'ENTREPRISE',
@@ -235,7 +231,6 @@ export class PassGenerator {
         });
       }
 
-      // 2. Contact & Réseaux Sociaux
       if (customization?.back_fields_phone) {
         pass.backFields.add({
           key: 'phone',
@@ -278,7 +273,6 @@ export class PassGenerator {
         });
       }
 
-      // 3. Conditions d'utilisation
       if (customization?.back_fields_terms) {
         pass.backFields.add({
           key: 'terms',
@@ -287,7 +281,6 @@ export class PassGenerator {
         });
       }
 
-      // 4. Paliers de récompenses (Automatique)
       if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
         const tiersList = clientData.rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
         pass.backFields.add({
@@ -297,7 +290,6 @@ export class PassGenerator {
         });
       }
 
-      // 5. Informations complémentaires
       if (customization?.back_fields_info) {
         pass.backFields.add({
           key: 'extra_info',
@@ -306,7 +298,6 @@ export class PassGenerator {
         });
       }
 
-      // Proximité (GPS)
       if (customization?.latitude && customization?.longitude) {
         pass.locations.add({
           latitude: Number(customization.latitude),

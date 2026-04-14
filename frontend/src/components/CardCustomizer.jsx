@@ -423,7 +423,6 @@ const CardCustomizer = ({ proInfo }) => {
 
           {activeTab === 'infos' && (
             <div className="upload-grid" style={{ gap: '2rem', display: 'flex', flexDirection: 'column' }}>
-              {/* SECTION 1: IDENTITÉ */}
               <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
                 <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <User size={18} /> Identité de la carte
@@ -459,7 +458,6 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
               </div>
 
-              {/* SECTION 2: CONTACT */}
               <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
                 <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <PhoneCall size={18} /> Contact & Interactions
@@ -495,7 +493,6 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
               </div>
 
-              {/* SECTION 3: RÉSEAUX SOCIAUX */}
               <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
                 <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <Share2 size={18} /> Réseaux Sociaux
@@ -531,7 +528,6 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
               </div>
 
-              {/* SECTION 4: TEXTES ET LÉGAL */}
               <div className="settings-section" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '12px' }}>
                 <h4 style={{ color: '#fff', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
                   <ShieldCheck size={18} /> Légal & Informations

@@ -915,14 +915,12 @@ export const updateCardCustomization = async (req, res) => {
       return res.status(400).json({ error: 'loyaltyType invalide' });
     }
 
-    // Vérifier si la personnalisation existe pour ce type
     const [existing] = await pool.query(
       'SELECT id FROM card_customization WHERE company_id = ? AND loyalty_type = ?',
       [empresaId, loyaltyType]
     );
 
     if (existing.length === 0) {
-      // Créer une nouvelle entrée
       const customizationId = randomUUID();
       await pool.query(
         `INSERT INTO card_customization 
@@ -952,7 +950,6 @@ export const updateCardCustomization = async (req, res) => {
         ]
       );
     } else {
-      // Mettre à jour l'entrée existante
       await pool.query(
         `UPDATE card_customization SET 
          primary_color = ?, text_color = ?, accent_color = ?, secondary_color = ?,

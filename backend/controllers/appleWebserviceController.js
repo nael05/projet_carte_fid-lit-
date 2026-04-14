@@ -236,8 +236,10 @@ export const getUpdatedPass = async (req, res) => {
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
-       LEFT JOIN card_customization cc ON e.id = cc.company_id AND (cc.loyalty_type = e.loyalty_type OR cc.loyalty_type IS NULL)
-       WHERE wc.pass_serial_number = ?`,
+       LEFT JOIN card_customization cc ON e.id = cc.company_id
+       WHERE wc.pass_serial_number = ?
+       ORDER BY cc.updated_at DESC
+       LIMIT 1`,
       [serialNumber]
     );
 
@@ -247,11 +249,14 @@ export const getUpdatedPass = async (req, res) => {
     }
 
     const data = clientRows[0];
-    if (!data.apple_background_color) {
-      logger.warn(`⚠️ ATTENTION: Aucune personnalisation trouvée pour l'entreprise ${data.company_id} (${data.company_name}). La carte sera blanche.`);
-    } else {
-      logger.info(`🎨 Personnalisation chargée pour ${data.company_name} (Couleur: ${data.apple_background_color})`);
-    }
+    
+    // LOGS DE DIAGNOSTIC DESIGN
+    logger.info(`🎨 --- DIAGNOSTIC DESIGN POUR ${data.company_name} ---`);
+    logger.info(`   > Couleur Fond : ${data.apple_background_color || 'DÉFAUT (#1f2937)'}`);
+    logger.info(`   > Logo URL : ${data.apple_logo_url || 'AUCUN'}`);
+    logger.info(`   > Icône URL : ${data.apple_icon_url || 'AUCUN'}`);
+    logger.info(`   > Type Fidélité : ${data.loyalty_type}`);
+    logger.info(`🎨 ------------------------------------------------`);
     const loyaltyType = data.loyalty_type || 'points';
 
     // Récupérer les paliers de récompense

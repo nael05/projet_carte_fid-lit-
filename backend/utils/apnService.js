@@ -89,15 +89,15 @@ export class APNService {
       if (result.failed && result.failed.length > 0) {
         const failure = result.failed[0];
         logger.warn(
-          `⚠️ Notification échouée (token: ${pushToken.substring(0, 10)}...): ${failure.error || 'Raison inconnue'} (Status: ${failure.status || 'N/A'})`
+          `⚠️ Apple Push Échoué [Token: ${pushToken.substring(0, 10)}...]: ${failure.error || 'Statut ' + failure.status}`
         );
         if (failure.response) {
-          logger.debug(`Détails échec APNs: ${JSON.stringify(failure.response)}`);
+          logger.error(`   ❌ Détails de la réponse Apple: ${JSON.stringify(failure.response)}`);
         }
         return { sent: false, error: failure.error, status: failure.status, token: pushToken };
       }
 
-      logger.info(`✅ Notification envoyée au device (token: ${pushToken.substring(0, 20)}...)`);
+      logger.info(`✅ Apple Push Envoyé avec succès au device (Topic: ${notification.topic})`);
       return { sent: true, token: pushToken };
     } catch (error) {
       logger.error(`❌ Erreur envoi notification: ${error.message}`);

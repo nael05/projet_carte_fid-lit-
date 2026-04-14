@@ -161,9 +161,11 @@ export const getUpdatedPasses = async (req, res) => {
     // Filtrer par date si fournie
     let updatedPasses = registrations;
     if (passesUpdatedSince) {
+      // On utilise >= pour s'assurer que si une mise à jour a eu lieu à l'instant même du tag, elle est incluse.
+      // Apple attend les changements DEPUIS (since) le tag.
       const sinceDate = new Date(parseInt(passesUpdatedSince));
       updatedPasses = registrations.filter(
-        (p) => new Date(p.last_updated) > sinceDate
+        (p) => new Date(p.last_updated) >= sinceDate
       );
     }
 
@@ -175,9 +177,8 @@ export const getUpdatedPasses = async (req, res) => {
 
     // Retourner la liste des passes mis à jour
     const serialNumbers = updatedPasses.map((p) => p.pass_serial_number);
-    const lastUpdatedTag = Math.floor(
-      Math.max(...updatedPasses.map((p) => new Date(p.last_updated).getTime()))
-    ).toString();
+    // Utiliser la valeur brute pour garder la précision
+    const lastUpdatedTag = Math.max(...updatedPasses.map((p) => new Date(p.last_updated).getTime())).toString();
 
     logger.info(`✅ ${serialNumbers.length} pass(es) mis à jour`);
     res.json({
@@ -301,10 +302,11 @@ export const getUpdatedPass = async (req, res) => {
     // passGenerator est l'instance par défaut importée en haut du fichier
     
     
-    // Forcer l'URL de production pour Apple Wallet
-    // CRITIQUE : Si le serveur tourne derrière un proxy/IP, req.get('host') peut renvoyer 'localhost'
-    // ce qui empêche l'iPhone de contacter le serveur depuis l'extérieur.
-    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    // Forcer HTTPS obligatoirement pour Apple Wallet (exigence stricte)
+    let backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    if (backendUrl.startsWith('http://')) {
+      backendUrl = backendUrl.replace('http://', 'https://');
+    }
     const webServiceURL = `${backendUrl}/api/wallet`;
     
     logger.info(`🌐 WebServiceURL pour ce pass : ${webServiceURL}`);
@@ -331,7 +333,9 @@ export const getUpdatedPass = async (req, res) => {
 
     // 5️⃣ Envoyer le fichier
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
-    res.setHeader('Last-Modified', now.toUTCString());
+    // Utiliser la date réelle de mise à jour de la carte en BD
+    const lastModified = data.last_updated ? new Date(data.last_updated) : new Date();
+    res.setHeader('Last-Modified', lastModified.toUTCString());
     res.setHeader('Content-Length', passBuffer.length);
     res.send(passBuffer);
 

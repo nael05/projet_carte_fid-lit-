@@ -217,22 +217,52 @@ export class PassGenerator {
       ];
 
       // 5. Back Infos
+      // --- DOS DE LA CARTE (Back Fields) ---
+      
+      // 1. Entreprise & Site Web
       pass.backFields.add({
         key: 'company_info',
-        label: 'Entreprise',
+        label: 'ENTREPRISE',
         value: clientData.companyName || 'Boutique',
       });
-      
+
+      if (customization?.back_fields_website) {
+        pass.backFields.add({
+          key: 'website',
+          label: 'SITE WEB',
+          value: customization.back_fields_website
+        });
+      }
+
+      // 2. Conditions d'utilisation
+      if (customization?.back_fields_terms) {
+        pass.backFields.add({
+          key: 'terms',
+          label: 'CONDITIONS',
+          value: customization.back_fields_terms
+        });
+      }
+
+      // 3. Paliers de récompenses (Automatique)
       if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
         const tiersList = clientData.rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
         pass.backFields.add({
           key: 'rewards_tiers',
-          label: 'Vos Paliers de Récompenses',
+          label: 'PALIERS DE RÉCOMPENSES',
           value: tiersList
         });
       }
 
-      // Proximité
+      // 4. Informations complémentaires
+      if (customization?.back_fields_info) {
+        pass.backFields.add({
+          key: 'extra_info',
+          label: 'INFOS COMPLÉMENTAIRES',
+          value: customization.back_fields_info
+        });
+      }
+
+      // Proximité (GPS)
       if (customization?.latitude && customization?.longitude) {
         pass.locations.add({
           latitude: Number(customization.latitude),

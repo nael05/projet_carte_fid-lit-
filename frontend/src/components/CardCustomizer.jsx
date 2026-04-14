@@ -3,7 +3,7 @@ import api from '../api';
 import { 
   Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw, 
   Globe, FileText, ChevronRight, Smartphone, Apple, User, PhoneCall, Share2, 
-  ShieldCheck, Phone, MapPin, Instagram, Facebook 
+  ShieldCheck, Phone, MapPin
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import './CardCustomizer.css';
@@ -507,7 +507,7 @@ const CardCustomizer = ({ proInfo }) => {
                 </h4>
                 <div className="upload-grid">
                   <div className="settings-group">
-                    <label><Instagram size={14} style={{verticalAlign:'middle'}}/> Instagram</label>
+                    <label><Share2 size={14} style={{verticalAlign:'middle'}}/> Instagram</label>
                     <input 
                       type="text" name="back_fields_instagram" 
                       value={config.back_fields_instagram || ''} 
@@ -516,7 +516,7 @@ const CardCustomizer = ({ proInfo }) => {
                     />
                   </div>
                   <div className="settings-group">
-                    <label><Facebook size={14} style={{verticalAlign:'middle'}}/> Facebook</label>
+                    <label><Share2 size={14} style={{verticalAlign:'middle'}}/> Facebook</label>
                     <input 
                       type="text" name="back_fields_facebook" 
                       value={config.back_fields_facebook || ''} 
@@ -682,8 +682,8 @@ const CardCustomizer = ({ proInfo }) => {
                       <div className="back-item-group" style={{ marginBottom: '1.2rem' }}>
                         <span className="back-group-title" style={{ fontSize: '0.7rem', opacity: 0.5, letterSpacing: '1px', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Réseaux Sociaux</span>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                          {config.back_fields_instagram && <div className="back-social-pill"><Instagram size={12} /> {config.back_fields_instagram}</div>}
-                          {config.back_fields_facebook && <div className="back-social-pill"><Facebook size={12} /> Facebook</div>}
+                          {config.back_fields_instagram && <div className="back-social-pill"><Share2 size={12} /> {config.back_fields_instagram}</div>}
+                          {config.back_fields_facebook && <div className="back-social-pill"><Share2 size={12} /> Facebook</div>}
                           {config.back_fields_tiktok && <div className="back-social-pill">TikTok</div>}
                         </div>
                       </div>

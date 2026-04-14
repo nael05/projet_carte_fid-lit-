@@ -170,9 +170,11 @@ export const createWalletPass = async (req, res) => {
     };
     // 5️⃣ Générer le pass Apple Wallet
     
-    // Forcer l'URL de production pour Apple Wallet
-    // CRITIQUE : Si le serveur tourne derrière un proxy/IP, req.get('host') peut renvoyer 'localhost'
-    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    // Forcer l'URL de production pour Apple Wallet (HTTPS OBLIGATOIRE)
+    let backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    if (backendUrl.startsWith('http://')) {
+      backendUrl = backendUrl.replace('http://', 'https://');
+    }
     const webServiceURL = `${backendUrl}/api/wallet`;
     
     logger.info(`🌐 WebServiceURL pour ce pass : ${webServiceURL}`);

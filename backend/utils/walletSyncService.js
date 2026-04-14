@@ -111,6 +111,8 @@ class WalletSyncService {
       );
 
       // 3. Envoyer le Push Apple à TOUS les clients enregistrés
+      logger.info(`   🍎 [SYNC GLOBALE] Recherche de terminaux Apple pour l'entreprise ID: ${companyId}...`);
+      
       const [registrations] = await db.query(
         `SELECT DISTINCT r.push_token 
          FROM apple_pass_registrations r
@@ -118,15 +120,17 @@ class WalletSyncService {
          WHERE w.company_id = ?`,
         [companyId]
       );
-
-      logger.info(`   🍎 [SYNC GLOBALE] Recherche de terminaux Apple pour l'entreprise ${companyId}...`);
       
       if (registrations.length > 0) {
         const tokens = registrations.map(r => r.push_token);
+        logger.info(`   🍎 [SYNC GLOBALE] ${tokens.length} terminal/terminaux trouvé(s). Envoi des notifications...`);
         await apnService.sendBulkUpdateNotifications(tokens);
-        logger.info(`   🍎 Apple Push envoyé avec succès à ${tokens.length} client(s)`);
+        logger.info(`   ✅ [SYNC GLOBALE] Apple Push envoyé avec succès.`);
       } else {
-        logger.warn(`   ⚠️ Aucun client Apple enregistré trouvé pour l'entreprise ${companyId}. La mise à jour ne sera pas envoyée.`);
+        logger.warn(`   ⚠️ [SYNC GLOBALE] Aucun terminal Apple enregistré trouvé pour l'entreprise ${companyId}.`);
+        // Diagnostic : voir s'il y a des cartes sans enregistrements
+        const [cardCount] = await db.query('SELECT COUNT(*) as count FROM wallet_cards WHERE company_id = ?', [companyId]);
+        logger.info(`   📊 Diagnostic : ${cardCount[0].count} carte(s) trouvée(s) en base pour cette entreprise, mais 0 enregistrement Push.`);
       }
 
       // 4. Forcer la mise à jour visuelle pour Google Wallet (Touch des objets individuels)

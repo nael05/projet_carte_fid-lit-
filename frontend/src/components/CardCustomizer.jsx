@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw, Globe, FileText, ChevronRight, Smartphone, Apple } from 'lucide-react';
+import { 
+  Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw, 
+  Globe, FileText, ChevronRight, Smartphone, Apple, User, PhoneCall, Share2, 
+  ShieldCheck, Phone, MapPin, Instagram, Facebook 
+} from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import './CardCustomizer.css';
 
@@ -23,6 +27,11 @@ const CardCustomizer = ({ proInfo }) => {
     back_fields_info: '',
     back_fields_terms: '',
     back_fields_website: '',
+    back_fields_phone: '',
+    back_fields_address: '',
+    back_fields_instagram: '',
+    back_fields_facebook: '',
+    back_fields_tiktok: '',
     apple_organization_name: '',
     apple_pass_description: 'Votre carte de fidélité numérique',
     // Google specific
@@ -413,67 +422,143 @@ const CardCustomizer = ({ proInfo }) => {
           )}
 
           {activeTab === 'infos' && (
-            <div className="upload-grid">
-              <div className="settings-group">
-                <label>Nom de l'organisation (En-tête Apple)</label>
-                <input 
-                  type="text" name="apple_organization_name" 
-                  value={config.apple_organization_name} 
-                  onChange={handleChange}
-                  placeholder={proInfo.nom}
-                />
+            <div className="upload-grid" style={{ gap: '2rem' }}>
+              {/* SECTION 1: IDENTITÉ */}
+              <div className="settings-section">
+                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <User size={18} /> Identité de la carte
+                </h4>
+                <div className="upload-grid">
+                  <div className="settings-group">
+                    <label>Nom de l'organisation (En-tête Apple)</label>
+                    <input 
+                      type="text" name="apple_organization_name" 
+                      value={config.apple_organization_name} 
+                      onChange={handleChange}
+                      placeholder={proInfo.nom}
+                    />
+                  </div>
+                  <div className="settings-group">
+                    <label>Sous-titre de la carte</label>
+                    <input 
+                      type="text" name="card_subtitle" 
+                      value={config.card_subtitle} 
+                      onChange={handleChange}
+                      placeholder="Ex: Merci pour votre visite !"
+                    />
+                  </div>
+                  <div className="settings-group">
+                    <label><FileText size={14} style={{verticalAlign:'middle'}}/> Description (Accessibilité)</label>
+                    <input 
+                      type="text" name="apple_pass_description" 
+                      value={config.apple_pass_description} 
+                      onChange={handleChange}
+                      placeholder="Ex: Carte de fidélité numérique"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="settings-group">
-                <label>Sous-titre de la carte</label>
-                <input 
-                  type="text" name="card_subtitle" 
-                  value={config.card_subtitle} 
-                  onChange={handleChange}
-                  placeholder="Ex: Merci pour votre visite !"
-                />
+              {/* SECTION 2: CONTACT (Interactif) */}
+              <div className="settings-section">
+                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <PhoneCall size={18} /> Contact & Interactions
+                </h4>
+                <div className="upload-grid">
+                  <div className="settings-group">
+                    <label><Phone size={14} style={{verticalAlign:'middle'}}/> Numéro de Téléphone</label>
+                    <input 
+                      type="text" name="back_fields_phone" 
+                      value={config.back_fields_phone} 
+                      onChange={handleChange}
+                      placeholder="Ex: 01 23 45 67 89"
+                    />
+                  </div>
+                  <div className="settings-group">
+                    <label><Globe size={14} style={{verticalAlign:'middle'}}/> Votre Site Web</label>
+                    <input 
+                      type="text" name="back_fields_website" 
+                      value={config.back_fields_website} 
+                      onChange={handleChange}
+                      placeholder="https://votre-site.com"
+                    />
+                  </div>
+                  <div className="settings-group">
+                    <label><MapPin size={14} style={{verticalAlign:'middle'}}/> Adresse Physique</label>
+                    <input 
+                      type="text" name="back_fields_address" 
+                      value={config.back_fields_address} 
+                      onChange={handleChange}
+                      placeholder="Ex: 12 rue de Rivoli, 75001 Paris"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="settings-group">
-                <label><FileText size={14} style={{verticalAlign:'middle'}}/> Description (Accessibilité)</label>
-                <input 
-                  type="text" name="apple_pass_description" 
-                  value={config.apple_pass_description} 
-                  onChange={handleChange}
-                  placeholder="Ex: Carte de fidélité numérique"
-                />
+              {/* SECTION 3: RÉSEAUX SOCIAUX */}
+              <div className="settings-section">
+                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Share2 size={18} /> Réseaux Sociaux
+                </h4>
+                <div className="upload-grid">
+                  <div className="settings-group">
+                    <label><Instagram size={14} style={{verticalAlign:'middle'}}/> Instagram</label>
+                    <input 
+                      type="text" name="back_fields_instagram" 
+                      value={config.back_fields_instagram} 
+                      onChange={handleChange}
+                      placeholder="@votrecompte"
+                    />
+                  </div>
+                  <div className="settings-group">
+                    <label><Facebook size={14} style={{verticalAlign:'middle'}}/> Facebook</label>
+                    <input 
+                      type="text" name="back_fields_facebook" 
+                      value={config.back_fields_facebook} 
+                      onChange={handleChange}
+                      placeholder="Ex: facebook.com/votrepage"
+                    />
+                  </div>
+                  <div className="settings-group">
+                    <label>TikTok</label>
+                    <input 
+                      type="text" name="back_fields_tiktok" 
+                      value={config.back_fields_tiktok} 
+                      onChange={handleChange}
+                      placeholder="@votrecompte"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="settings-group">
-                <label><Globe size={14} style={{verticalAlign:'middle'}}/> Votre Site Web</label>
-                <input 
-                  type="text" name="back_fields_website" 
-                  value={config.back_fields_website} 
-                  onChange={handleChange}
-                  placeholder="https://votre-site.com"
-                />
-              </div>
+              {/* SECTION 4: TEXTES ET LÉGAL */}
+              <div className="settings-section">
+                <h4 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldCheck size={18} /> Légal & Informations
+                </h4>
+                <div className="upload-grid">
+                  <div className="settings-group">
+                    <label>Conditions d'utilisation (Verso)</label>
+                    <textarea 
+                      name="back_fields_terms" 
+                      value={config.back_fields_terms} 
+                      onChange={handleChange}
+                      rows={4}
+                      placeholder="Expliquez ici comment utiliser les points..."
+                    />
+                  </div>
 
-              <div className="settings-group">
-                <label>Conditions d'utilisation (Verso)</label>
-                <textarea 
-                  name="back_fields_terms" 
-                  value={config.back_fields_terms} 
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Expliquez ici comment utiliser les points..."
-                />
-              </div>
-
-              <div className="settings-group">
-                <label>Informations Complémentaires</label>
-                <textarea 
-                  name="back_fields_info" 
-                  value={config.back_fields_info} 
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Horaires, adresse, contact..."
-                />
+                  <div className="settings-group">
+                    <label>Informations Complémentaires</label>
+                    <textarea 
+                      name="back_fields_info" 
+                      value={config.back_fields_info} 
+                      onChange={handleChange}
+                      rows={3}
+                      placeholder="Horaires, adresse, contact..."
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}

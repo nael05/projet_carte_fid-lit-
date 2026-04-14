@@ -174,6 +174,7 @@ export class PassGenerator {
 
       const pass = template.createPass({
         serialNumber: String(serialNumber),
+        description: customization?.apple_pass_description || 'Carte de fidélité numérique'
       });
 
       if (customization?.latitude && customization?.longitude) {
@@ -234,7 +235,50 @@ export class PassGenerator {
         });
       }
 
-      // 2. Conditions d'utilisation
+      // 2. Contact & Réseaux Sociaux
+      if (customization?.back_fields_phone) {
+        pass.backFields.add({
+          key: 'phone',
+          label: 'TÉLÉPHONE',
+          value: customization.back_fields_phone,
+          dataDetectorTypes: ['PKDataDetectorTypePhoneNumber']
+        });
+      }
+
+      if (customization?.back_fields_address) {
+        pass.backFields.add({
+          key: 'address',
+          label: 'ADRESSE',
+          value: customization.back_fields_address,
+          dataDetectorTypes: ['PKDataDetectorTypeAddress']
+        });
+      }
+
+      if (customization?.back_fields_instagram) {
+        pass.backFields.add({
+          key: 'instagram',
+          label: 'INSTAGRAM',
+          value: customization.back_fields_instagram.startsWith('@') ? customization.back_fields_instagram : `@${customization.back_fields_instagram}`
+        });
+      }
+
+      if (customization?.back_fields_facebook) {
+        pass.backFields.add({
+          key: 'facebook',
+          label: 'FACEBOOK',
+          value: customization.back_fields_facebook
+        });
+      }
+
+      if (customization?.back_fields_tiktok) {
+        pass.backFields.add({
+          key: 'tiktok',
+          label: 'TIKTOK',
+          value: customization.back_fields_tiktok.startsWith('@') ? customization.back_fields_tiktok : `@${customization.back_fields_tiktok}`
+        });
+      }
+
+      // 3. Conditions d'utilisation
       if (customization?.back_fields_terms) {
         pass.backFields.add({
           key: 'terms',
@@ -243,7 +287,7 @@ export class PassGenerator {
         });
       }
 
-      // 3. Paliers de récompenses (Automatique)
+      // 4. Paliers de récompenses (Automatique)
       if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
         const tiersList = clientData.rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
         pass.backFields.add({
@@ -253,7 +297,7 @@ export class PassGenerator {
         });
       }
 
-      // 4. Informations complémentaires
+      // 5. Informations complémentaires
       if (customization?.back_fields_info) {
         pass.backFields.add({
           key: 'extra_info',

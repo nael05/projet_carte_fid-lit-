@@ -183,49 +183,47 @@ export class PassGenerator {
           relevantText: customization.relevant_text || customization.relevantText || 'Boutique à proximité'
         });
       }
-
-      let pointsToNextTierStr = '';
-      if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
-        const currentPoints = clientData.balance || 0;
-        const nextTier = clientData.rewardTiers.find(t => t.points_required > currentPoints);
-        if (nextTier) {
-          const lacking = nextTier.points_required - currentPoints;
-          pointsToNextTierStr = ` (Manque ${lacking} pts pour le palier : ${nextTier.title})`;
-        } else {
-          pointsToNextTierStr = ` (Paliers maximum atteints !)`;
-        }
-      }
-
-      const gainedStr = clientData.pointsGained > 0 ? ` +${clientData.pointsGained} pts.` : '';
-
+      // --- LAYOUT PREMIUM (Style KFC) ---
+      
+      // 1. Points (Header)
       pass.headerFields.add({
         key: 'points_header',
         label: 'POINTS',
-        value: `${clientData.balance || 0}`,
-        changeMessage: `Nouveau solde: %@ pts.${gainedStr}${pointsToNextTierStr}`,
+        value: `${clientData.balance || 0}`
       });
 
-      pass.auxiliaryFields.add({
-        key: 'client_name',
-        label: 'Client',
-        value: `${clientData.firstName} ${clientData.lastName}`,
+      // 2. Bonjour [Prénom] (Primary)
+      pass.primaryFields.add({
+        key: 'greeting',
+        label: 'BONJOUR',
+        value: (clientData.firstName || 'Client').toUpperCase()
       });
 
-      if (clientData.createdAt) {
-        pass.auxiliaryFields.add({
-          key: 'member_since',
-          label: 'Membre depuis',
-          value: new Date(clientData.createdAt).toLocaleDateString('fr-FR'),
-        });
-      }
+      // 3. Détails (Secondary)
+      pass.secondaryFields.add({
+        key: 'reward_hint',
+        label: 'DÉTAILS DES RÉCOMPENSES',
+        value: 'Au dos 👆 ...'
+      });
 
+      // 4. Barcode + ID Court
+      const shortId = clientData.clientId ? String(clientData.clientId).slice(-6).toUpperCase() : 'N/A';
+      pass.barcodes = [
+        {
+          format: "PKBarcodeFormatQR",
+          message: String(clientData.clientId),
+          messageEncoding: "iso-8859-1",
+          altText: `N° Carte : ${shortId}`
+        }
+      ];
+
+      // 5. Back Infos
       pass.backFields.add({
         key: 'company_info',
         label: 'Entreprise',
         value: clientData.companyName || 'Boutique',
       });
-
-      // Ajout des paliers de récompenses sur la face arrière
+      
       if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
         const tiersList = clientData.rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
         pass.backFields.add({
@@ -233,22 +231,16 @@ export class PassGenerator {
           label: 'Vos Paliers de Récompenses',
           value: tiersList
         });
-      } else if (clientData.rewardTitle) {
-        pass.backFields.add({
-          key: 'reward_info',
-          label: 'Récompense Initiale',
-          value: clientData.rewardTitle
-        });
       }
 
-      pass.barcodes = [
-        {
-          format: "PKBarcodeFormatQR",
-          message: String(clientData.clientId),
-          messageEncoding: "iso-8859-1",
-          altText: String(clientData.cardNumber || clientData.clientId)
-        }
-      ];
+      // Proximité
+      if (customization?.latitude && customization?.longitude) {
+        pass.locations.add({
+          latitude: Number(customization.latitude),
+          longitude: Number(customization.longitude),
+          relevantText: customization.relevant_text || 'Boutique à proximité'
+        });
+      }
 
       return await pass.asBuffer();
     } catch (error) {

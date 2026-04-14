@@ -513,81 +513,51 @@ const CardCustomizer = ({ proInfo }) => {
             <div className={`apple-card ${previewSide === 'back' ? 'flipped' : ''}`} style={{ 
               backgroundColor: config.primary_color,
               color: config.text_color,
-              '--stamp-color': config.accent_color 
+              '--stamp-color': config.accent_color,
+              '--label-color': config.accent_color
             }}>
               
-              {/* APPLE FRONT */}
+              {/* APPLE FRONT PREMIUM */}
               <div className="card-front">
-                <div className="card-top-bar">
-                  {config.icon_url ? (
-                    <img src={getMediaUrl(config.icon_url)} alt="App Icon" className="card-app-icon" />
-                  ) : (
-                    <div className="card-app-icon" style={{ background: 'rgba(255,255,255,0.2)' }}></div>
-                  )}
-                  <span className="card-org-name">{config.apple_organization_name || proInfo.nom}</span>
-                </div>
-
-                <div className="card-header">
-                  <div className="card-logo-placeholder">
+                <div className="card-header-premium">
+                  <div className="card-logo-area">
                     {config.logo_url ? (
                       <img src={getMediaUrl(config.logo_url)} alt="Logo" className="card-logo" />
                     ) : (
-                      <span style={{ fontSize: '13px', fontWeight: 700, opacity: 0.6 }}>{config.logo_text || proInfo.nom}</span>
+                      <span className="card-logo-text">{config.logo_text || proInfo.nom}</span>
                     )}
                   </div>
-                  <div className="card-label-field">
-                     <span className="card-field-label" style={{ color: config.accent_color }}>Offre</span>
-                     <span className="card-field-value" style={{ fontSize: '13px' }}>{config.reward_title || "Votre Récompense"}</span>
+                  <div className="card-points-header">
+                     <span className="card-field-label">POINTS</span>
+                     <span className="card-field-value">96</span>
                   </div>
                 </div>
 
-                <div className="card-strip" style={{ 
+                <div className="card-strip-premium" style={{ 
                   backgroundImage: config.strip_image_url ? `url(${getMediaUrl(config.strip_image_url)})` : 'none',
                   backgroundColor: !config.strip_image_url ? 'rgba(0,0,0,0.1)' : ''
                 }}>
-                  {config.strip_image_url && <div className="strip-overlay"></div>}
-                  {proInfo.loyalty_type === 'stamps' && (
-                    <div className="stamps-preview-grid">
-                      {[...Array(10)].map((_, i) => (
-                        <div key={i} className={`stamp-slot ${i < 3 ? 'filled' : ''}`}>
-                          {i < 3 && (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {!config.strip_image_url && <div className="strip-placeholder">Bannière (Photo)</div>}
                 </div>
 
-                <div className="card-body">
-                  <div className="card-primary-field">
-                    <span className="card-field-label" style={{ color: config.accent_color }}>
-                      {proInfo.loyalty_type === 'points' ? 'Solde Points' : 'Progression'}
-                    </span>
-                    <span className="card-field-value-lg">
-                      {proInfo.loyalty_type === 'points' ? '1,250' : '3 / 10'}
-                    </span>
+                <div className="card-info-grid">
+                  <div className="card-info-col">
+                    <span className="card-field-label">BONJOUR</span>
+                    <span className="card-field-value-lg">NAEL</span>
                   </div>
-                  <div className="card-aux-row">
-                    <div className="card-field-group">
-                      <span className="card-field-label" style={{ color: config.accent_color }}>Détenteur</span>
-                      <span className="card-field-value">A. Martin</span>
-                    </div>
-                    <div className="card-field-group">
-                      <span className="card-field-label" style={{ color: config.accent_color }}>Membre</span>
-                      <span className="card-field-value">04/2026</span>
-                    </div>
+                  <div className="card-info-col text-right">
+                    <span className="card-field-label">DÉTAILS DES RÉCOMPENSES</span>
+                    <span className="card-field-value">Au dos 👆 ...</span>
                   </div>
                 </div>
 
-                <div className="card-footer">
-                   <span className="card-footer-subtitle">{config.card_subtitle}</span>
-                   <div className="card-barcode-area">
-                      <div className="qr-mock"></div>
-                      <div className="barcode-id">CUST-8829-PRO</div>
-                   </div>
+                <div className="card-barcode-premium">
+                   <div className="qr-mock-premium"></div>
+                   <div className="barcode-id-premium">N° Carte : 2BF10B</div>
+                </div>
+
+                <div className="card-tiny-logo">
+                   {config.logo_url && <img src={getMediaUrl(config.logo_url)} alt="Tiny Logo" />}
                 </div>
               </div>
 
@@ -600,7 +570,7 @@ const CardCustomizer = ({ proInfo }) => {
                   </div>
                   <div className="back-item">
                     <h4>Conditions</h4>
-                    <p>{config.back_fields_terms || "Cumulez des tampons pour obtenir des cadeaux."}</p>
+                    <p>{config.back_fields_terms || "Cumulez des points pour obtenir des cadeaux."}</p>
                   </div>
                   <div className="back-item">
                     <h4>Description</h4>

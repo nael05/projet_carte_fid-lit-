@@ -234,7 +234,7 @@
 }
 
 /* ============================================================
-   APPLE WALLET REALISM — 100% FIDELITY
+   PREVIEW STRUCTURE
    ============================================================ */
 
 .customizer-preview {
@@ -276,6 +276,10 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* ============================================================
+   APPLE WALLET PREMIUM — PRO DESIGN
+   ============================================================ */
+
 .apple-card {
   width: 100%;
   aspect-ratio: 1 / 1.58;
@@ -283,22 +287,174 @@
   position: relative;
   overflow: hidden;
   box-shadow: 
-    0 4px 6px rgba(0,0,0,0.1),
-    0 15px 45px rgba(0,0,0,0.25);
+    0 10px 40px rgba(0,0,0,0.3);
   transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transform-style: preserve-3d;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   user-select: none;
 }
 
-/* Static Glass Reflection */
-.apple-card::after {
-  content: '';
+.card-front {
   position: absolute;
-  top: 0; left: 0; right: 0; height: 50%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
-  pointer-events: none;
-  z-index: 10;
+  width: 100%;
+  height: 100%;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Premium */
+.card-header-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 40px;
+  margin-bottom: 12px;
+}
+
+.card-logo-area {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.card-logo {
+  max-height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.card-logo-text {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+}
+
+.card-points-header {
+  text-align: right;
+}
+
+.card-points-header .card-field-label {
+  font-size: 10px;
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+.card-points-header .card-field-value {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* Strip Image Premium */
+.card-strip-premium {
+  margin: 0 -20px;
+  height: 130px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.strip-placeholder {
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+/* Info Grid (Bonjour / Détails) */
+.card-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 16px 0;
+  gap: 10px;
+}
+
+.card-info-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.text-right { text-align: right; }
+
+.card-field-label {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.8;
+  margin-bottom: 2px;
+  color: var(--label-color, white);
+}
+
+.card-field-value-lg {
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.card-field-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Barcode Section Premium */
+.card-barcode-premium {
+  margin-top: auto;
+  align-self: center;
+  width: 160px;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.qr-mock-premium {
+  width: 140px;
+  height: 140px;
+  background-image: 
+    linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #000 75%),
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+  background-size: 12px 12px;
+  opacity: 0.95;
+}
+
+.barcode-id-premium {
+  font-size: 10px;
+  font-family: 'Courier New', Courier, monospace;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Tiny Corner Logo */
+.card-tiny-logo {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.card-tiny-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .apple-card.flipped { transform: rotateY(180deg); }
@@ -306,7 +462,7 @@
 .card-front, .card-back {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  padding: 16px 18px;
+  padding: 16px 20px;
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
@@ -316,196 +472,27 @@
   transform: rotateY(180deg);
   background: #ffffff !important;
   color: #000000 !important;
+  border-radius: 16px;
 }
 
-/* TOP BAR (Icon + Name) */
-.card-top-bar {
+.back-content {
+  margin-top: 30px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 24px;
-  margin-bottom: 4px;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 15px;
+  overflow-y: auto;
 }
 
-.card-app-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  object-fit: cover;
-}
-
-.card-org-name {
+.back-item h4 {
   font-size: 13px;
-  font-weight: 500;
-  opacity: 0.9;
-  letter-spacing: -0.01em;
-}
-
-/* HEADER (Logo & Récompense) */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  height: 52px;
-  margin-bottom: 6px;
-  z-index: 2;
-  flex-shrink: 0;
-}
-
-.card-logo-placeholder {
-  height: 40px;
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-.card-logo {
-  height: 38px;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-.card-label-field {
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  margin-left: 12px;
-}
-
-/* STRIP (Stamps or Image) */
-.card-strip {
-  margin: 0 -18px;
-  height: 123px;
-  background-size: cover;
-  background-position: center;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.strip-overlay {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.15);
-}
-
-/* Stamps Grid */
-.stamps-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  padding: 0 18px;
-  width: 100%;
-  position: relative; /* Indispensable pour le z-index */
-  z-index: 10;        /* Passer devant l'overlay */
-}
-
-.stamp-slot {
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stamp-slot.filled {
-  background: var(--stamp-color, var(--accent));
-  border: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-}
-
-/* BODY (Fields) */
-.card-body {
-  padding-top: 16px;
-  z-index: 2;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.card-field-label {
-  font-size: 11px;
+  margin-bottom: 4px;
+  color: #888;
   text-transform: uppercase;
-  font-weight: 600;
-  opacity: 0.8;
-  display: block;
-  letter-spacing: 0.02em;
 }
 
-.card-field-value {
-  font-size: 16px;
-  font-weight: 600;
-  display: block;
-}
-
-.card-field-value-lg {
-  font-size: 38px;
-  font-weight: 300;
-  line-height: 1;
-  display: block;
-}
-
-.card-aux-row {
-  display: flex;
-  gap: 20px;
-}
-
-/* FOOTER (Subtitle & Barcode) */
-.card-footer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  z-index: 2;
-  padding-bottom: 8px;
-}
-
-.card-footer-subtitle {
-  font-size: 10px;
-  font-weight: 500;
-  opacity: 0.7;
-  text-align: center;
-}
-
-.card-barcode-area {
-  width: 160px;
-  height: 160px;
-  background: white;
-  padding: 8px;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.qr-mock {
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(45deg, #000 25%, transparent 25%),
-    linear-gradient(-45deg, #000 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #000 75%),
-    linear-gradient(-45deg, transparent 75%, #000 75%);
-  background-size: 11px 11px;
-  opacity: 0.9;
-}
-
-.barcode-id {
-  font-size: 9px;
-  font-family: monospace;
-  color: #444;
+.back-item p {
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .btn-info-flip {
@@ -539,37 +526,7 @@
   cursor: pointer;
 }
 
-.card-barcode-area {
-  width: 160px;
-  height: 160px;
-  background: white;
-  padding: 8px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
 
-.qr-mock {
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(45deg, #000 25%, transparent 25%),
-    linear-gradient(-45deg, #000 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #000 75%),
-    linear-gradient(-45deg, transparent 75%, #000 75%);
-  background-size: 12px 12px;
-  background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
-  opacity: 0.9;
-}
-
-.barcode-id {
-  font-size: 9px;
-  font-family: monospace;
-  color: #333;
-}
 
 /* ============================================================
    GOOGLE WALLET MOCKUP — Android Style

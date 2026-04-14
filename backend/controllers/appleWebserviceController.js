@@ -255,17 +255,19 @@ export const getUpdatedPass = async (req, res) => {
     
     // LOGIQUE DE SECOURS (FALLBACK) : Si Apple est vide, on prend le générique
     const finalDesign = {
-      backgroundColor: data.apple_background_color || data.generic_color || '#1f2937',
-      labelColor: data.apple_label_color || data.generic_label || '#a8a8a8',
-      foregroundColor: data.apple_text_color || data.generic_text || '#ffffff',
-      logoUrl: data.apple_logo_url || data.generic_logo,
-      iconUrl: data.apple_icon_url || data.generic_icon,
-      stripUrl: data.apple_strip_image_url || data.generic_strip
+      apple_background_color: data.apple_background_color || data.generic_color || '#1f2937',
+      apple_label_color: data.apple_label_color || data.generic_label || '#a8a8a8',
+      apple_text_color: data.apple_text_color || data.generic_text || '#ffffff',
+      apple_logo_url: data.apple_logo_url || data.generic_logo,
+      apple_icon_url: data.apple_icon_url || data.generic_icon,
+      apple_strip_image_url: data.apple_strip_image_url || data.generic_strip,
+      apple_pass_description: data.apple_pass_description,
+      apple_organization_name: data.apple_organization_name
     };
 
     logger.info(`🎨 --- DIAGNOSTIC DESIGN (AVEC FALLBACKS) POUR ${data.company_name} ---`);
-    logger.info(`   > Couleur Fond : ${finalDesign.backgroundColor}`);
-    logger.info(`   > Logo URL : ${finalDesign.logoUrl || 'AUCUN'}`);
+    logger.info(`   > Couleur Fond : ${finalDesign.apple_background_color}`);
+    logger.info(`   > Logo URL : ${finalDesign.apple_logo_url || 'AUCUN'}`);
     logger.info(`🎨 -----------------------------------------------------------`);
     const loyaltyType = data.loyalty_type || 'points';
 

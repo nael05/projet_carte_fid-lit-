@@ -369,6 +369,7 @@
   font-weight: 600;
   opacity: 0.5;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Info Grid — POSITIONNÉ NETTEMENT SOUS LA PHOTO */
@@ -426,16 +427,12 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-
-
 .barcode-id-premium {
   font-size: 10px;
   font-family: 'Courier New', Courier, monospace;
   color: #333;
   font-weight: 600;
 }
-
-
 
 .apple-card.flipped { transform: rotateY(180deg); }
 
@@ -532,11 +529,6 @@
   cursor: pointer;
 }
 
-
-
-/* ============================================================
-   GOOGLE WALLET MOCKUP — Android Style
-   ============================================================ */
 /* ============================================================
    GOOGLE WALLET MOCKUP — Android Style (Material Design 3)
    ============================================================ */
@@ -686,3 +678,98 @@
 
 .btn-premium-save:hover { opacity: 0.9; }
 .btn-premium-save:active { transform: scale(0.98); }
+
+
+/* ============================================================
+   PREMIUM SECTIONS & UX ENHANCEMENTS
+   ============================================================ */
+
+.customizer-settings-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+.customizer-settings-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.customizer-settings-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+
+.settings-section-premium {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  margin-bottom: 24px;
+}
+
+.settings-section-premium:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.section-title-premium {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-grid-premium {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.settings-group.full-width {
+  grid-column: span 2;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-top: 4px;
+  display: block;
+}
+
+.settings-section-premium label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+}
+
+.settings-section-premium input, 
+.settings-section-premium textarea {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  padding: 12px 14px !important;
+  width: 100%;
+}
+
+.settings-section-premium input:focus, 
+.settings-section-premium textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
+  outline: none;
+}

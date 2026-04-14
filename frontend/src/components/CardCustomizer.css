@@ -372,8 +372,8 @@
 .card-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 12px 0; /* Un peu moins de padding pour resserrer */
-  margin-top: 5px; /* Espace net sous la bannière */
+  padding: 12px 0;
+  margin-top: 25px; /* Écart augmenté pour être sûr d'être sous la photo */
   gap: 10px;
 }
 

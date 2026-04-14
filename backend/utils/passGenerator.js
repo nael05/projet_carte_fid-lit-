@@ -192,14 +192,13 @@ export class PassGenerator {
         value: `${clientData.balance || 0}`
       });
 
-      // 2. Bonjour [Prénom] (Primary)
-      pass.primaryFields.add({
+      // 2. Bonjour [Prénom] & Détails (Secondary Fields - Pour être sous la bannière sur iOS)
+      pass.secondaryFields.add({
         key: 'greeting',
         label: 'BONJOUR',
         value: (clientData.firstName || 'Client').toUpperCase()
       });
 
-      // 3. Détails (Secondary)
       pass.secondaryFields.add({
         key: 'reward_hint',
         label: 'DÉTAILS DES RÉCOMPENSES',

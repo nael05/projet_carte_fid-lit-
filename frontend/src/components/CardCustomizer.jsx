@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw, Globe, FileText, ChevronRight, Smartphone, Apple } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import './CardCustomizer.css';
 
 const CardCustomizer = ({ proInfo }) => {
@@ -523,7 +524,12 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
 
                 <div className="card-barcode-premium">
-                   <div className="qr-mock-premium"></div>
+                   <QRCodeCanvas 
+                     value="https://fidelyzapp.fr/c/2BF10B" 
+                     size={135}
+                     level="H"
+                     includeMargin={false}
+                   />
                    <div className="barcode-id-premium">N° Carte : 2BF10B</div>
                 </div>
 

@@ -119,10 +119,14 @@ class WalletSyncService {
         [companyId]
       );
 
+      logger.info(`   🍎 [SYNC GLOBALE] Recherche de terminaux Apple pour l'entreprise ${companyId}...`);
+      
       if (registrations.length > 0) {
         const tokens = registrations.map(r => r.push_token);
         await apnService.sendBulkUpdateNotifications(tokens);
-        logger.info(`   🍎 Apple Push envoyé à ${tokens.length} client(s)`);
+        logger.info(`   🍎 Apple Push envoyé avec succès à ${tokens.length} client(s)`);
+      } else {
+        logger.warn(`   ⚠️ Aucun client Apple enregistré trouvé pour l'entreprise ${companyId}. La mise à jour ne sera pas envoyée.`);
       }
 
       // 4. Forcer la mise à jour visuelle pour Google Wallet (Touch des objets individuels)

@@ -108,6 +108,11 @@ export const updateLoyaltyConfig = async (req, res) => {
       );
     }
 
+    // 🔄 Synchronisation en temps réel pour tous les clients du club
+    walletSyncService.syncCompanyWallets(empresaId).catch(err => 
+      logger.error('Global synchronization failed after loyalty config update', err)
+    );
+
     res.json({ success: true, message: 'Configuration de fidélité mise à jour' });
   } catch (err) {
     logger.error('Update loyalty config error for enterprise: ' + empresaId, { 

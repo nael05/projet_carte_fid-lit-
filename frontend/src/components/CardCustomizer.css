@@ -349,7 +349,7 @@
 /* Strip Image Premium */
 .card-strip-premium {
   margin: 0 -20px;
-  height: 130px;
+  height: 125px; /* Légèrement réduit pour laisser de la place */
   background-size: cover;
   background-position: center;
   display: flex;
@@ -357,6 +357,7 @@
   justify-content: center;
   border-top: 1px solid rgba(255,255,255,0.1);
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
 }
 
 .strip-placeholder {
@@ -367,11 +368,12 @@
   text-transform: uppercase;
 }
 
-/* Info Grid (Bonjour / Détails) */
+/* Info Grid (Bonjour / Détails) — BIEN EN DESSOUS */
 .card-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 16px 0;
+  padding: 12px 0; /* Un peu moins de padding pour resserrer */
+  margin-top: 5px; /* Espace net sous la bannière */
   gap: 10px;
 }
 

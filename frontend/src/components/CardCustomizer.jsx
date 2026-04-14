@@ -430,86 +430,90 @@ const CardCustomizer = ({ proInfo }) => {
           )}
 
           {activeTab === 'infos' && (
-            <div className="customizer-settings-scroll">
-              {/* SECTION: IDENTITÉ */}
-              <div className="settings-section-premium">
-                <h4 className="section-title-premium">
-                  <User size={18} /> Identité du Pass
-                </h4>
-                <div className="settings-grid-premium">
-                  <div className="settings-group">
-                    <label>Nom de l'organisation (En-tête Apple)</label>
+            <div className="customizer-settings-content">
+              {/* GROUPE: CONFIGURATION DE BASE */}
+              <div className="form-section">
+                <div className="section-header">
+                  <User size={18} />
+                  <h3>Identité de votre Pass</h3>
+                </div>
+                <div className="form-grid">
+                  <div className="form-field">
+                    <label>Nom de l'enseigne (En-tête)</label>
                     <input 
                       type="text" name="apple_organization_name" 
                       value={config.apple_organization_name || ''} 
                       onChange={handleChange}
-                      placeholder={proInfo.nom || "Nom de l'entreprise"}
+                      placeholder={proInfo.nom || "Votre établissement"}
                     />
+                    <small className="field-hint">Nom affiché tout en haut de la carte.</small>
                   </div>
-                  <div className="settings-group">
-                    <label>Sous-titre de la carte</label>
+                  <div className="form-field">
+                    <label>Sous-titre accrocheur</label>
                     <input 
                       type="text" name="card_subtitle" 
                       value={config.card_subtitle || ''} 
                       onChange={handleChange}
-                      placeholder="Ex: Merci pour votre visite !"
+                      placeholder="Ex: Passion & Fidélité"
                     />
                   </div>
-                  <div className="settings-group full-width">
-                    <label><FileText size={14} /> Description (Accessibilité)</label>
+                  <div className="form-field full-width">
+                    <label>Description (VoiceOver)</label>
                     <input 
                       type="text" name="apple_pass_description" 
                       value={config.apple_pass_description || ''} 
                       onChange={handleChange}
-                      placeholder="Ex: Votre fidélité récompensée"
+                      placeholder="Ex: Carte de fidélité numérique pour vos avantages"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION: CONTACT */}
-              <div className="settings-section-premium">
-                <h4 className="section-title-premium">
-                  <PhoneCall size={18} /> Contact & Interactions
-                </h4>
-                <div className="settings-grid-premium">
-                  <div className="settings-group">
-                    <label><Phone size={14} /> Numéro de Téléphone</label>
+              {/* GROUPE: CONTACT & WEB */}
+              <div className="form-section">
+                <div className="section-header">
+                  <PhoneCall size={18} />
+                  <h3>Contact & Localisation</h3>
+                </div>
+                <div className="form-grid">
+                  <div className="form-field">
+                    <label><Phone size={14} /> Téléphone</label>
                     <input 
                       type="text" name="back_fields_phone" 
                       value={config.back_fields_phone || ''} 
                       onChange={handleChange}
-                      placeholder="Ex: 01 23 45 67 89"
+                      placeholder="01 23 45 67 89"
                     />
                   </div>
-                  <div className="settings-group">
-                    <label><Globe size={14} /> Site Web</label>
+                  <div className="form-field">
+                    <label><Globe size={14} /> Site Internet</label>
                     <input 
                       type="text" name="back_fields_website" 
                       value={config.back_fields_website || ''} 
                       onChange={handleChange}
-                      placeholder="https://votre-site.com"
+                      placeholder="www.votre-site.fr"
                     />
                   </div>
-                  <div className="settings-group full-width">
-                    <label><MapPin size={14} /> Adresse Physique</label>
+                  <div className="form-field full-width">
+                    <label><MapPin size={14} /> Adresse physique</label>
                     <input 
                       type="text" name="back_fields_address" 
                       value={config.back_fields_address || ''} 
                       onChange={handleChange}
-                      placeholder="Ex: 12 rue de la Paix, Paris"
+                      placeholder="Ex: 12 avenue des Champs, Paris"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION: RÉSEAUX SOCIAUX */}
-              <div className="settings-section-premium">
-                <h4 className="section-title-premium">
-                  <Share2 size={18} /> Réseaux Sociaux
-                </h4>
-                <div className="settings-grid-premium">
-                  <div className="settings-group">
+              {/* GROUPE: RÉSEAUX SOCIAUX */}
+              <div className="form-section">
+                <div className="section-header">
+                  <Share2 size={18} />
+                  <h3>Présence Sociale</h3>
+                </div>
+                <div className="form-grid">
+                  <div className="form-field">
                     <label><Share2 size={14} /> Instagram</label>
                     <input 
                       type="text" name="back_fields_instagram" 
@@ -518,51 +522,52 @@ const CardCustomizer = ({ proInfo }) => {
                       placeholder="@votrecompte"
                     />
                   </div>
-                  <div className="settings-group">
+                  <div className="form-field">
                     <label><Share2 size={14} /> Facebook</label>
                     <input 
                       type="text" name="back_fields_facebook" 
                       value={config.back_fields_facebook || ''} 
                       onChange={handleChange}
-                      placeholder="facebook.com/page"
+                      placeholder="MaPageFidelyz"
                     />
                   </div>
-                  <div className="settings-group">
+                  <div className="form-field">
                     <label>TikTok</label>
                     <input 
                       type="text" name="back_fields_tiktok" 
                       value={config.back_fields_tiktok || ''} 
                       onChange={handleChange}
-                      placeholder="@votrecompte"
+                      placeholder="votrecompte"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION: LÉGAL */}
-              <div className="settings-section-premium">
-                <h4 className="section-title-premium">
-                  <ShieldCheck size={18} /> Légal & Informations
-                </h4>
-                <div className="settings-grid-premium">
-                  <div className="settings-group full-width">
+              {/* GROUPE: LÉGAL */}
+              <div className="form-section">
+                <div className="section-header">
+                  <ShieldCheck size={18} />
+                  <h3>Informations Légales</h3>
+                </div>
+                <div className="form-grid">
+                  <div className="form-field full-width">
                     <label>Conditions d'utilisation</label>
                     <textarea 
                       name="back_fields_terms" 
                       value={config.back_fields_terms || ''} 
                       onChange={handleChange}
                       rows={3}
-                      placeholder="Règles du programme de fidélité..."
+                      placeholder="Expliquez ici les règles d'utilisation de la carte..."
                     />
                   </div>
-                  <div className="settings-group full-width">
-                    <label>Informations Complémentaires</label>
+                  <div className="form-field full-width">
+                    <label>Infos complémentaires (Au dos)</label>
                     <textarea 
                       name="back_fields_info" 
                       value={config.back_fields_info || ''} 
                       onChange={handleChange}
                       rows={2}
-                      placeholder="Horaires, contact, messages aux clients..."
+                      placeholder="Ex: Valable dans tous nos points de vente."
                     />
                   </div>
                 </div>

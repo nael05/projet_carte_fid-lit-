@@ -1,28 +1,23 @@
 import pool from '../db.js';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Recherche du fichier SQL dans backend/migrations
-const sqlPath = path.join(process.cwd(), 'backend', 'migrations', 'add-back-fields.sql');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Recherche intelligente du fichier SQL (remonte d'un cran si on est dans scratch)
+const sqlPath = path.join(__dirname, '..', 'migrations', 'add-back-fields.sql');
 
 async function runMigration() {
   try {
     console.log('--- Lancement de la migration des champs Verso ---');
-    console.log('Fichier :', sqlPath);
+    console.log('Recherche du fichier SQL :', sqlPath);
     
     if (!fs.existsSync(sqlPath)) {
-      // Fallback si on est déjà dans le dossier backend
-      const fallbackPath = path.join(process.cwd(), 'migrations', 'add-back-fields.sql');
-      if (fs.existsSync(fallbackPath)) {
-        var finalPath = fallbackPath;
-      } else {
-        throw new Error('Fichier SQL introuvable.');
-      }
-    } else {
-      var finalPath = sqlPath;
+      throw new Error(`Fichier SQL introuvable à : ${sqlPath}`);
     }
 
-    const sql = fs.readFileSync(finalPath, 'utf8');
+    const sql = fs.readFileSync(sqlPath, 'utf8');
 
     const statements = sql
       .split(';')

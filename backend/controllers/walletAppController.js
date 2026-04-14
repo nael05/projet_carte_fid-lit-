@@ -396,7 +396,15 @@ export const downloadClientPass = async (req, res) => {
                cc.google_card_title,
                cc.google_card_subtitle,
                cc.latitude,
-               cc.longitude
+               cc.longitude,
+               cc.back_fields_info,
+               cc.back_fields_terms,
+               cc.back_fields_website,
+               cc.back_fields_phone,
+               cc.back_fields_address,
+               cc.back_fields_instagram,
+               cc.back_fields_facebook,
+               cc.back_fields_tiktok
         FROM clients c
         LEFT JOIN entreprises e ON c.entreprise_id = e.id
         LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
@@ -491,6 +499,14 @@ export const downloadClientPass = async (req, res) => {
       apple_pass_description: client.apple_pass_description,
       apple_organization_name: client.apple_organization_name || client.company_name,
       logo_text: client.logo_text,
+      back_fields_info: client.back_fields_info,
+      back_fields_terms: client.back_fields_terms,
+      back_fields_website: client.back_fields_website,
+      back_fields_phone: client.back_fields_phone,
+      back_fields_address: client.back_fields_address,
+      back_fields_instagram: client.back_fields_instagram,
+      back_fields_facebook: client.back_fields_facebook,
+      back_fields_tiktok: client.back_fields_tiktok,
     };
 
     const passBuffer = await passGenerator.generateLoyaltyPass(passData, customization, serialNumber, authenticationToken);

@@ -229,7 +229,9 @@ export const getUpdatedPass = async (req, res) => {
               e.id as company_id, e.nom as company_name, e.loyalty_type,
               cc.apple_logo_url, cc.apple_icon_url, cc.apple_background_color,
               cc.apple_text_color, cc.apple_label_color, cc.apple_pass_description,
-              cc.apple_organization_name
+              cc.apple_organization_name, cc.back_fields_info, cc.back_fields_terms,
+              cc.back_fields_website, cc.back_fields_phone, cc.back_fields_address,
+              cc.back_fields_instagram, cc.back_fields_facebook, cc.back_fields_tiktok
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
@@ -285,6 +287,14 @@ export const getUpdatedPass = async (req, res) => {
       apple_label_color: data.apple_label_color,
       apple_pass_description: data.apple_pass_description,
       apple_organization_name: data.apple_organization_name,
+      back_fields_info: data.back_fields_info,
+      back_fields_terms: data.back_fields_terms,
+      back_fields_website: data.back_fields_website,
+      back_fields_phone: data.back_fields_phone,
+      back_fields_address: data.back_fields_address,
+      back_fields_instagram: data.back_fields_instagram,
+      back_fields_facebook: data.back_fields_facebook,
+      back_fields_tiktok: data.back_fields_tiktok,
     };
 
     // 3️⃣ Générer le nouveau pass (utilise l'instance globale importée)

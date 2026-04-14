@@ -17,9 +17,6 @@ class GoogleWalletGenerator {
     this.keyFilePath = path.isAbsolute(rawPath) 
       ? rawPath 
       : path.resolve(__dirname, '..', rawPath);
-    this.apnKeyPath = process.env.APPLE_APN_KEY_PATH ? path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH) : null;
-    this.apnKeyId = process.env.APPLE_APN_KEY_ID;
-    this.apnTeamId = process.env.APPLE_APN_TEAM_ID;
     this.issuerId = process.env.GOOGLE_WALLET_ISSUER_ID;
     this.client = null;
     this.credentials = null;

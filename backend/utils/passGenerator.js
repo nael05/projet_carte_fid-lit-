@@ -29,6 +29,15 @@ export class PassGenerator {
 
       this.certPath = process.env.APPLE_CERT_PATH;
       this.keyPath = process.env.APPLE_KEY_PATH || this.certPath;
+      
+      // Convertir en chemins absolus si nécessaire
+      if (this.certPath && !path.isAbsolute(this.certPath)) {
+        this.certPath = path.resolve(__dirname, '..', this.certPath);
+      }
+      if (this.keyPath && !path.isAbsolute(this.keyPath)) {
+        this.keyPath = path.resolve(__dirname, '..', this.keyPath);
+      }
+
       this.certPassword = process.env.APPLE_CERT_PASSWORD || '';
       this.teamId = process.env.APPLE_TEAM_ID;
       this.passTypeId = process.env.APPLE_PASS_TYPE_ID;
@@ -84,12 +93,20 @@ export class PassGenerator {
     if (!urlOrPath || typeof urlOrPath !== 'string') return null;
 
     try {
-      if (urlOrPath.startsWith('uploads/')) {
-        const fullPath = path.resolve(__dirname, '..', urlOrPath);
+      // Détection plus robuste des fichiers locaux dans le dossier 'uploads'
+      const isLocalUpload = urlOrPath.includes('uploads/');
+      if (isLocalUpload) {
+        // Nettoyer le chemin (enlever le slash initial s'il existe et tout ce qui précède 'uploads/')
+        const cleanPath = urlOrPath.substring(urlOrPath.indexOf('uploads/'));
+        const fullPath = path.resolve(__dirname, '..', cleanPath);
+        
         if (fs.existsSync(fullPath)) {
           return fs.readFileSync(fullPath);
+        } else {
+          logger.warn(`⚠️ Image locale introuvable : ${fullPath}`);
         }
       }
+      
       if (urlOrPath.startsWith('http')) {
         const response = await axios.get(urlOrPath, {
           responseType: 'arraybuffer',

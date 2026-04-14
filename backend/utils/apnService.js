@@ -6,12 +6,20 @@
 
 import 'dotenv/config';
 import apn from 'apn';
-import path from 'path';
+import { fileURLToPath } from 'url';
 import logger from './logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class APNService {
   constructor() {
-    this.apnKeyPath = process.env.APPLE_APN_KEY_PATH ? path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH) : null;
+    // Utiliser un chemin absolu basé sur le dossier 'utils' pour remonter à la racine du backend
+    const rawPath = process.env.APPLE_APN_KEY_PATH;
+    this.apnKeyPath = rawPath 
+      ? (path.isAbsolute(rawPath) ? rawPath : path.resolve(__dirname, '..', rawPath))
+      : null;
+      
     this.apnKeyId = process.env.APPLE_APN_KEY_ID;
     this.apnTeamId = process.env.APPLE_APN_TEAM_ID;
     this.environment = process.env.APPLE_APN_ENVIRONMENT || 'development';

@@ -346,10 +346,12 @@
   line-height: 1;
 }
 
-/* Strip Image Premium */
+/* Strip Image Premium — HAUTEUR FIXE POUR NE PAS DÉBORDER */
 .card-strip-premium {
   margin: 0 -20px;
-  height: 125px; /* Légèrement réduit pour laisser de la place */
+  height: 120px; 
+  min-height: 120px;
+  max-height: 120px;
   background-size: cover;
   background-position: center;
   display: flex;
@@ -358,23 +360,24 @@
   border-top: 1px solid rgba(255,255,255,0.1);
   border-bottom: 1px solid rgba(255,255,255,0.1);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .strip-placeholder {
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   opacity: 0.5;
   text-transform: uppercase;
 }
 
-/* Info Grid (Bonjour / Détails) — BIEN EN DESSOUS */
+/* Info Grid — POSITIONNÉ NETTEMENT SOUS LA PHOTO */
 .card-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 12px 0;
-  margin-top: 25px; /* Écart augmenté pour être sûr d'être sous la photo */
-  gap: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end; /* Aligne le Prénom et le texte "Au dos" sur la même ligne */
+  padding: 20px 0 10px; /* Plus d'espace au dessus */
+  width: 100%;
 }
 
 .card-info-col {
@@ -382,25 +385,30 @@
   flex-direction: column;
 }
 
-.text-right { text-align: right; }
+.card-info-col.text-right {
+  align-items: flex-end;
+  text-align: right;
+}
 
 .card-field-label {
   font-size: 10px;
   font-weight: 700;
   opacity: 0.8;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   color: var(--label-color, white);
+  white-space: nowrap;
 }
 
 .card-field-value-lg {
   font-size: 32px;
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .card-field-value {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 /* Barcode Section Premium */

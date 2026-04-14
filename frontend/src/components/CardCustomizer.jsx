@@ -493,11 +493,10 @@ const CardCustomizer = ({ proInfo }) => {
               <div className="card-front">
                 <div className="card-header-premium">
                   <div className="card-logo-area">
-                    {config.logo_url ? (
+                    {config.logo_url && (
                       <img src={getMediaUrl(config.logo_url)} alt="Logo" className="card-logo" />
-                    ) : (
-                      <span className="card-logo-text">{config.logo_text || proInfo.nom}</span>
                     )}
+                    <span className="card-logo-text">{config.logo_text || (!config.logo_url ? proInfo.nom : '')}</span>
                   </div>
                   <div className="card-points-header">
                      <span className="card-field-label">POINTS</span>

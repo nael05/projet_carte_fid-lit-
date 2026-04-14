@@ -4,8 +4,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Recherche intelligente du fichier SQL (remonte d'un cran si on est dans scratch)
 const sqlPath = path.join(__dirname, '..', 'migrations', 'add-back-fields.sql');
 
 async function runMigration() {
@@ -19,20 +17,31 @@ async function runMigration() {
 
     const sql = fs.readFileSync(sqlPath, 'utf8');
 
+    // Split par point-virgule et exécution ligne par ligne
     const statements = sql
       .split(';')
       .map(s => s.trim())
       .filter(s => s.length > 0 && !s.startsWith('--'));
 
     for (const statement of statements) {
-      console.log('Exécution de :', statement.substring(0, 50) + '...');
-      await pool.query(statement);
+      try {
+        console.log('Exécution de :', statement.substring(0, 100) + '...');
+        await pool.query(statement);
+        console.log('  ✅ Succès.');
+      } catch (err) {
+        if (err.message.includes('Duplicate column name')) {
+          console.log('  ℹ️  Déjà existant (on ignore).');
+        } else {
+          console.error(`  ❌ Erreur sur cette ligne : ${err.message}`);
+          // On continue quand même sur les autres champs
+        }
+      }
     }
     
-    console.log('✅ Migration terminée avec succès.');
+    console.log('\n--- Fin de la migration ---');
     process.exit(0);
   } catch (err) {
-    console.error('❌ Erreur lors de la migration:', err.message);
+    console.error('❌ Erreur critique:', err.message);
     process.exit(1);
   }
 }

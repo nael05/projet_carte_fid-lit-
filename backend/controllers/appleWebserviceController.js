@@ -228,11 +228,14 @@ export const getUpdatedPass = async (req, res) => {
       `SELECT c.id, c.prenom, c.nom, c.telephone, c.points, c.created_at,
               wc.pass_serial_number, wc.authentication_token, wc.points_balance,
               e.id as company_id, e.nom as company_name, e.loyalty_type,
-              cc.apple_logo_url, cc.apple_icon_url, cc.apple_background_color,
-              cc.apple_text_color, cc.apple_label_color, cc.apple_pass_description,
-              cc.apple_organization_name, cc.back_fields_info, cc.back_fields_terms,
-              cc.back_fields_website, cc.back_fields_phone, cc.back_fields_address,
-              cc.back_fields_instagram, cc.back_fields_facebook, cc.back_fields_tiktok
+              cc.logo_url as generic_logo, cc.icon_url as generic_icon, cc.strip_image_url as generic_strip,
+              cc.primary_color as generic_color, cc.text_color as generic_text, cc.accent_color as generic_label,
+              cc.apple_logo_url, cc.apple_icon_url, cc.apple_strip_image_url,
+              cc.apple_background_color, cc.apple_text_color, cc.apple_label_color,
+              cc.apple_pass_description, cc.apple_organization_name,
+              cc.back_fields_info, cc.back_fields_terms, cc.back_fields_website,
+              cc.back_fields_phone, cc.back_fields_address, cc.back_fields_instagram,
+              cc.back_fields_facebook, cc.back_fields_tiktok
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
@@ -250,13 +253,20 @@ export const getUpdatedPass = async (req, res) => {
 
     const data = clientRows[0];
     
-    // LOGS DE DIAGNOSTIC DESIGN
-    logger.info(`🎨 --- DIAGNOSTIC DESIGN POUR ${data.company_name} ---`);
-    logger.info(`   > Couleur Fond : ${data.apple_background_color || 'DÉFAUT (#1f2937)'}`);
-    logger.info(`   > Logo URL : ${data.apple_logo_url || 'AUCUN'}`);
-    logger.info(`   > Icône URL : ${data.apple_icon_url || 'AUCUN'}`);
-    logger.info(`   > Type Fidélité : ${data.loyalty_type}`);
-    logger.info(`🎨 ------------------------------------------------`);
+    // LOGIQUE DE SECOURS (FALLBACK) : Si Apple est vide, on prend le générique
+    const finalDesign = {
+      backgroundColor: data.apple_background_color || data.generic_color || '#1f2937',
+      labelColor: data.apple_label_color || data.generic_label || '#a8a8a8',
+      foregroundColor: data.apple_text_color || data.generic_text || '#ffffff',
+      logoUrl: data.apple_logo_url || data.generic_logo,
+      iconUrl: data.apple_icon_url || data.generic_icon,
+      stripUrl: data.apple_strip_image_url || data.generic_strip
+    };
+
+    logger.info(`🎨 --- DIAGNOSTIC DESIGN (AVEC FALLBACKS) POUR ${data.company_name} ---`);
+    logger.info(`   > Couleur Fond : ${finalDesign.backgroundColor}`);
+    logger.info(`   > Logo URL : ${finalDesign.logoUrl || 'AUCUN'}`);
+    logger.info(`🎨 -----------------------------------------------------------`);
     const loyaltyType = data.loyalty_type || 'points';
 
     // Récupérer les paliers de récompense
@@ -324,7 +334,7 @@ export const getUpdatedPass = async (req, res) => {
 
     const passBuffer = await passGenerator.generateLoyaltyPass(
       passData,
-      customization,
+      finalDesign, // Utilise les réglages (Apple ou Génériques)
       serialNumber,
       data.authentication_token,
       { webServiceURL }

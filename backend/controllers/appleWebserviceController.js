@@ -325,9 +325,8 @@ export const getUpdatedPass = async (req, res) => {
     }
 
     // 4️⃣ Mettre à jour la date de génération et le SOLDE synchronisé (Précision ms)
-    const now = new Date();
     await db.query(
-      'UPDATE wallet_cards SET last_pass_generated_at = NOW(3), points_balance = ?, last_updated = NOW(3) WHERE pass_serial_number = ?',
+      'UPDATE wallet_cards SET points_balance = ?, last_updated = NOW(3) WHERE pass_serial_number = ?',
       [currentPoints, serialNumber]
     );
 

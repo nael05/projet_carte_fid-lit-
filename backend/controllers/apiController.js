@@ -592,9 +592,18 @@ export const handleScan = async (req, res) => {
     );
 
     // 🔄 Sync TOUS les Wallets (Apple et Google)
-    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
+    // IMPORTANT: On AWAIT pour garantir que last_updated est mis à jour en base 
+    // AVANT que le push APNs ne dise à l'iPhone de venir chercher les données.
+    await walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
       logger.error('Wallet sync failed in handleScan', { error: e.message })
     );
+
+    // Envoi de la notification Push (Contenu visuel + Signal Silencieux automatique désormais)
+    try {
+      await sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false);
+    } catch (pushErr) {
+      logger.warn('Push loyalty notification failed', pushErr.message);
+    }
 
     // Détection des récompenses disponibles
     let availableRewards = [];
@@ -638,12 +647,6 @@ export const handleScan = async (req, res) => {
        }
     }
 
-    // Envoi de la notification Push (Contenu visuel demandé par l'utilisateur)
-    try {
-      await sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false);
-    } catch (pushErr) {
-      logger.warn('Push loyalty notification failed', pushErr.message);
-    }
 
     res.json({ 
       success: true, 
@@ -691,16 +694,18 @@ export const adjustPoints = async (req, res) => {
     );
 
     // 🔄 Sync TOUS les Wallets (Apple et Google)
-    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
+    // IMPORTANT: AWAIT pour éviter la race condition avec APNs
+    await walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
       logger.error('Wallet sync failed in adjustPoints', { error: e.message })
     );
 
-    // Envoi de la notification Push
+    // Envoi de la notification Push (Visuelle + Silencieuse)
     try {
       await sendLoyaltyUpdateNotification(clientId, empresaId, adjustment, false);
     } catch (pushErr) {
       logger.warn('Push adjust notification failed', pushErr.message);
     }
+
 
     res.json({ success: true, newPoints });
   } catch (err) {
@@ -1039,16 +1044,17 @@ export const redeemReward = async (req, res) => {
     await pool.query('UPDATE clients SET points = ? WHERE id = ?', [newPoints, clientId]);
     
     // 🔄 Sync TOUS les Wallets (Apple et Google)
-    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
+    await walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
       logger.error('Wallet sync failed in redeemReward', e.message)
     );
 
-    // 4. Envoi notification visuelle
+    // 4. Envoi notification visuelle (+ silencieuse auto)
     try {
       await sendLoyaltyUpdateNotification(clientId, empresaId, -tier.points_required, true);
     } catch (pushErr) {
       logger.warn('Push redeem notification failed', pushErr.message);
     }
+
     
     // 5. On renvoie les récompenses encore disponibles après ce retrait
     const [availableRewards] = await pool.query('SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required <= ? ORDER BY points_required ASC', [empresaId, newPoints]);

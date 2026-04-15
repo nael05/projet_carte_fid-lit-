@@ -268,7 +268,8 @@ export const addPointsToWallet = async (req, res) => {
     );
 
     // 🔄 Synchronisation Centralisée (Apple & Google)
-    walletSyncService.syncClientWallet(clientId, wallet.entreprise_id).catch(err => 
+    // IMPORTANT: AWAIT pour garantir l'ordre SQL -> Push
+    await walletSyncService.syncClientWallet(clientId, wallet.entreprise_id).catch(err => 
       logger.error(`❌ Sync failed in addPointsToWallet: ${err.message}`)
     );
 

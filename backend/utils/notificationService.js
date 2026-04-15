@@ -68,7 +68,11 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
     const pushTokens = registrations.map(r => r.push_token);
     await apnService.sendBulkAlertNotifications(pushTokens, title, body);
 
-    logger.info(`✅ Notification de fidélité envoyée au client ${clientId}: ${body}`);
+    // 6. Envoyer le signal silencieux (Update) pour forcer Apple Wallet à rafraîchir le contenu
+    // Cela évite que le client voie la notification mais que la carte ne soit pas à jour.
+    await apnService.sendBulkUpdateNotifications(pushTokens);
+
+    logger.info(`✅ Notification de fidélité et signal Update envoyés au client ${clientId}: ${body}`);
 
   } catch (err) {
     logger.error(`❌ Erreur service notification fidélité: ${err.message}`);

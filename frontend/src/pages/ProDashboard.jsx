@@ -6,11 +6,12 @@ import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 import CardCustomizer from '../components/CardCustomizer'
-import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2 } from 'lucide-react'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2, Sun, Moon } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {
   const [activeTab, setActiveTab] = useState('scanner')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
   const [clients, setClients] = useState([])
   const [scannerActive, setScannerActive] = useState(false)
   const [lastScan, setLastScan] = useState(null)
@@ -44,6 +45,16 @@ function ProDashboard() {
   const scannerRef = useRef(null)
   const scannerInstance = useRef(null)
   const { token, isSuspended, logout } = useAuth()
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark-mode')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [darkMode])
 
   useEffect(() => {
     if (!token) {
@@ -315,9 +326,14 @@ function ProDashboard() {
             <span className="pro-badge">Points · {clients.length} client(s)</span>
           </div>
         </div>
-        <button className="pro-topbar-btn" onClick={handleLogout} title="Déconnexion">
-          <LogOut size={18} />
-        </button>
+        <div className="pro-topbar-right">
+          <button className="pro-topbar-btn theme-toggle" onClick={() => setDarkMode(!darkMode)} title="Changer de thème">
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button className="pro-topbar-btn logout-btn" onClick={handleLogout} title="Déconnexion">
+            <LogOut size={18} />
+          </button>
+        </div>
       </header>
 
       {isSuspended && (

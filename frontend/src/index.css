@@ -6,17 +6,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* ===== PALETTE GRISE MODERNE ===== */
+  /* ===== PALETTE CLAIRE (Default) ===== */
   --bg-app: #F5F5F7;
-  --bg-surface: #FFFFFF;
+  --bg-surface: rgba(255, 255, 255, 0.85); /* For glassmorphism */
   --bg-elevated: #FFFFFF;
   --bg-subtle: #F0F0F3;
   --bg-hover: #E8E8EC;
   --bg-dark: #1D1D1F;
 
   /* ===== BORDURES ===== */
-  --border-light: #E2E2E7;
-  --border-medium: #C7C7CC;
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.15);
   --border-dark: #8E8E93;
 
   /* ===== TYPOGRAPHIE ===== */
@@ -28,47 +28,54 @@
   /* ===== ACCENT ===== */
   --accent: #007AFF;
   --accent-hover: #0066D6;
-  --accent-light: rgba(0, 122, 255, 0.08);
-
-  /* ===== SÉMANTIQUES ===== */
-  --success-bg: #E8F8EF;
-  --success-text: #1B7A3D;
-  --success-border: #B8E6C8;
-
-  --error-bg: #FDEAEA;
-  --error-text: #C53030;
-  --error-border: #F5B4B4;
-
-  --warning-bg: #FFF8E6;
-  --warning-text: #92610E;
-  --warning-border: #FFE0A3;
-
-  /* ===== ESPACEMENTS ===== */
-  --space-1: 4px; --space-2: 8px; --space-3: 12px;
-  --space-4: 16px; --space-6: 24px; --space-8: 32px;
-  --space-12: 48px; --space-16: 64px;
-
-  /* ===== RAYONS ===== */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
+  --accent-light: rgba(0, 122, 255, 0.12);
 
   /* ===== OMBRES ===== */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
-  --shadow-xl: 0 24px 60px rgba(0,0,0,0.16);
-  --shadow-focus: 0 0 0 4px rgba(0, 122, 255, 0.2);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-md: 0 10px 25px rgba(0,0,0,0.08);
+  --shadow-lg: 0 20px 50px rgba(0,0,0,0.12);
+  --shadow-xl: 0 30px 80px rgba(0,0,0,0.18);
+  --shadow-focus: 0 0 0 4px rgba(0, 122, 255, 0.25);
 
-  /* ===== TRANSITIONS ===== */
-  --transition: all 180ms cubic-bezier(0.25, 0.1, 0.25, 1);
-  --transition-slow: all 350ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  /* ===== DESIGN SYSTEM V3 UTILS ===== */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --blur: blur(20px);
+  
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-family: 'Inter', -apple-system, sans-serif;
+}
 
-  /* ===== TYPOGRAPHIE ===== */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+/* ===== MODE SOMBRE (Active via .dark-mode) ===== */
+.dark-mode {
+  --bg-app: #0A0A0B;
+  --bg-surface: rgba(28, 28, 30, 0.82);
+  --bg-elevated: #1C1C1E;
+  --bg-subtle: #242426;
+  --bg-hover: #2C2C2E;
+  --bg-dark: #FFFFFF; /* Inversed for buttons if needed */
+  
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.2);
+  
+  --text-primary: #F2F2F7;
+  --text-secondary: #AEAEB2;
+  --text-tertiary: #636366;
+  --text-inverse: #000000;
+  
+  --accent-light: rgba(0, 122, 255, 0.2);
+  
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-md: 0 10px 25px rgba(0,0,0,0.3);
+  --shadow-lg: 0 20px 50px rgba(0,0,0,0.4);
+  
+  --glass-bg: rgba(28, 28, 30, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 /* ============================================================
@@ -95,13 +102,44 @@ a:hover { color: var(--accent-hover); }
 ::selection { background: rgba(0, 122, 255, 0.15); color: var(--text-primary); }
 
 /* ============================================================
-   TYPOGRAPHIE
+   TYPOGRAPHIE FLUIDE (V3)
    ============================================================ */
-h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: var(--space-4); color: var(--text-primary); }
-h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: var(--space-3); color: var(--text-primary); }
-h3 { font-size: 17px; font-weight: 600; margin-bottom: var(--space-2); color: var(--text-primary); }
-p  { font-size: 15px; color: var(--text-secondary); margin-bottom: var(--space-3); line-height: 1.6; }
+h1 { 
+  font-size: clamp(22px, 5vw, 32px); 
+  font-weight: 800; 
+  letter-spacing: -0.04em; 
+  margin-bottom: 1rem; 
+  color: var(--text-primary); 
+  line-height: 1.1;
+}
+h2 { 
+  font-size: clamp(18px, 4vw, 24px); 
+  font-weight: 700; 
+  letter-spacing: -0.02em; 
+  margin-bottom: 0.75rem; 
+  color: var(--text-primary); 
+}
+h3 { 
+  font-size: 17px; 
+  font-weight: 600; 
+  margin-bottom: 0.5rem; 
+  color: var(--text-primary); 
+}
+p { 
+  font-size: 15px; 
+  color: var(--text-secondary); 
+  margin-bottom: 1rem; 
+  line-height: 1.6; 
+}
 small { font-size: 13px; color: var(--text-tertiary); }
+
+/* Glassmorphism Utility */
+.glass-effect {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+}
 
 /* ============================================================
    BOUTONS

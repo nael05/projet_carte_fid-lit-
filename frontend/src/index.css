@@ -53,29 +53,29 @@
 
 /* ===== MODE SOMBRE (Active via .dark-mode) ===== */
 .dark-mode {
-  --bg-app: #0A0A0B;
-  --bg-surface: rgba(28, 28, 30, 0.82);
-  --bg-elevated: #1C1C1E;
-  --bg-subtle: #242426;
-  --bg-hover: #2C2C2E;
-  --bg-dark: #FFFFFF; /* Inversed for buttons if needed */
+  --bg-app: #08090D;      /* Deep Midnight Black */
+  --bg-surface: rgba(17, 19, 26, 0.85);
+  --bg-elevated: #151821;  /* Rich Charcoal Blue */
+  --bg-subtle: #1E222E;
+  --bg-hover: #262B3B;
+  --bg-dark: #FFFFFF;
   
-  --border-light: rgba(255, 255, 255, 0.1);
-  --border-medium: rgba(255, 255, 255, 0.2);
+  --border-light: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.12);
   
-  --text-primary: #F2F2F7;
-  --text-secondary: #AEAEB2;
-  --text-tertiary: #636366;
+  --text-primary: #F8FAFC;   /* Crisp Slate White */
+  --text-secondary: #94A3B8; /* Muted Slate Gray */
+  --text-tertiary: #64748B;
   --text-inverse: #000000;
   
-  --accent-light: rgba(0, 122, 255, 0.2);
+  --accent-light: rgba(59, 130, 246, 0.15);
   
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
-  --shadow-md: 0 10px 25px rgba(0,0,0,0.3);
-  --shadow-lg: 0 20px 50px rgba(0,0,0,0.4);
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-md: 0 12px 30px rgba(0,0,0,0.5);
+  --shadow-lg: 0 25px 60px rgba(0,0,0,0.6);
   
-  --glass-bg: rgba(28, 28, 30, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(13, 15, 21, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 /* ============================================================

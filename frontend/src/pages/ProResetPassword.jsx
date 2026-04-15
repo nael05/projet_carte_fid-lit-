@@ -5,7 +5,6 @@ import { validatePassword } from '../utils/passwordValidator'
 import api from '../api'
 import { AlertCircle, Eye, EyeOff, Loader2, CheckCircle2, Circle } from 'lucide-react'
 import './Auth.css'
-import './ProResetPassword.css'
 
 function ProResetPassword() {
   const [newPassword, setNewPassword] = useState('')

@@ -12,6 +12,7 @@ import './ProDashboard.css'
 function ProDashboard() {
   const [activeTab, setActiveTab] = useState('scanner')
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
+  const [toasts, setToasts] = useState([])
   const [clients, setClients] = useState([])
   const [scannerActive, setScannerActive] = useState(false)
   const [lastScan, setLastScan] = useState(null)
@@ -55,6 +56,14 @@ function ProDashboard() {
       localStorage.setItem('theme', 'light')
     }
   }, [darkMode])
+
+  const addToast = (message, type = 'success') => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 4000)
+  }
 
   useEffect(() => {
     if (!token) {
@@ -185,11 +194,19 @@ function ProDashboard() {
       const successData = {
         success: true,
         clientName: response.data.clientName,
-        message: response.data.message
+        message: response.data.message,
+        clientId,
+        newPoints: response.data.newPoints,
+        availableRewards: response.data.allRewards,
+        nextTier: response.data.nextTier
       }
       
-      setLastScan(successData)
-      setTimeout(() => setLastScan(null), 5000)
+      // Si pas de récompense ni de progression de palier complexe, on utilise un toast
+      if (!response.data.allRewards?.length && !response.data.nextTier) {
+        addToast(`${response.data.clientName} : ${response.data.message}`)
+      } else {
+        setLastScan(successData)
+      }
       loadClients()
 
       if (response.data.allRewards && response.data.allRewards.length > 0) {
@@ -218,7 +235,8 @@ function ProDashboard() {
       
       // On ferme tout immédiatement (Règle : 1 cadeau max par passage)
       setRedeemModal(null)
-      setTimeout(() => setLastScan(null), 3000)
+      setLastScan(null)
+      addToast('Cadeau validé avec succès !')
       loadClients()
     } catch (err) {
       alert(err.response?.data?.error || 'Erreur lors du rachat')
@@ -236,7 +254,7 @@ function ProDashboard() {
       await api.delete(`/pro/clients/${clientId}`);
       // Mettre à jour la liste locale
       setClients(prev => prev.filter(c => c.id !== clientId));
-      setLastScan({ success: true, message: `Le client ${clientName} a été supprimé.` });
+      addToast(`Le client ${clientName} a été supprimé.`, 'error');
     } catch (err) {
       console.error('Erreur suppression client:', err);
       setPageError(err.response?.data?.error || 'Erreur lors de la suppression du client');
@@ -246,9 +264,10 @@ function ProDashboard() {
   const adjustPoints = async (clientId, adjustment) => {
     try {
       await api.put(`/pro/adjust-points/${clientId}`, { adjustment })
+      addToast(adjustment > 0 ? '+ points ajoutés' : '- points retirés')
       loadClients()
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur')
+      addToast(err.response?.data?.error || 'Erreur', 'error')
     }
   }
 
@@ -335,6 +354,19 @@ function ProDashboard() {
           </button>
         </div>
       </header>
+
+      {/* ===== TOAST CONTAINER ===== */}
+      <div className="pro-toast-container">
+        {toasts.map(t => (
+          <div key={t.id} className={`pro-toast ${t.type}`}>
+            {t.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
+            <span>{t.message}</span>
+            <button onClick={() => setToasts(prev => prev.filter(toast => toast.id !== t.id))}>
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
 
       {isSuspended && (
         <div className="pro-suspended-banner">
@@ -578,15 +610,26 @@ function ProDashboard() {
               </div>
 
               <div className="pro-search-bar">
-                <input
-                  type="text"
-                  placeholder="Rechercher un client..."
-                  value={clientSearch}
-                  onChange={e => setClientSearch(e.target.value)}
-                />
+                <div className="pro-search-wrapper">
+                  <input
+                    type="text"
+                    placeholder="Rechercher un client..."
+                    value={clientSearch}
+                    onChange={e => setClientSearch(e.target.value)}
+                  />
+                  {clientSearch && (
+                    <button className="pro-search-clear" onClick={() => setClientSearch('')}>
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {filteredClients.length === 0 ? (
+              {loading ? (
+                <div className="pro-client-list">
+                  {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton-card" />)}
+                </div>
+              ) : filteredClients.length === 0 ? (
                 <div className="pro-empty">
                   <Users size={40} />
                   <p>{clientSearch ? 'Aucun résultat' : 'Aucun client pour le moment'}</p>

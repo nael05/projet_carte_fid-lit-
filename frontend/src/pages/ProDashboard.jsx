@@ -339,9 +339,19 @@ function ProDashboard() {
       {/* ===== TOP BAR ===== */}
       <header className="pro-topbar">
         <div className="pro-topbar-left">
-          <div className="pro-avatar">{(localStorage.getItem('companyName') || 'E')[0]}</div>
+          <div className="pro-avatar">
+            {proInfo?.logo_url ? (
+              <img 
+                src={`${import.meta.env.VITE_API_URL || ''}/uploads/${proInfo.logo_url}`} 
+                alt="Logo" 
+                className="pro-logo-img"
+              />
+            ) : (
+              (proInfo?.nom || localStorage.getItem('companyName') || 'E')[0]
+            )}
+          </div>
           <div>
-            <h1 className="pro-company-name">{localStorage.getItem('companyName')}</h1>
+            <h1 className="pro-company-name">{proInfo?.nom || localStorage.getItem('companyName')}</h1>
             <span className="pro-badge">Points · {clients.length} client(s)</span>
           </div>
         </div>

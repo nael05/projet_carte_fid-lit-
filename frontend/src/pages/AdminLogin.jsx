@@ -14,6 +14,16 @@ function AdminLogin() {
   const navigate = useNavigate()
   const { login, isAuthenticated, isAdmin } = useAuth()
 
+  // Theme initialization
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('fidelyz-theme')
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark')
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+  }, [])
+
   useEffect(() => {
     if (isAuthenticated && isAdmin()) {
       navigate('/master-admin-secret/dashboard')

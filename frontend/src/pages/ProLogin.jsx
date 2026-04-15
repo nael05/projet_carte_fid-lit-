@@ -17,6 +17,16 @@ function ProLogin() {
   const { login, isAuthenticated, loading: authLoading, role } = useAuth()
   const redirectedRef = useRef(false)
 
+  // Theme initialization
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('fidelyz-theme')
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark')
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+  }, [])
+
   // Redirect if already logged in
   useEffect(() => {
     if (authLoading) return

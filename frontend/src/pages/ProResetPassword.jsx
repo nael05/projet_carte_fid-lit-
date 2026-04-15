@@ -20,14 +20,19 @@ function ProResetPassword() {
   const location = useLocation()
   const { token, updateMustChangePassword } = useAuth()
 
+  // Theme initialization
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('fidelyz-theme')
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark')
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+  }, [])
+
   // Vérifier que l'user peut accéder à cette page
   useEffect(() => {
-    // Permettre l'accès si:
-    // 1. User vient depuis ProLogin ou
-    // 2. User est authentifié (changement de mot de passe volontaire)
-    // 3. Sinon rediriger vers login
-    
-    const fromProLogin = location.state?.firstTime
+    const fromProLogin = location.state?.fromLogin
     
     if (!token && !fromProLogin) {
       navigate('/pro/login')
@@ -40,56 +45,32 @@ function ProResetPassword() {
     setLoading(true)
 
     try {
-      // Validation 1: Les mots de passe correspondent
       if (newPassword !== confirmPassword) {
         setError('Les mots de passe ne correspondent pas')
         setLoading(false)
         return
       }
 
-      // Validation 2: Les champs ne sont pas vides
-      if (!newPassword || !confirmPassword) {
-        setError('Veuillez remplir tous les champs')
-        setLoading(false)
-        return
-      }
-
-      // Validation 3: Complexité du mot de passe
       const validation = validatePassword(newPassword)
       if (!validation.isValid) {
-        setError(`Exigences du mot de passe:\n${validation.errors.join('\n')}`)
+        setError(`Le mot de passe ne respecte pas les critères`)
         setLoading(false)
         return
       }
 
-      // 📤 Envoyer la requête au backend
-      console.log('📤 Envoi du changement de mot de passe...')
       await api.put('/pro/change-password', { newPassword })
-      
-      console.log('✅ Mot de passe changé avec succès')
-      
-      // 🔐 Réinitialiser le flag mustChangePassword
       updateMustChangePassword(false)
-      
       setSuccess(true)
       
-      // Redirection après 2 secondes
       setTimeout(() => {
         navigate('/pro/dashboard')
       }, 2000)
     } catch (err) {
-      console.error('❌ Erreur change password:', err)
-      
       if (err.response?.status === 401) {
         setError('Session expirée. Reconnexion requise.')
         setTimeout(() => navigate('/pro/login'), 2000)
-      } else if (err.response?.data?.error) {
-        // Afficher les erreurs détaillées du backend
-        const errorMsg = err.response.data.error
-        const details = err.response.data.details
-        setError(`${errorMsg}${details ? '\n' + details.join('\n') : ''}`)
       } else {
-        setError('Erreur lors du changement de mot de passe')
+        setError(err.response?.data?.error || 'Erreur lors du changement de mot de passe')
       }
     } finally {
       setLoading(false)
@@ -98,11 +79,17 @@ function ProResetPassword() {
 
   if (success) {
     return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <h2>Mot de passe changé</h2>
-          <p style={{ textAlign: 'center', color: '#065F46', margin: '0' }}>
-            Redirection vers le tableau de bord...
+      <div className="luxe-auth-container">
+        <div className="luxe-auth-card">
+          <div className="luxe-auth-header">
+            <div className="luxe-icon-success" style={{ margin: '0 auto 24px' }}>
+              <CheckCircle2 size={48} color="#10B981" />
+            </div>
+            <h1>Mot de passe mis à jour</h1>
+            <p>Sécurisation terminée avec succès.</p>
+          </div>
+          <p style={{ textAlign: 'center', color: '#10B981', fontWeight: '600' }}>
+            Redirection vers votre espace...
           </p>
         </div>
       </div>
@@ -110,19 +97,23 @@ function ProResetPassword() {
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Sécuriser votre compte</h2>
-        <p style={{ textAlign: 'center', fontSize: '14px', marginBottom: '32px', lineHeight: '1.5' }}>
-          Première connexion détectée ! Veuillez créer un nouveau mot de passe sécurisé.
-        </p>
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+    <div className="luxe-auth-container">
+      <div className="luxe-auth-bg"></div>
+      
+      <div className="luxe-auth-card">
+        <div className="luxe-auth-header">
+          <h1>Sécritisé votre compte</h1>
+          <p>Choisissez un nouveau mot de passe robuste</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="luxe-auth-form">
+          <div className="luxe-form-group">
             <label htmlFor="newPassword">Nouveau mot de passe</label>
             <input
               id="newPassword"
+              className="luxe-input"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Entrez un mot de passe sécurisé"
+              placeholder="••••••••"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={loading}
@@ -130,21 +121,21 @@ function ProResetPassword() {
             />
             <button
               type="button"
+              className="password-toggle-btn"
               onClick={() => setShowPassword(!showPassword)}
-              className="btn-ghost"
-              tabIndex={-1}
-              style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
+              tabIndex="-1"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
-          <div className="form-group">
+          <div className="luxe-form-group">
             <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
             <input
               id="confirmPassword"
+              className="luxe-input"
               type={showConfirm ? 'text' : 'password'}
-              placeholder="Confirmez votre mot de passe"
+              placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
@@ -152,48 +143,42 @@ function ProResetPassword() {
             />
             <button
               type="button"
+              className="password-toggle-btn"
               onClick={() => setShowConfirm(!showConfirm)}
-              className="btn-ghost"
-              tabIndex={-1}
-              style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
+              tabIndex="-1"
             >
               {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
-          {error && (
-            <div className="alert error">
-              <AlertCircle size={18} />
-              <span>{error}</span>
-            </div>
-          )}
-          
-          {/* Password strength indicator */}
           {newPassword && (
-            <div style={{ fontSize: '12px', color: '#4B5563', marginBottom: '12px' }}>
-              <p style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: '#4B5563' }}>Critères du mot de passe:</p>
-              <ul style={{ margin: '0', paddingLeft: '0', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <li style={{ color: newPassword.length >= 6 ? '#10B981' : '#71717A', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {newPassword.length >= 6 ? <CheckCircle2 size={14} /> : <Circle size={14} />} Au moins 6 caractères
+            <div className="luxe-criteria-box">
+              <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Sécurité Requise</span>
+              <ul className="luxe-criteria-list">
+                <li className={`luxe-criteria-item ${newPassword.length >= 6 ? 'valid' : ''}`}>
+                  {newPassword.length >= 6 ? <CheckCircle2 size={14} /> : <Circle size={14} />} 6 caractères min.
                 </li>
-                <li style={{ color: /(?=.*[A-Z])/.test(newPassword) ? '#10B981' : '#71717A', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <li className={`luxe-criteria-item ${/(?=.*[A-Z])/.test(newPassword) ? 'valid' : ''}`}>
                   {/(?=.*[A-Z])/.test(newPassword) ? <CheckCircle2 size={14} /> : <Circle size={14} />} Une majuscule
                 </li>
-                <li style={{ color: /(?=.*[0-9!@#$%^&*])/.test(newPassword) ? '#10B981' : '#71717A', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? <CheckCircle2 size={14} /> : <Circle size={14} />} Un chiffre ou caractère spécial
+                <li className={`luxe-criteria-item ${/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? 'valid' : ''}`}>
+                  {/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? <CheckCircle2 size={14} /> : <Circle size={14} />} Chiffre / Spécial
                 </li>
               </ul>
             </div>
           )}
+
+          {error && (
+            <div className="luxe-alert error">
+              <AlertCircle size={18} /> <span>{error}</span>
+            </div>
+          )}
           
-          <button type="submit" className="btn-primary" disabled={loading || !newPassword || !confirmPassword}>
+          <button type="submit" className="btn-luxe-submit" disabled={loading || !newPassword || !confirmPassword}>
             {loading ? (
-              <>
-                <Loader2 className="animate-spin" size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                En cours...
-              </>
+              <Loader2 className="spin" size={20} />
             ) : (
-              'Changer le mot de passe'
+              'Valider le mot de passe'
             )}
           </button>
         </form>

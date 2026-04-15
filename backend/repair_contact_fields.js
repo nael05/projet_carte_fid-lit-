@@ -1,9 +1,12 @@
 // repair_contact_fields.js
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+import process from 'process';
+
+dotenv.config();
 
 async function repair() {
-    console.log('🚀 Démarrage de la réparation de la base de données...');
+    console.log('🚀 Démarrage de la réparation de la base de données (ESM)...');
     
     const connection = await mysql.createConnection({
         host: process.env.DB_HOST,

@@ -340,9 +340,9 @@ function ProDashboard() {
       <header className="pro-topbar">
         <div className="pro-topbar-left">
           <div className="pro-avatar">
-            {proInfo?.logo_url ? (
+            {customization?.logo_url ? (
               <img 
-                src={`${import.meta.env.VITE_API_URL || ''}/uploads/${proInfo.logo_url}`} 
+                src={`${import.meta.env.VITE_API_URL || ''}/uploads/${customization.logo_url}`} 
                 alt="Logo" 
                 className="pro-logo-img"
               />

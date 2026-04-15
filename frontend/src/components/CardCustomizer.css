@@ -789,3 +789,27 @@
 .form-field textarea {
   resize: vertical;
 }
+
+/* ---- RESPONSIVE PREVIEW SCALING ---- */
+@media (max-width: 420px) {
+  .customizer-preview {
+    width: 100%;
+    transform: scale(0.9);
+    transform-origin: top center;
+    margin-bottom: -40px; /* offset the scale space */
+  }
+}
+
+@media (max-width: 360px) {
+  .customizer-preview {
+    transform: scale(0.85);
+    margin-bottom: -60px;
+  }
+}
+
+/* Fix for color grid on very small screens */
+@media (max-width: 480px) {
+  .color-grid {
+    grid-template-columns: 1fr;
+  }
+}

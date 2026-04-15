@@ -698,31 +698,31 @@ function ProDashboard() {
                   
                   <div className="tiers-list" style={{ marginTop: '15px' }}>
                     {loyaltyConfig.reward_tiers.map(tier => (
-                      <div key={tier.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-subtle)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-light)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                          <strong style={{ background: 'var(--accent)', color: 'white', padding: '4px 8px', borderRadius: '6px', fontSize: '13px' }}>{tier.points_required} pts</strong>
-                          <span>{tier.title}</span>
+                      <div key={tier.id} className="tier-item-row">
+                        <div className="tier-item-info-box">
+                          <strong className="tier-points-badge">{tier.points_required} pts</strong>
+                          <span className="tier-title-text">{tier.title}</span>
                         </div>
-                        <button onClick={() => handleDeleteTier(tier.id)} style={{ color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Trash2 size={18} /></button>
+                        <button className="tier-delete-btn" onClick={() => handleDeleteTier(tier.id)}><Trash2 size={18} /></button>
                       </div>
                     ))}
                     {loyaltyConfig.reward_tiers.length === 0 && (
-                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+                      <div className="pro-empty-small">
                         Aucun palier défini
                       </div>
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '15px', alignItems: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Points requis</label>
-                      <input type="number" placeholder="ex: 50" value={newTier.points_required} onChange={e => setNewTier({...newTier, points_required: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-light)', width: '100%', boxSizing: 'border-box' }}/>
+                  <div className="tier-add-form">
+                    <div className="tier-input-group pts-group">
+                      <label>Points requis</label>
+                      <input type="number" placeholder="ex: 50" value={newTier.points_required} onChange={e => setNewTier({...newTier, points_required: e.target.value})} />
                     </div>
-                    <div style={{ flex: 2 }}>
-                      <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Nom de l'offre</label>
-                      <input type="text" placeholder="ex: Café offert" value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-light)', width: '100%', boxSizing: 'border-box' }}/>
+                    <div className="tier-input-group title-group">
+                      <label>Nom de l'offre</label>
+                      <input type="text" placeholder="ex: Café offert" value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} />
                     </div>
-                    <button className="pro-btn-secondary" onClick={handleAddTier} disabled={savingSettings}>
+                    <button className="pro-btn-secondary tier-add-submit" onClick={handleAddTier} disabled={savingSettings}>
                       <Plus size={18} /> Ajouter
                     </button>
                   </div>

@@ -68,7 +68,7 @@ class GoogleWalletGenerator {
       ]
     };
 
-    if (heroImageUrl && !heroImageUrl.includes('loca.lt')) {
+    if (heroImageUrl) {
       loyaltyClass.heroImage = {
         sourceUri: { uri: this._getAbsoluteUrl(heroImageUrl) }
       };

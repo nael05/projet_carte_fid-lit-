@@ -32,8 +32,12 @@
   background: var(--bg-subtle);
   padding: 4px;
   border-radius: var(--radius-md);
-  margin-bottom: 8px;
+  margin-bottom: 15px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.customizer-tabs::-webkit-scrollbar { display: none; }
 
 .customizer-tab {
   flex: 1;
@@ -238,7 +242,8 @@
    ============================================================ */
 
 .customizer-preview {
-  width: 380px;
+  width: 100%;
+  max-width: 380px;
   position: sticky;
   top: 80px;
   display: flex;
@@ -246,6 +251,13 @@
   align-items: center;
   gap: 24px;
   margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .customizer-preview {
+    position: static;
+    margin-top: 40px;
+  }
 }
 
 .preview-toggle {
@@ -257,17 +269,23 @@
 }
 
 .preview-toggle button {
-  padding: 8px 24px;
+  padding: 8px 16px; /* Reduced from 24px for mobile safety */
   border-radius: 20px;
   border: none;
   background: none;
-  font-size: 12px;
+  font-size: 11px; /* Slightly smaller for mobile */
   font-weight: 700;
   cursor: pointer;
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   transition: all 0.2s;
+}
+@media (min-width: 480px) {
+  .preview-toggle button {
+    padding: 8px 24px;
+    font-size: 12px;
+  }
 }
 
 .preview-toggle button.active {
@@ -794,16 +812,16 @@
 @media (max-width: 420px) {
   .customizer-preview {
     width: 100%;
-    transform: scale(0.9);
+    transform: scale(0.85); /* More aggressive scaling */
     transform-origin: top center;
-    margin-bottom: -40px; /* offset the scale space */
+    margin-bottom: -60px; /* offset the scale space */
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 350px) {
   .customizer-preview {
-    transform: scale(0.85);
-    margin-bottom: -60px;
+    transform: scale(0.78);
+    margin-bottom: -100px;
   }
 }
 
@@ -811,5 +829,24 @@
 @media (max-width: 480px) {
   .color-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* GRID RESPONSIVENESS */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .color-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .upload-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }

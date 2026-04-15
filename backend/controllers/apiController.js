@@ -567,14 +567,12 @@ export const handleScan = async (req, res) => {
 
     const loyaltyConfig = config[0];
     
-    // Sécurisation de l'ajout de points (NaN protection)
-    let pointsToAdd = Number(loyaltyConfig.points_per_purchase) || 10;
+    // Calcul des points à ajouter : Priorité à la valeur saisie dans le Scan Modal si elle est valide
+    let pointsToAdd = Number(points_to_add);
     
-    if (loyaltyConfig.points_adding_mode === 'manual') {
-      const parsedBodyPoints = Number(points_to_add);
-      if (!isNaN(parsedBodyPoints)) {
-        pointsToAdd = parsedBodyPoints;
-      }
+    // Fallback sur la config si rien n'est saisi ou si la valeur est invalide
+    if (isNaN(pointsToAdd) || pointsToAdd <= 0) {
+      pointsToAdd = Number(loyaltyConfig.points_per_purchase) || 10;
     }
 
     const currentPoints = Number(clientRows[0].points) || 0;
@@ -592,17 +590,18 @@ export const handleScan = async (req, res) => {
     );
 
     // 🔄 Sync TOUS les Wallets (Apple et Google)
-    // IMPORTANT: On AWAIT pour garantir que last_updated est mis à jour en base 
-    // AVANT que le push APNs ne dise à l'iPhone de venir chercher les données.
+    // Synchronisation du solde en base de données pour les cartes pass
     await walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
       logger.error('Wallet sync failed in handleScan', { error: e.message })
     );
 
-    // Envoi de la notification Push (Contenu visuel + Signal Silencieux automatique désormais)
+    // 🔔 Envoi de la notification Push VISUELLE (Alerte "Points ajoutés ! ✨")
+    // Cela permet au client de voir immédiatement son nouveau solde sur son écran verrouillé.
+    // Cette fonction gère à la fois le signal silencieux de rafraîchissement et l'alerte visuelle.
     try {
       await sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false);
     } catch (pushErr) {
-      logger.warn('Push loyalty notification failed', pushErr.message);
+      logger.warn('Push scan notification failed', pushErr.message);
     }
 
     // 6. Détection des récompenses disponibles (Logique filtrée)

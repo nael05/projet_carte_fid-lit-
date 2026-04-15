@@ -1,6 +1,10 @@
-import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { LayoutGrid, Users, CreditCard, Search, CheckCircle2, Loader2, AlertTriangle, X } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { 
+  LayoutGrid, Users, CreditCard, Search, CheckCircle2, 
+  Loader2, AlertTriangle, X, Shield, Zap, Smartphone, 
+  ArrowRight, Star, Globe, ChevronRight 
+} from 'lucide-react'
 import api from '../api'
 import './Home.css'
 
@@ -8,128 +12,152 @@ function Home() {
   const navigate = useNavigate()
 
   return (
-    <div className="home-container">
-      <header className="home-header">
-        <h1>Fidelyz</h1>
-        <p>Plateforme de gestion de cartes de fidélité dématérialisées</p>
-      </header>
+    <div className="home-luxe-container">
+      {/* Background Decorative Elements */}
+      <div className="luxe-bg-glow"></div>
+      <div className="luxe-bg-mesh"></div>
 
-      <div className="home-content">
-        {/* Admin Role */}
-        <div className="interface-card admin-card">
-          <div className="card-icon">
-            <LayoutGrid size={28} />
+      {/* NAVBAR */}
+      <nav className="luxe-navbar">
+        <div className="navbar-content">
+          <div className="logo-placeholder">
+            {/* Logo will be here later */}
+            <div className="placeholder-box">
+              <Zap size={20} fill="currentColor" />
+            </div>
+            <span className="brand-name">Fidelyz</span>
           </div>
-          <h2>Master Admin</h2>
-          <p className="card-description">
-            Gérez les entreprises de votre SaaS
-          </p>
-          <ul className="card-features">
-            <li>Créer une entreprise</li>
-            <li>Générer mots de passe</li>
-            <li>Suspendre/Réactiver</li>
-            <li>Supprimer (cascade)</li>
-          </ul>
-          <div className="card-footer">
-            <small>Interface: Propriétaire du SaaS</small>
+          <div className="navbar-actions">
+            <button onClick={() => navigate('/pro/login')} className="btn-nav-glass">
+              Espace Pro
+            </button>
           </div>
-          <button
-            onClick={() => navigate('/master-admin-secret')}
-            className="btn-primary"
-          >
-            Accéder
+        </div>
+      </nav>
+
+      {/* HERO SECTION */}
+      <section className="hero-section">
+        <div className="hero-badge">
+          <Star size={14} /> <span>La Fidélité 2.0 est arrivée</span>
+        </div>
+        <h1 className="hero-title">
+          Réinventez la Fidélité <br />
+          <span className="gradient-text">avec le Digital</span>
+        </h1>
+        <p className="hero-subtitle">
+          Transformez l'expérience de vos clients avec des cartes dématérialisées intelligentes, 
+          directement intégrées dans Apple & Google Wallet.
+        </p>
+        <div className="hero-ctas">
+          <button onClick={() => navigate('/pro/login')} className="btn-luxe-primary">
+            Démarrer gratuitement <ArrowRight size={18} />
           </button>
+          <a href="#access" className="btn-luxe-secondary">Voir les solutions</a>
+        </div>
+      </section>
+
+      {/* MODERN FEATURES SECTION */}
+      <section className="features-showcase">
+        <div className="feature-item">
+          <div className="feat-icon"><Smartphone size={24} /></div>
+          <h3>Compatible Wallet</h3>
+          <p>S'ajoute en un clic sur iPhone et Android sans application.</p>
+        </div>
+        <div className="feature-item">
+          <div className="feat-icon"><Zap size={24} /></div>
+          <h3>Scan Instantané</h3>
+          <p>Attribution de points ultra-rapide via QR Code sécurisé.</p>
+        </div>
+        <div className="feature-item">
+          <div className="feat-icon"><Globe size={24} /></div>
+          <h3>Accès Partout</h3>
+          <p>Gérez votre commerce depuis n'importe quel appareil.</p>
+        </div>
+      </section>
+
+      {/* ACCESS SECTION (The 3 Pillars) */}
+      <section id="access" className="access-section">
+        <div className="section-intro">
+          <h2>Nos Solutions d'Accès</h2>
+          <p>Une interface optimisée pour chaque acteur de votre écosystème.</p>
         </div>
 
-        {/* Pro Role */}
-        <div className="interface-card pro-card">
-          <div className="card-icon">
-            <Users size={28} />
+        <div className="grid-piliers">
+          {/* Admin Role */}
+          <div className="pilier-card glass-card">
+            <div className="pilier-header">
+              <LayoutGrid size={32} />
+              <h3>Master Admin</h3>
+            </div>
+            <p>Pilotage global du SaaS et gestion des entreprises partenaires.</p>
+            <ul className="pilier-list">
+              <li><CheckCircle2 size={16} /> Gestion multi-société</li>
+              <li><CheckCircle2 size={16} /> Monitoring système</li>
+              <li><CheckCircle2 size={16} /> Audit & Sécurité</li>
+            </ul>
+            <button onClick={() => navigate('/master-admin-secret')} className="btn-card-action">
+              Entrée Master <ChevronRight size={18} />
+            </button>
           </div>
-          <h2>Compte Pro</h2>
-          <p className="card-description">
-            Gérez vos clients et leurs points
-          </p>
-          <ul className="card-features">
-            <li>Scanner QR codes</li>
-            <li>Ajouter des points</li>
-            <li>Voir tous les clients</li>
-            <li>Configurer récompenses</li>
-          </ul>
-          <div className="card-footer">
-            <small>Interface: Commerçants / Propriétaires de magasin</small>
+
+          {/* Pro Role */}
+          <div className="pilier-card glass-card active-border">
+            <div className="pilier-tag">Hautement Recommandé</div>
+            <div className="pilier-header border-pro">
+              <Users size={32} />
+              <h3>Tableau de Bord Pro</h3>
+            </div>
+            <p>Outils complets pour commerçants souhaitant booster leur rétention.</p>
+            <ul className="pilier-list">
+              <li><CheckCircle2 size={16} /> Scan QR Premium</li>
+              <li><CheckCircle2 size={16} /> Customisation Wallet</li>
+              <li><CheckCircle2 size={16} /> Rapports Analytics</li>
+            </ul>
+            <button onClick={() => navigate('/pro/login')} className="btn-card-action primary">
+              Se Connecter <ChevronRight size={18} />
+            </button>
           </div>
-          <button
-            onClick={() => navigate('/pro/login')}
-            className="btn-primary"
-          >
-            Se Connecter
-          </button>
-        </div>
 
-        {/* Client Public Role */}
-        <div className="interface-card client-card">
-          <div className="card-icon">
-            <CreditCard size={28} />
+          {/* Client Role */}
+          <div className="pilier-card glass-card">
+            <div className="pilier-header">
+              <CreditCard size={32} />
+              <h3>Espace Client</h3>
+            </div>
+            <p>Accès public pour la création rapide de cartes de fidélité.</p>
+            <div className="client-demo-wrapper">
+              <DemoClientAccess />
+            </div>
           </div>
-          <h2>Client Public</h2>
-          <p className="card-description">
-            Créer votre carte de fidélité
-          </p>
-          <ul className="card-features">
-            <li>Scanner QR au comptoir</li>
-            <li>Créer sa carte</li>
-            <li>Ajouter au Wallet</li>
-            <li>Suivre les points</li>
-          </ul>
-          <div className="card-footer">
-            <small>Interface: Clients (accès public)</small>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="luxe-footer">
+        <div className="footer-line"></div>
+        <div className="footer-content">
+          <div className="footer-brand">
+            <span className="brand-name">Fidelyz</span>
+            <p>La référence du Wallet Loyalty</p>
           </div>
-          <DemoClientAccess />
+          <div className="footer-copy">
+            &copy; 2026 Fidelyz S.A.S. • Tous droits réservés.
+          </div>
         </div>
-      </div>
-
-      {/* Info Section */}
-      <div className="home-info">
-        <div className="info-box">
-          <h3>Structure du Système</h3>
-          <p>
-            Ce SaaS fonctionne avec 3 niveaux d'accès totalement isolés:
-          </p>
-          <ul>
-            <li><strong>Master Admin</strong> (1) → Gère le SaaS entier</li>
-            <li><strong>Entreprises</strong> (N) → Commerçants utilisant le platform</li>
-            <li><strong>Clients</strong> (N×M) → Clients de chaque entreprise</li>
-          </ul>
-        </div>
-
-        <div className="info-box">
-          <h3>Sécurité</h3>
-          <ul>
-            <li>Isolation complète des données par entreprise</li>
-            <li>JWT + RBAC (Role-Based Access Control)</li>
-            <li>Hachage bcryptjs pour les mots de passe</li>
-            <li>Authentification obligatoire pour les pros</li>
-          </ul>
-        </div>
-      </div>
-
-      <footer className="home-footer">
-        <p>Fidelyz v1.0.0</p>
       </footer>
     </div>
   )
 }
 
 function DemoClientAccess() {
-  const [showForm, setShowForm] = React.useState(false)
-  const [searchTerm, setSearchTerm] = React.useState('')
-  const [selectedId, setSelectedId] = React.useState('')
-  const [enterprises, setEnterprises] = React.useState([])
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedId, setSelectedId] = useState('')
+  const [enterprises, setEnterprises] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (showForm && enterprises.length === 0) {
       fetchEnterprises()
     }
@@ -140,29 +168,21 @@ function DemoClientAccess() {
     setError('')
     try {
       const response = await api.get('/public/enterprises')
-      console.log('Enterprises loaded:', response.data)
-      
-      // Handle both array and object response formats
       let data = response.data
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        // If it's an object with a "value" property, use that
         data = data.value || []
       }
-      
       setEnterprises(Array.isArray(data) ? data : [])
     } catch (err) {
-      console.error('Error loading enterprises:', err)
-      setError('Erreur lors du chargement des entreprises. Vérifiez que le serveur est actif.')
+      setError('Serveur indisponible')
     } finally {
       setLoading(false)
     }
   }
 
-  // Filtrer les entreprises par ID ou nom
   const filteredEnterprises = enterprises.filter(ent => {
     const searchLower = searchTerm.toLowerCase().trim()
     if (!searchLower) return true
-    
     return (
       String(ent.id).toLowerCase().includes(searchLower) ||
       (ent.nom || '').toLowerCase().includes(searchLower)
@@ -171,124 +191,59 @@ function DemoClientAccess() {
 
   if (!showForm) {
     return (
-      <button
-        onClick={() => setShowForm(true)}
-        className="btn-primary"
-      >
-        Créer une Carte
+      <button onClick={() => setShowForm(true)} className="btn-client-start">
+        Créer ma carte maintenant
       </button>
     )
   }
 
   return (
-    <form onSubmit={(e) => {
-      e.preventDefault()
-      if (selectedId.trim()) {
-        window.location.href = `/join/${selectedId}`
-      }
-    }} className="demo-form">
-      {error && (
-        <div className="alert error" style={{ fontSize: '13px', marginBottom: '12px' }}>
-          <AlertTriangle size={16} /> <span>{error}</span>
-        </div>
-      )}
+    <div className="demo-form-luxe">
+      <div className="demo-form-header">
+        <button onClick={() => setShowForm(false)} className="back-link"><X size={16} /></button>
+        <h4>Rechercher un commerce</h4>
+      </div>
       
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Chargement des entreprises...
-        </div>
-      ) : enterprises.length > 0 ? (
+        <div className="loading-state"><Loader2 size={24} className="spin" /></div>
+      ) : (
         <>
-          {/* Search Input */}
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Search size={14} /> Rechercher une entreprise</label>
+          <div className="search-field-wrapper">
+            <Search size={16} className="search-icon" />
             <input
               type="text"
-              placeholder="Tapez l'ID ou le nom de l'entreprise..."
+              placeholder="Nom du commerce..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               autoFocus
             />
           </div>
 
-          {/* Results List */}
-          <div>
-            {filteredEnterprises.length > 0 ? (
-              <>
-                <label>Sélectionner une entreprise ({filteredEnterprises.length})</label>
-                <div className="demo-form-search-results">
-                  {filteredEnterprises.map((ent) => (
-                    <div
-                      key={ent.id}
-                      className={`demo-form-item ${selectedId === ent.id ? 'selected' : ''}`}
-                      onClick={() => setSelectedId(ent.id)}
-                    >
-                      <div>
-                        <div className="demo-form-item-name">{ent.nom}</div>
-                        <div className="demo-form-item-id">ID: {ent.id}</div>
-                      </div>
-                      {selectedId === ent.id && <CheckCircle2 size={16} />}
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="demo-form-empty">
-                Aucune entreprise ne correspond à "{searchTerm}"
+          <div className="enterprises-scroll">
+            {filteredEnterprises.map((ent) => (
+              <div
+                key={ent.id}
+                className={`ent-item ${selectedId === ent.id ? 'active' : ''}`}
+                onClick={() => setSelectedId(ent.id)}
+              >
+                <span>{ent.nom}</span>
+                {selectedId === ent.id && <CheckCircle2 size={16} />}
               </div>
-            )}
+            ))}
+            {filteredEnterprises.length === 0 && <p className="no-result">Aucun commerce trouvé</p>}
           </div>
 
-          {/* Selection Confirmation */}
           {selectedId && (
-            <div className="demo-form-selection" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <CheckCircle2 size={16} /> Entreprise sélectionnée: <strong>{enterprises.find(e => e.id === selectedId)?.nom}</strong>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="demo-form-buttons">
             <button 
-              type="submit" 
-              disabled={!selectedId}
-              className="btn-primary"
+              onClick={() => window.location.href = `/join/${selectedId}`}
+              className="btn-join-final"
             >
-              Créer une Carte
+              C'est parti !
             </button>
-            <button
-              type="button"
-              className="btn-small-cancel"
-              onClick={() => {
-                setShowForm(false)
-                setSearchTerm('')
-                setSelectedId('')
-                setError('')
-              }}
-            >
-              Annuler
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="demo-form-empty">
-            Aucune entreprise disponible pour le moment
-          </div>
-          <button
-            type="button"
-            className="btn-small-cancel"
-            onClick={() => {
-              setShowForm(false)
-              setSearchTerm('')
-              setSelectedId('')
-              setError('')
-            }}
-          >
-            Retour
-          </button>
+          )}
         </>
       )}
-    </form>
+    </div>
   )
 }
 

@@ -234,7 +234,8 @@ export const getUpdatedPass = async (req, res) => {
               cc.apple_pass_description, cc.apple_organization_name,
               cc.back_fields_info, cc.back_fields_terms, cc.back_fields_website,
               cc.back_fields_phone, cc.back_fields_address, cc.back_fields_instagram,
-              cc.back_fields_facebook, cc.back_fields_tiktok
+              cc.back_fields_facebook, cc.back_fields_tiktok,
+              cc.latitude, cc.longitude, cc.relevant_text
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
@@ -335,7 +336,20 @@ export const getUpdatedPass = async (req, res) => {
 
     const passBuffer = await passGenerator.generateLoyaltyPass(
       passData,
-      finalDesign, // Utilise les réglages (Apple ou Génériques)
+      { 
+        ...finalDesign,
+        back_fields_info: data.back_fields_info,
+        back_fields_terms: data.back_fields_terms,
+        back_fields_website: data.back_fields_website,
+        back_fields_phone: data.back_fields_phone,
+        back_fields_address: data.back_fields_address,
+        back_fields_instagram: data.back_fields_instagram,
+        back_fields_facebook: data.back_fields_facebook,
+        back_fields_tiktok: data.back_fields_tiktok,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        relevant_text: data.relevant_text
+      },
       serialNumber,
       data.authentication_token,
       { webServiceURL }

@@ -110,7 +110,7 @@ function Home() {
             <ul className="pilier-list">
               <li><CheckCircle2 size={16} /> Scan QR Premium</li>
               <li><CheckCircle2 size={16} /> Customisation Wallet</li>
-              <li><CheckCircle2 size={16} /> Rapports Analytics</li>
+              <li><CheckCircle2 size={16} /> Base de données client</li>
             </ul>
             <button onClick={() => navigate('/pro/login')} className="btn-card-action primary">
               Se Connecter <ChevronRight size={18} />

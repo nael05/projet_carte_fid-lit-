@@ -94,19 +94,30 @@ export const createCompany = async (req, res) => {
       [companyId, nom, email, prenom || null, telephone || null, hashedPassword, tempPassword, true, 'actif', loyalty_type]
     );
 
-    // Créer la configuration de fidélité initiale
+    // Créer la configuration de fidélité initiale avec des valeurs par défaut robustes
     const configId = randomUUID();
     await pool.query(
       `INSERT INTO loyalty_config (
-        id, entreprise_id, loyalty_type, reward_title, reward_description
-      ) VALUES (?, ?, ?, ?, ?)`,
+        id, entreprise_id, loyalty_type, reward_title, reward_description, 
+        points_per_purchase, points_for_reward, points_adding_mode
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         configId, companyId, loyalty_type,
         'Récompense spéciale',
         loyalty_type === 'points' 
           ? 'Vous avez atteint le nombre de points requis!' 
-          : 'Tous vos tampons sont remplis!'
+          : 'Tous vos tampons sont remplis!',
+        10, 100, 'manual'
       ]
+    );
+
+    // 🎨 Initialiser la personnalisation de carte par défaut (pour éviter les erreurs d'enregistrement plus tard)
+    const customizationId = randomUUID();
+    await pool.query(
+      `INSERT INTO card_customization 
+       (id, company_id, loyalty_type, primary_color, text_color, accent_color, secondary_color)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [customizationId, companyId, loyalty_type, '#1f2937', '#ffffff', '#3b82f6', '#374151']
     );
 
     res.json({
@@ -589,9 +600,8 @@ export const handleScan = async (req, res) => {
       [transactionId, clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
     );
 
-    // 🔄 Sync TOUS les Wallets (Apple et Google)
-    // Synchronisation du solde en base de données pour les cartes pass
-    await walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
+    // 🔄 Sync TOUS les Wallets (Apple et Google) en arrière-plan (pour plus de réactivité)
+    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
       logger.error('Wallet sync failed in handleScan', { error: e.message })
     );
 
@@ -668,9 +678,8 @@ export const adjustPoints = async (req, res) => {
       [newPoints, clientId, empresaId]
     );
 
-    // 🔄 Sync TOUS les Wallets (Apple et Google)
-    // IMPORTANT: AWAIT pour éviter la race condition avec APNs
-    await walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
+    // 🔄 Sync TOUS les Wallets (Apple et Google) en arrière-plan
+    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
       logger.error('Wallet sync failed in adjustPoints', { error: e.message })
     );
 
@@ -871,7 +880,7 @@ export const updateCardCustomization = async (req, res) => {
           latitude, longitude, relevant_text,
           google_primary_color, google_text_color, google_logo_url,
           google_hero_image_url, google_card_title, google_card_subtitle)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customizationId, empresaId, loyaltyType, 
           primary_color || '#1f2937', text_color || '#ffffff', accent_color || '#3b82f6', secondary_color || '#374151',

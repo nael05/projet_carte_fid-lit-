@@ -79,7 +79,7 @@
 .auth-form, .login-form, .pro-login-form {
   display: flex; flex-direction: column; gap: 18px;
 }
-.form-group { margin-bottom: 0; position: relative; }
+.pro-form-group { margin-bottom: 0; position: relative; }
 .form-group label {
   display: block; color: var(--text-secondary);
   font-weight: 500; margin-bottom: 6px; font-size: 14px;
@@ -131,6 +131,27 @@
 
 /* Spinner animation */
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
 
 /* Responsive */
 @media (max-width: 480px) {

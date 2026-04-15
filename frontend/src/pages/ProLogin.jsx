@@ -186,10 +186,9 @@ function ProLogin() {
               />
               <button
                 type="button"
-                className="btn-ghost"
+                className="password-toggle-btn"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
-                style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>

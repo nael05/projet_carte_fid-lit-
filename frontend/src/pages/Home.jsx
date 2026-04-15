@@ -50,7 +50,7 @@ function Home() {
         </p>
         <div className="hero-ctas">
           <button onClick={() => navigate('/pro/login')} className="btn-luxe-primary">
-            Démarrer gratuitement <ArrowRight size={18} />
+            Accédez à mon espace pro <ArrowRight size={18} />
           </button>
           <a href="#access" className="btn-luxe-secondary">Voir les solutions</a>
         </div>

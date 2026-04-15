@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
-import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
+import { AlertCircle, Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import './Auth.css'
-import './AdminLogin.css'
 
 function AdminLogin() {
   const [identifiant, setIdentifiant] = useState('')
@@ -38,80 +37,74 @@ function AdminLogin() {
   }
 
   return (
-    <div className="auth-container login-page">
-      <div className="login-background">
-        <div className="gradient-blob blob-1"></div>
-        <div className="gradient-blob blob-2"></div>
-      </div>
+    <div className="luxe-auth-container">
+      <div className="luxe-auth-bg"></div>
       
-      <div className="auth-card login-card">
-        <div className="login-header">
+      <div className="luxe-auth-card">
+        <div className="luxe-auth-header">
           <h1>Accès Admin</h1>
-          <p className="subtitle">Gestion des entreprises</p>
+          <p>Gestion sécurisée du SaaS</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form login-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="luxe-auth-form">
+          <div className="luxe-form-group">
             <label htmlFor="identifiant">Identifiant</label>
             <input
               id="identifiant"
+              className="luxe-input"
               type="text"
-              placeholder="Entrez votre identifiant"
+              placeholder="Nom d'utilisateur"
               value={identifiant}
               onChange={(e) => setIdentifiant(e.target.value)}
               disabled={loading}
               required
-              autoComplete="username"
+              autoFocus
             />
           </div>
 
-          <div className="form-group">
+          <div className="luxe-form-group">
             <label htmlFor="password">Mot de passe</label>
             <input
               id="password"
+              className="luxe-input"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Entrez votre mot de passe"
+              placeholder="••••••••"
               value={mot_de_passe}
               onChange={(e) => setMotDePasse(e.target.value)}
               disabled={loading}
               required
-              autoComplete="current-password"
             />
             <button
               type="button"
-              className="btn-ghost"
+              className="password-toggle-btn"
               onClick={() => setShowPassword(!showPassword)}
               tabIndex="-1"
-              style={{ position: 'absolute', right: '10px', top: '34px', padding: '4px' }}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
           {error && (
-            <div className="alert error">
+            <div className="luxe-alert error">
               <AlertCircle size={18} /> <span>{error}</span>
             </div>
           )}
 
           <button 
             type="submit" 
-            className="btn-primary btn-login"
+            className="btn-luxe-submit"
             disabled={loading}
           >
             {loading ? (
-              <>
-                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                Connexion en cours...
-              </>
+              <Loader2 className="spin" size={20} />
             ) : (
-              <>Se connecter</>
+              <>Accéder au système</>
             )}
           </button>
         </form>
 
-        <div className="login-footer">
-          <p>Identifiants: admin / admin</p>
+        <div className="luxe-auth-footer">
+          <p>Connecté avec Shield v2.0</p>
         </div>
       </div>
     </div>

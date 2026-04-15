@@ -596,13 +596,11 @@ export const handleScan = async (req, res) => {
     );
 
     // 🔔 Envoi de la notification Push VISUELLE (Alerte "Points ajoutés ! ✨")
-    // Cela permet au client de voir immédiatement son nouveau solde sur son écran verrouillé.
-    // Cette fonction gère à la fois le signal silencieux de rafraîchissement et l'alerte visuelle.
-    try {
-      await sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false);
-    } catch (pushErr) {
-      logger.warn('Push scan notification failed', pushErr.message);
-    }
+    // On ne fait pas de 'await' ici pour que le Dashboard réponde instantanément au commerçant.
+    // La notification partira en arrière-plan.
+    sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false).catch(e => 
+      logger.warn('Push scan notification failed', e.message)
+    );
 
     // 6. Détection des récompenses disponibles (Logique filtrée)
     const [tiers] = await pool.query(
@@ -677,11 +675,10 @@ export const adjustPoints = async (req, res) => {
     );
 
     // Envoi de la notification Push (Visuelle + Silencieuse)
-    try {
-      await sendLoyaltyUpdateNotification(clientId, empresaId, adjustment, false);
-    } catch (pushErr) {
-      logger.warn('Push adjust notification failed', pushErr.message);
-    }
+    // Non-bloquant pour une réactivité instantanée du Dashboard
+    sendLoyaltyUpdateNotification(clientId, empresaId, adjustment, false).catch(e => 
+      logger.warn('Push adjust notification failed', e.message)
+    );
 
 
     res.json({ success: true, newPoints });

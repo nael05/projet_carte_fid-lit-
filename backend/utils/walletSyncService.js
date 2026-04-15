@@ -65,8 +65,10 @@ class WalletSyncService {
             if (registrations.length > 0) {
               const tokens = registrations.map(r => r.push_token);
               logger.info(`   🍎 [SYNC] Envoi Push Apple à ${tokens.length} appareil(s) pour le serial [${serial}]`);
-              const pushResult = await apnService.sendBulkUpdateNotifications(tokens);
-              logger.info(`   🍎 [SYNC] Résultat Push: ${JSON.stringify(pushResult)}`);
+              // Non-bloquant pour la réactivité du Dashboard
+              apnService.sendBulkUpdateNotifications(tokens).catch(err => 
+                logger.error(`   🍎 [SYNC] Échec Push arrière-plan pour serial [${serial}]:`, err.message)
+              );
             } else {
               logger.info(`   ℹ️ [SYNC] Aucun appareil Apple enregistré pour le serial [${serial}]`);
             }
@@ -127,8 +129,10 @@ class WalletSyncService {
       if (registrations.length > 0) {
         const tokens = registrations.map(r => r.push_token);
         logger.info(`   🍎 [SYNC GLOBALE] ${tokens.length} terminal/terminaux trouvé(s). Envoi des notifications...`);
-        await apnService.sendBulkUpdateNotifications(tokens);
-        logger.info(`   ✅ [SYNC GLOBALE] Apple Push envoyé avec succès.`);
+        // Non-bloquant pour la réactivité globale
+        apnService.sendBulkUpdateNotifications(tokens).catch(err => 
+          logger.error(`   🍎 [SYNC GLOBALE] Échec Push arrière-plan:`, err.message)
+        );
       } else {
         logger.warn(`   ⚠️ [SYNC GLOBALE] Aucun terminal Apple enregistré trouvé pour l'entreprise ${companyId}.`);
         // Diagnostic : voir s'il y a des cartes sans enregistrements

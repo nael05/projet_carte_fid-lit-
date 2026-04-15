@@ -30,7 +30,6 @@ class WalletSyncService {
       }
 
       const client = clientRows[0];
-      logger.info(`📊 [SYNC] Client trouvé: ${client.nom || client.id}. Solde actuel: ${client.points}`);
       const newBalance = client.points || 0;
 
       // 2. Récupérer les paliers de récompense actuels pour les inclure dans le texte

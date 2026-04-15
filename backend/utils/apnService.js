@@ -27,7 +27,6 @@ export class APNService {
     this.environment = (process.env.APPLE_APN_ENVIRONMENT || 'development').trim();
     this.provider = null;
 
-    console.log('🚀 [APN_DEBUG] Constructor called');
     this.initializeProvider();
   }
 
@@ -36,25 +35,19 @@ export class APNService {
    */
   initializeProvider() {
     try {
-      // Diagnostic clair au démarrage
-      if (!this.apnKeyPath) logger.warn('❌ APN_DEBUG: APPLE_APN_KEY_PATH non défini');
-      if (!this.apnKeyId) logger.warn('❌ APN_DEBUG: APPLE_APN_KEY_ID non défini');
-      if (!this.apnTeamId) logger.warn('❌ APN_DEBUG: APPLE_APN_TEAM_ID non défini');
-
       if (!this.apnKeyPath || !this.apnKeyId || !this.apnTeamId) {
-        logger.warn('⚠️ Configuration APNs incomplète - Notifications push désactivées au lancement');
+        logger.warn('⚠️ Configuration APNs incomplète - Notifications push désactivées');
         return;
       }
 
       // Vérification physique du fichier
       if (!fs.existsSync(this.apnKeyPath)) {
-        logger.error(`❌ APN_DEBUG: Fichier .p8 INTROUVABLE au chemin calculé: ${this.apnKeyPath}`);
-        // Tenter un repli si le chemin est relatif au dossier courant au lieu de __dirname
+        // Tenter un repli relatif au CWD (souvent nécessaire en prod avec PM2)
         const fallbackPath = path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH || '');
         if (fs.existsSync(fallbackPath)) {
-          logger.info(`💡 APN_DEBUG: Fichier trouvé via le chemin relatif au CWD: ${fallbackPath}`);
           this.apnKeyPath = fallbackPath;
         } else {
+          logger.error(`❌ Fichier de clé Apple (.p8) introuvable au chemin: ${this.apnKeyPath}`);
           return;
         }
       }
@@ -65,7 +58,7 @@ export class APNService {
           keyId: this.apnKeyId,
           teamId: this.apnTeamId,
         },
-        production: true, // Wallet utilise toujours la prod
+        production: true, // Toujours TRUE pour Apple Wallet
       });
 
       this.provider.on('error', (error) => {

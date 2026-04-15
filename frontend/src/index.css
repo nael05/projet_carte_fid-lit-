@@ -216,7 +216,7 @@ input[type="text"], input[type="email"], input[type="password"],
 input[type="tel"], input[type="number"], textarea, select {
   width: 100%; min-height: 44px; padding: 10px 14px;
   background: var(--bg-surface);
-  color: var(--text-primary);
+  color: #FFFFFF !important; /* Force white text during typing */
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   font-size: 15px; font-family: var(--font-family); transition: var(--transition);

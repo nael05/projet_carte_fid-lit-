@@ -25,11 +25,33 @@ function AdminDashboard() {
   const [formData, setFormData] = useState({
     nom: '',
     email: '',
+    prenom: '',
+    telephone: '',
     loyalty_type: 'points'
   })
 
   const navigate = useNavigate()
   const { logout, token } = useAuth()
+
+  const copyToClipboard = (text, message = 'Copié !') => {
+    navigator.clipboard.writeText(text)
+    setSuccess(message)
+    setTimeout(() => setSuccess(''), 2000)
+  }
+
+  const copyAllInfo = (ent) => {
+    const text = `
+DÉTAILS COMMERCE FIDELYZ
+-----------------------
+COMMERCE : ${ent.nom}
+ID : #${ent.id}
+GÉRANT : ${ent.prenom || 'N/A'}
+TEL : ${ent.telephone || 'N/A'}
+EMAIL : ${ent.email}
+PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
+-----------------------`.trim()
+    copyToClipboard(text, 'Toutes les infos ont été copiées !')
+  }
 
   // Theme synchronization
   useEffect(() => {
@@ -88,6 +110,8 @@ function AdminDashboard() {
       const response = await api.post('/admin/create-company', {
         nom: formData.nom,
         email: formData.email,
+        prenom: formData.prenom,
+        telephone: formData.telephone,
         loyalty_type: formData.loyalty_type
       })
       
@@ -97,7 +121,7 @@ function AdminDashboard() {
       })
 
       setSuccess('Entreprise créée avec succès!')
-      setFormData({ nom: '', email: '', loyalty_type: 'points' })
+      setFormData({ nom: '', email: '', prenom: '', telephone: '', loyalty_type: 'points' })
       
       setTimeout(() => {
         loadEnterprises()
@@ -309,19 +333,45 @@ function AdminDashboard() {
                 {filteredEnterprises.map(ent => (
                   <div key={ent.id} className={`ux-ent-card ${ent.statut}`}>
                     <div className="ux-card-top">
-                      <h3>{ent.nom}</h3>
+                      <h3 onClick={() => copyToClipboard(ent.nom)} title="Copier le nom">{ent.nom}</h3>
                       <span className={`ux-badge ${ent.statut}`}>{ent.statut === 'actif' ? 'Actif' : 'Suspendu'}</span>
                     </div>
                     
                     <div className="ux-card-details">
                       <div className="ux-detail">
-                        <span>ID</span>
-                        <code className="ux-id-code">#{ent.id}</code>
+                        <span>Gérant</span>
+                        <div className="ux-copy-row">
+                          <strong onClick={() => copyToClipboard(ent.prenom)}>{ent.prenom || 'N/A'}</strong>
+                          <button onClick={() => copyToClipboard(ent.prenom)} className="ux-mini-copy"><Copy size={12} /></button>
+                        </div>
                       </div>
                       <div className="ux-detail">
-                        <span>Contact</span>
-                        <strong>{ent.email}</strong>
+                        <span>Téléphone</span>
+                        <div className="ux-copy-row">
+                          <strong onClick={() => copyToClipboard(ent.telephone)}>{ent.telephone || 'N/A'}</strong>
+                          <button onClick={() => copyToClipboard(ent.telephone)} className="ux-mini-copy"><Copy size={12} /></button>
+                        </div>
                       </div>
+                      <div className="ux-detail">
+                        <span>Email de connexion</span>
+                        <div className="ux-copy-row">
+                          <strong onClick={() => copyToClipboard(ent.email)}>{ent.email}</strong>
+                          <button onClick={() => copyToClipboard(ent.email)} className="ux-mini-copy"><Copy size={12} /></button>
+                        </div>
+                      </div>
+                      <div className="ux-detail">
+                        <span>ID Unique</span>
+                        <code className="ux-id-code" onClick={() => copyToClipboard(ent.id)}>#{ent.id}</code>
+                      </div>
+                      {ent.temporary_password && (
+                        <div className="ux-detail full-width">
+                          <span>Pass Temporaire</span>
+                          <div className="ux-copy-row-highlight">
+                            <code onClick={() => copyToClipboard(ent.temporary_password)}>{ent.temporary_password}</code>
+                            <button onClick={() => copyToClipboard(ent.temporary_password)} className="ux-mini-copy"><Copy size={14} /></button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="ux-card-footer">
@@ -332,6 +382,7 @@ function AdminDashboard() {
                           <button onClick={() => handleReactivate(ent.id)} className="ux-btn-icon green" title="Réactiver"><Unlock size={16} /></button>
                         )}
                         <button onClick={() => handleDelete(ent.id)} className="ux-btn-icon red" title="Supprimer"><Trash2 size={16} /></button>
+                        <button onClick={() => copyAllInfo(ent)} className="ux-btn-icon blue" title="Tout copier"><Copy size={16} /></button>
                       </div>
                       <button className="ux-btn-outline small" onClick={() => window.open(`mailto:${ent.email}`)}><ExternalLink size={14} /> Contact</button>
                     </div>
@@ -360,6 +411,24 @@ function AdminDashboard() {
                     placeholder="Brasserie, Boutique, Coiffeur..." 
                     required
                   />
+                </div>
+                <div className="ux-form-row-compact">
+                  <div className="ux-form-group">
+                    <label>Prénom Gérant</label>
+                    <input 
+                      type="text" value={formData.prenom} 
+                      onChange={e => setFormData({...formData, prenom: e.target.value})}
+                      placeholder="Ex: Jean" 
+                    />
+                  </div>
+                  <div className="ux-form-group">
+                    <label>Téléphone</label>
+                    <input 
+                      type="tel" value={formData.telephone} 
+                      onChange={e => setFormData({...formData, telephone: e.target.value})}
+                      placeholder="06..." 
+                    />
+                  </div>
                 </div>
                 <div className="ux-form-group">
                   <label>Email Administrateur</label>

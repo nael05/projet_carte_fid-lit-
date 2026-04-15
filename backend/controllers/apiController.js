@@ -50,7 +50,7 @@ export const adminLogin = async (req, res) => {
 export const getEnterprises = async (req, res) => {
   try {
     const [enterprises] = await pool.query(
-      'SELECT id, nom, email, statut, loyalty_type, temporary_password, must_change_password, created_at FROM entreprises ORDER BY created_at DESC'
+      'SELECT id, nom, email, prenom, telephone, statut, loyalty_type, temporary_password, must_change_password, created_at FROM entreprises ORDER BY created_at DESC'
     );
 
     res.json(enterprises);
@@ -74,7 +74,7 @@ export const getPublicEnterprises = async (req, res) => {
 };
 
 export const createCompany = async (req, res) => {
-  const { nom, email, loyalty_type = 'points' } = req.body;
+  const { nom, email, prenom, telephone, loyalty_type = 'points' } = req.body;
 
   if (!nom || !email) {
     return res.status(400).json({ error: 'Nom et email requis' });
@@ -90,8 +90,8 @@ export const createCompany = async (req, res) => {
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     await pool.query(
-      'INSERT INTO entreprises (id, nom, email, mot_de_passe, temporary_password, must_change_password, statut, loyalty_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [companyId, nom, email, hashedPassword, tempPassword, true, 'actif', loyalty_type]
+      'INSERT INTO entreprises (id, nom, email, prenom, telephone, mot_de_passe, temporary_password, must_change_password, statut, loyalty_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [companyId, nom, email, prenom || null, telephone || null, hashedPassword, tempPassword, true, 'actif', loyalty_type]
     );
 
     // Créer la configuration de fidélité initiale

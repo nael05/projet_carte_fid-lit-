@@ -20,9 +20,9 @@
   --border-dark: #8E8E93;
 
   /* ===== TYPOGRAPHIE ===== */
-  --text-primary: #1D1D1F;
-  --text-secondary: #6E6E73;
-  --text-tertiary: #AEAEB2;
+  --text-primary: #111827;   /* Deep near-black for maximum readability */
+  --text-secondary: #4B5563; /* Sophisticated Slate Gray */
+  --text-tertiary: #9CA3AF;
   --text-inverse: #FFFFFF;
 
   /* ===== ACCENT ===== */
@@ -216,7 +216,7 @@ input[type="text"], input[type="email"], input[type="password"],
 input[type="tel"], input[type="number"], textarea, select {
   width: 100%; min-height: 44px; padding: 10px 14px;
   background: var(--bg-surface);
-  color: #FFFFFF !important; /* Force white text during typing */
+  color: var(--text-primary); /* Adapted color for theme compatibility */
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   font-size: 15px; font-family: var(--font-family); transition: var(--transition);

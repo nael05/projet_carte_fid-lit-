@@ -7,6 +7,7 @@
 import 'dotenv/config';
 import apn from 'apn';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import logger from './logger.js';
 
@@ -16,14 +17,14 @@ const __dirname = path.dirname(__filename);
 export class APNService {
   constructor() {
     // Utiliser un chemin absolu basé sur le dossier 'utils' pour remonter à la racine du backend
-    const rawPath = process.env.APPLE_APN_KEY_PATH;
+    const rawPath = (process.env.APPLE_APN_KEY_PATH || '').trim();
     this.apnKeyPath = rawPath 
       ? (path.isAbsolute(rawPath) ? rawPath : path.resolve(__dirname, '..', rawPath))
       : null;
       
-    this.apnKeyId = process.env.APPLE_APN_KEY_ID;
-    this.apnTeamId = process.env.APPLE_APN_TEAM_ID;
-    this.environment = process.env.APPLE_APN_ENVIRONMENT || 'development';
+    this.apnKeyId = (process.env.APPLE_APN_KEY_ID || '').trim();
+    this.apnTeamId = (process.env.APPLE_APN_TEAM_ID || '').trim();
+    this.environment = (process.env.APPLE_APN_ENVIRONMENT || 'development').trim();
     this.provider = null;
 
     this.initializeProvider();
@@ -34,32 +35,45 @@ export class APNService {
    */
   initializeProvider() {
     try {
+      // Diagnostic clair au démarrage
+      if (!this.apnKeyPath) logger.warn('❌ APN_DEBUG: APPLE_APN_KEY_PATH non défini');
+      if (!this.apnKeyId) logger.warn('❌ APN_DEBUG: APPLE_APN_KEY_ID non défini');
+      if (!this.apnTeamId) logger.warn('❌ APN_DEBUG: APPLE_APN_TEAM_ID non défini');
+
       if (!this.apnKeyPath || !this.apnKeyId || !this.apnTeamId) {
-        logger.warn('⚠️ Configuration APNs incomplète - notifications push désactivées');
+        logger.warn('⚠️ Configuration APNs incomplète - Notifications push désactivées au lancement');
         return;
       }
 
+      // Vérification physique du fichier
+      if (!fs.existsSync(this.apnKeyPath)) {
+        logger.error(`❌ APN_DEBUG: Fichier .p8 INTROUVABLE au chemin calculé: ${this.apnKeyPath}`);
+        // Tenter un repli si le chemin est relatif au dossier courant au lieu de __dirname
+        const fallbackPath = path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH || '');
+        if (fs.existsSync(fallbackPath)) {
+          logger.info(`💡 APN_DEBUG: Fichier trouvé via le chemin relatif au CWD: ${fallbackPath}`);
+          this.apnKeyPath = fallbackPath;
+        } else {
+          return;
+        }
+      }
+
       this.provider = new apn.Provider({
-        // Clé P8 (format moderne, recommandé)
-        key: this.apnKeyPath,
-        keyId: this.apnKeyId,
-        teamId: this.apnTeamId,
-
-        // Production obligatoirement TRUE pour Apple Wallet (PassKit n'utilise pas la sandbox APNs)
-        production: true,
-
-        // Options de retry
-        connectionRetryLimit: 3,
+        token: {
+          key: this.apnKeyPath,
+          keyId: this.apnKeyId,
+          teamId: this.apnTeamId,
+        },
+        production: true, // Wallet utilise toujours la prod
       });
 
-      // Gestion des erreurs de connexion
       this.provider.on('error', (error) => {
-        logger.error(`❌ Erreur APNs: ${error.message}`);
+        logger.error(`❌ Erreur APNs (Provider): ${error.message}`);
       });
 
-      logger.info(`✅ Provider APNs initialisé (${this.environment})`);
+      logger.info(`✅ Provider APNs initialisé avec succès (${this.environment})`);
     } catch (error) {
-      logger.error(`❌ Impossible initialiser APNs: ${error.message}`);
+      logger.error(`❌ Échec initialisation APNs: ${error.message}`);
       this.provider = null;
     }
   }
@@ -89,7 +103,8 @@ export class APNService {
 
       // Priorité 5 est requise en pushType 'background' sous iOS 13+ avec "aps": {}
       notification.priority = 5;
-      notification.topic = process.env.APPLE_PASS_TYPE_ID;
+      const topic = (process.env.APPLE_PASS_TYPE_ID || '').trim();
+      notification.topic = topic;
 
       // Envoyer
       const result = await this.provider.send(notification, pushToken);

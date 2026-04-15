@@ -13,7 +13,7 @@ class WalletSyncService {
    */
   async syncClientWallet(clientId, companyId) {
     try {
-      logger.info(`🔄 Synchronisation Wallet pour client ${clientId} (Entreprise: ${companyId})`);
+      logger.info(`🔄 [SYNC] Début synchronisation pour client ${clientId} (Entreprise: ${companyId})`);
 
       // 1. Récupérer les données fraîches du client et de son entreprise
       const [clientRows] = await db.query(
@@ -25,11 +25,12 @@ class WalletSyncService {
       );
 
       if (!clientRows || clientRows.length === 0) {
-        logger.warn(`⚠️ Impossible de synchroniser : Client ${clientId} non trouvé`);
+        logger.warn(`⚠️ [SYNC] ÉCHEC : Client [${clientId}] non trouvé pour l'entreprise [${companyId}]. Vérifiez s'il s'agit d'un UUID ou d'un Serial Number.`);
         return;
       }
 
       const client = clientRows[0];
+      logger.info(`📊 [SYNC] Client trouvé: ${client.nom || client.id}. Solde actuel: ${client.points}`);
       const newBalance = client.points || 0;
 
       // 2. Récupérer les paliers de récompense actuels pour les inclure dans le texte
@@ -64,8 +65,11 @@ class WalletSyncService {
 
             if (registrations.length > 0) {
               const tokens = registrations.map(r => r.push_token);
-              await apnService.sendBulkUpdateNotifications(tokens);
-              logger.info(`   🍎 Apple Push envoyé à ${tokens.length} appareil(s) pour ${serial}`);
+              logger.info(`   🍎 [SYNC] Envoi Push Apple à ${tokens.length} appareil(s) pour le serial [${serial}]`);
+              const pushResult = await apnService.sendBulkUpdateNotifications(tokens);
+              logger.info(`   🍎 [SYNC] Résultat Push: ${JSON.stringify(pushResult)}`);
+            } else {
+              logger.info(`   ℹ️ [SYNC] Aucun appareil Apple enregistré pour le serial [${serial}]`);
             }
           }
 

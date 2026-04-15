@@ -692,7 +692,7 @@ function ProDashboard() {
               <div className="pro-recruit-content">
                 <div className="pro-qr-display">
                   {proInfo ? (
-                    <QRCodeSVG value={`${window.location.origin}/join/${proInfo.id}`} size={200} level="H" includeMargin={true} />
+                    <QRCodeSVG value={`${window.location.origin}/join/${proInfo.id}`} size={200} level="H" includeMargin={false} />
                   ) : (
                     <div className="pro-qr-placeholder"><Loader2 size={24} className="pro-spin" /></div>
                   )}

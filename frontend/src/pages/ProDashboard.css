@@ -458,7 +458,7 @@
 }
 .pro-qr-display {
   background: #fff;
-  padding: 16px;
+  padding: 8px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   display: inline-flex;

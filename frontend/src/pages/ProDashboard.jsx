@@ -181,11 +181,12 @@ function ProDashboard() {
       setTimeout(() => setLastScan(null), 5000)
       loadClients()
 
-      if (response.data.availableRewards && response.data.availableRewards.length > 0) {
+      if (response.data.allRewards && response.data.allRewards.length > 0) {
         setRedeemModal({
           clientId,
           clientName: response.data.clientName,
-          rewards: response.data.availableRewards
+          rewards: response.data.allRewards,
+          currentPoints: response.data.newPoints
         })
       }
     } catch (err) {
@@ -204,15 +205,10 @@ function ProDashboard() {
         rewardTierId 
       })
       
-      setLastScan({ success: true, clientName: redeemModal.clientName, message: response.data.message })
-      setTimeout(() => setLastScan(null), 5000)
+      // On ferme tout immédiatement (Règle : 1 cadeau max par passage)
+      setRedeemModal(null)
+      setTimeout(() => setLastScan(null), 3000)
       loadClients()
-
-      if (response.data.availableRewards && response.data.availableRewards.length > 0) {
-        setRedeemModal({ ...redeemModal, rewards: response.data.availableRewards })
-      } else {
-        setRedeemModal(null)
-      }
     } catch (err) {
       alert(err.response?.data?.error || 'Erreur lors du rachat')
     } finally {
@@ -521,17 +517,24 @@ function ProDashboard() {
                       </div>
                       
                       <div className="reward-scroll-list">
-                        {redeemModal.rewards.map(r => (
-                          <div key={r.id} className="reward-item-premium">
-                             <div className="reward-item-info">
-                                <strong>{r.title}</strong>
-                                <span>Coût : {r.points_required} pts</span>
-                             </div>
-                             <button className="claim-item-btn" onClick={() => handleRedeem(r.id)}>
-                               Valider
-                             </button>
-                          </div>
-                        ))}
+                        {redeemModal.rewards.map(r => {
+                          const isLocked = redeemModal.currentPoints < r.points_required;
+                          return (
+                            <div key={r.id} className={`reward-item-premium ${isLocked ? 'locked' : ''}`}>
+                               <div className="reward-item-info">
+                                  <strong>{r.title}</strong>
+                                  <span>{isLocked ? `Manque ${r.points_required - redeemModal.currentPoints} pts` : `Coût : ${r.points_required} pts`}</span>
+                               </div>
+                               <button 
+                                 className="claim-item-btn" 
+                                 disabled={isLocked}
+                                 onClick={() => handleRedeem(r.id)}
+                               >
+                                 {isLocked ? <Settings size={14} /> : 'Valider'}
+                               </button>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <button 

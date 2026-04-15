@@ -246,9 +246,9 @@
 .btn-premium-save {
   width: 100%;
   padding: 16px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
+  background: var(--accent) !important;
+  color: #fff !important;
+  border: none !important;
   border-radius: var(--radius-md);
   font-size: 16px;
   font-weight: 700;
@@ -263,7 +263,7 @@
 }
 
 .btn-premium-save:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--accent-hover) !important;
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
 }

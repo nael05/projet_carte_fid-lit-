@@ -342,9 +342,16 @@ function ProDashboard() {
           <div className="pro-avatar">
             {customization?.logo_url ? (
               <img 
-                src={`${import.meta.env.VITE_API_URL || ''}/uploads/${customization.logo_url}`} 
+                src={customization.logo_url.startsWith('http') 
+                  ? customization.logo_url 
+                  : `${import.meta.env.VITE_API_URL || window.location.origin + '/api'}/uploads/${customization.logo_url}`.replace('/api/api/', '/api/')} 
                 alt="Logo" 
                 className="pro-logo-img"
+                onError={(e) => {
+                  e.target.onerror = null; 
+                  e.target.src = ''; // Prevents infinite loop
+                  e.target.parentElement.innerHTML = (proInfo?.nom || 'E')[0];
+                }}
               />
             ) : (
               (proInfo?.nom || localStorage.getItem('companyName') || 'E')[0]

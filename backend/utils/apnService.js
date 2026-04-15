@@ -27,6 +27,7 @@ export class APNService {
     this.environment = (process.env.APPLE_APN_ENVIRONMENT || 'development').trim();
     this.provider = null;
 
+    console.log('🚀 [APN_DEBUG] Constructor called');
     this.initializeProvider();
   }
 
@@ -230,20 +231,6 @@ export class APNService {
   }
 }
 
-// Exporter une instance singleton (lazy-loaded avec Proxy)
-let instance = null;
-
-function getInstance() {
-  if (!instance) {
-    instance = new APNService();
-  }
-  return instance;
-}
-
-export const apnService = new Proxy({}, {
-  get(target, property) {
-    return getInstance()[property];
-  }
-});
-
+// Exporter une instance singleton (Initialisation IMMÉDIATE pour voir les logs)
+export const apnService = new APNService();
 export default apnService;

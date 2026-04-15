@@ -322,10 +322,6 @@ function AdminDashboard() {
                         <span>Contact</span>
                         <strong>{ent.email}</strong>
                       </div>
-                      <div className="ux-detail">
-                        <span>Système</span>
-                        <strong>{ent.loyalty_type === 'points' ? 'Points' : 'Tampons'}</strong>
-                      </div>
                     </div>
 
                     <div className="ux-card-footer">
@@ -374,27 +370,7 @@ function AdminDashboard() {
                     required
                   />
                 </div>
-                <div className="ux-form-group">
-                  <label>Type de Fidélité</label>
-                  <div className="ux-radio-group">
-                    <label className={`ux-radio-card ${formData.loyalty_type === 'points' ? 'active' : ''}`}>
-                      <input type="radio" value="points" checked={formData.loyalty_type === 'points'} onChange={e => setFormData({...formData, loyalty_type: e.target.value})} />
-                      <Star size={20} />
-                      <div>
-                        <strong>Points</strong>
-                        <span>Cagnotte cumulable</span>
-                      </div>
-                    </label>
-                    <label className={`ux-radio-card ${formData.loyalty_type === 'stamps' ? 'active' : ''}`}>
-                      <input type="radio" value="stamps" checked={formData.loyalty_type === 'stamps'} onChange={e => setFormData({...formData, loyalty_type: e.target.value})} />
-                      <Stamp size={20} />
-                      <div>
-                        <strong>Tampons</strong>
-                        <span>Carte à compléter</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
+                {/* Loyalty type removed, defaulting to points */}
 
                 <div className="ux-form-footer">
                   <button type="submit" className="ux-btn-primary lrg" disabled={submitting}>

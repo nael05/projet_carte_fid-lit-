@@ -5,17 +5,19 @@ import api from '../api'
 import { 
   AlertCircle, CheckCircle2, Loader2, X, Plus, Search, 
   Lock, Unlock, Trash2, Key, Star, Stamp, LogOut, 
-  ShieldAlert, LayoutDashboard, Copy, ExternalLink, Users
+  ShieldAlert, LayoutDashboard, Copy, ExternalLink, Users,
+  Sun, Moon, PieChart, PlusCircle, Filter
 } from 'lucide-react'
 import './AdminDashboard.css'
 
 function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('overview')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
   const [enterprises, setEnterprises] = useState([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [showCreateForm, setShowCreateForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('tous')
   const [newCompanyCredentials, setNewCompanyCredentials] = useState(null)
@@ -28,6 +30,17 @@ function AdminDashboard() {
 
   const navigate = useNavigate()
   const { logout, token } = useAuth()
+
+  // Theme synchronization
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark-mode')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [darkMode])
 
   useEffect(() => {
     if (!token) {
@@ -42,19 +55,12 @@ function AdminDashboard() {
       setLoading(true)
       setError('')
       const response = await api.get('/admin/enterprises')
-      console.log('Enterprises loaded:', response.data)
-      
       let data = response.data
       if (data && typeof data === 'object' && !Array.isArray(data)) {
         data = data.value || []
       }
-      
-      const enterprises = Array.isArray(data) ? data : []
-      setEnterprises(enterprises)
-      
-      if (enterprises.length === 0) {
-        console.warn('Aucune entreprise trouvée')
-      }
+      const enterprisesData = Array.isArray(data) ? data : []
+      setEnterprises(enterprisesData)
     } catch (err) {
       console.error('Error loading enterprises:', err)
       setError('Erreur lors du chargement des entreprises')
@@ -72,24 +78,12 @@ function AdminDashboard() {
     setError('')
     setSuccess('')
     
-    if (!formData.nom || !formData.nom.trim()) {
-      setError('Le nom de l\'entreprise est requis')
-      return
-    }
-    
-    if (!formData.email || !formData.email.trim()) {
-      setError('L\'email est requis')
-      return
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      setError('Email invalide')
+    if (!formData.nom || !formData.email) {
+      setError('Tous les champs sont requis')
       return
     }
     
     setSubmitting(true)
-
     try {
       const response = await api.post('/admin/create-company', {
         nom: formData.nom,
@@ -98,16 +92,12 @@ function AdminDashboard() {
       })
       
       setNewCompanyCredentials({
-        companyId: response.data.companyId,
-        email: response.data.email,
-        temporaryPassword: response.data.temporaryPassword,
-        loyalty_type: response.data.loyalty_type,
+        ...response.data,
         nom: formData.nom
       })
 
       setSuccess('Entreprise créée avec succès!')
       setFormData({ nom: '', email: '', loyalty_type: 'points' })
-      setShowCreateForm(false)
       
       setTimeout(() => {
         loadEnterprises()
@@ -124,10 +114,10 @@ function AdminDashboard() {
     if (!window.confirm('Suspendre cette entreprise?')) return
     try {
       await api.put(`/admin/suspend-company/${companyId}`)
-      setSuccess('Entreprise suspendue avec succès')
+      setSuccess('Entreprise suspendue')
       loadEnterprises()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la suspension')
+      setError(err.response?.data?.error || 'Erreur')
     }
   }
 
@@ -135,21 +125,21 @@ function AdminDashboard() {
     if (!window.confirm('Réactiver cette entreprise?')) return
     try {
       await api.put(`/admin/reactivate-company/${companyId}`)
-      setSuccess('Entreprise réactivée avec succès')
+      setSuccess('Entreprise réactivée')
       loadEnterprises()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la réactivation')
+      setError(err.response?.data?.error || 'Erreur')
     }
   }
 
   const handleDelete = async (companyId) => {
-    if (!window.confirm('ATTENTION: Suppression définitive!\n\nCette action supprimera l\'entreprise ET tous ses clients.\nÊtes-vous sûr?')) return
+    if (!window.confirm('Suppression définitive?')) return
     try {
       await api.delete(`/admin/delete-company/${companyId}`)
-      setSuccess('Entreprise supprimée avec succès')
+      setSuccess('Entreprise supprimée')
       loadEnterprises()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la suppression')
+      setError(err.response?.data?.error || 'Erreur')
     }
   }
 
@@ -161,204 +151,258 @@ function AdminDashboard() {
 
   const filteredEnterprises = enterprises.filter(ent => {
     const searchLower = searchTerm.toLowerCase().trim()
-    if (!searchLower) return filterStatus === 'tous' || ent.statut === filterStatus
-    const nomMatch = (ent.nom || '').toLowerCase().includes(searchLower)
-    const emailMatch = (ent.email || '').toLowerCase().includes(searchLower)
-    const idMatch = String(ent.id || '').toLowerCase().includes(searchLower)
-    return (nomMatch || emailMatch || idMatch) && (filterStatus === 'tous' || ent.statut === filterStatus)
+    const matchesSearch = !searchLower || (ent.nom || '').toLowerCase().includes(searchLower) || (ent.email || '').toLowerCase().includes(searchLower) || String(ent.id).includes(searchLower)
+    const matchesFilter = filterStatus === 'tous' || ent.statut === filterStatus
+    return matchesSearch && matchesFilter
   })
 
   return (
-    <div className="dashboard-container admin-luxe">
-      <div className="admin-bg-mesh"></div>
-
-      {/* MODAL CREDENTIALS LUXE */}
+    <div className={`admin-ux-v3 ${darkMode ? 'theme-dark' : 'theme-light'}`}>
+      <div className="ux-bg-glass"></div>
+      
+      {/* MODAL CREDENTIALS */}
       {newCompanyCredentials && (
-        <div className="modal-overlay-luxe" onClick={() => setNewCompanyCredentials(null)}>
-          <div className="modal-content-luxe" onClick={e => e.stopPropagation()}>
-            <div className="modal-header-luxe">
-              <CheckCircle2 size={48} color="#10B981" style={{ margin: '0 auto 16px' }} />
-              <h2>Entreprise créée !</h2>
-              <p style={{ color: '#94A3B8' }}>{newCompanyCredentials.nom}</p>
+        <div className="ux-modal-overlay" onClick={() => setNewCompanyCredentials(null)}>
+          <div className="ux-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="ux-modal-header">
+              <div className="ux-icon-success"><CheckCircle2 size={32} /></div>
+              <h2>Commerce Créé !</h2>
+              <p>Voici les accès pour <strong>{newCompanyCredentials.nom}</strong></p>
             </div>
             
-            <div className="credentials-cluster">
-              <div className="cred-item">
-                <div className="cred-label">Identifiant Email</div>
-                <div className="cred-row">
-                  <span className="cred-value">{newCompanyCredentials.email}</span>
-                  <button onClick={() => navigator.clipboard.writeText(newCompanyCredentials.email)} className="btn-copy-luxe">Copier</button>
+            <div className="ux-cred-box">
+              <div className="ux-cred-row">
+                <label>Email Identifiant</label>
+                <div className="ux-copy-group">
+                  <code>{newCompanyCredentials.email}</code>
+                  <button onClick={() => navigator.clipboard.writeText(newCompanyCredentials.email)}><Copy size={16} /></button>
                 </div>
               </div>
-              <div className="cred-item">
-                <div className="cred-label">Mot de passe temporaire</div>
-                <div className="cred-row">
-                  <span className="cred-value">{newCompanyCredentials.temporaryPassword}</span>
-                  <button onClick={() => navigator.clipboard.writeText(newCompanyCredentials.temporaryPassword)} className="btn-copy-luxe">Copier</button>
+              <div className="ux-cred-row">
+                <label>Mot de passe temporaire</label>
+                <div className="ux-copy-group">
+                  <code>{newCompanyCredentials.temporaryPassword}</code>
+                  <button onClick={() => navigator.clipboard.writeText(newCompanyCredentials.temporaryPassword)}><Copy size={16} /></button>
                 </div>
               </div>
             </div>
 
-            <button onClick={() => setNewCompanyCredentials(null)} className="btn-luxe-create" style={{ width: '100%', justifyContent: 'center' }}>
-              Terminer
+            <button onClick={() => setNewCompanyCredentials(null)} className="ux-btn-primary full">
+              Fermer et continuer
             </button>
           </div>
         </div>
       )}
 
-      {/* LUXE HEADER */}
-      <header className="admin-luxe-header">
-        <div className="admin-logo-section">
-          <span className="admin-badge">Master</span>
-          <h1 className="admin-title-luxe">Fidelyz Control</h1>
+      {/* TOP NAVBAR */}
+      <nav className="ux-navbar">
+        <div className="ux-nav-left">
+          <div className="ux-logo-icon"><ShieldAlert size={22} /></div>
+          <h1>Fidelyz Control</h1>
         </div>
-        <div className="admin-header-actions">
-          <button onClick={() => logout()} className="btn-luxe-logout">
-            <LogOut size={18} /> Déconnexion
+
+        <div className="ux-nav-center desktop-only">
+          <button className={`ux-tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+            <PieChart size={18} /> Vue d'ensemble
+          </button>
+          <button className={`ux-tab-btn ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>
+            <LayoutDashboard size={18} /> Gestion
+          </button>
+          <button className={`ux-tab-btn ${activeTab === 'create' ? 'active' : ''}`} onClick={() => setActiveTab('create')}>
+            <PlusCircle size={18} /> Nouveau
           </button>
         </div>
-      </header>
 
-      <main className="admin-luxe-main">
-        {/* STATS BAND */}
-        <section className="admin-stats-band">
-          <div className="stat-luxe-card">
-            <div className="stat-icon-box total"><Users size={24} /></div>
-            <div className="stat-info">
-              <h4>Total Entreprises</h4>
-              <div className="number">{stats.total}</div>
+        <div className="ux-nav-right">
+          <button className="ux-theme-toggle" onClick={() => setDarkMode(!darkMode)}>
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <button className="ux-btn-logout" onClick={() => logout()}>
+            <LogOut size={18} /> <span className="desktop-only">Quitter</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* MOBILE NAV (TABS REPLACEMENT) */}
+      <div className="ux-mobile-tabs mobile-only">
+        <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}><PieChart size={20} /></button>
+        <button className={activeTab === 'list' ? 'active' : ''} onClick={() => setActiveTab('list')}><LayoutDashboard size={20} /></button>
+        <button className={activeTab === 'create' ? 'active' : ''} onClick={() => setActiveTab('create')}><PlusCircle size={20} /></button>
+      </div>
+
+      <main className="ux-content">
+        {error && <div className="ux-alert error"><AlertCircle size={18} /> {error}</div>}
+        {success && <div className="ux-alert success"><CheckCircle2 size={18} /> {success}</div>}
+
+        {/* VIEW: OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="ux-view-fade">
+            <header className="ux-view-header">
+              <h2>Tableau de bord stratégique</h2>
+              <p>Résumé de l'activité du réseau Fidelyz.</p>
+            </header>
+
+            <div className="ux-stats-grid">
+              <div className="ux-stat-card">
+                <div className="ux-stat-icon blue"><Users size={24} /></div>
+                <div className="ux-stat-data">
+                  <span className="ux-stat-label">Total Entreprises</span>
+                  <span className="ux-stat-value">{stats.total}</span>
+                </div>
+              </div>
+              <div className="ux-stat-card">
+                <div className="ux-stat-icon green"><CheckCircle2 size={24} /></div>
+                <div className="ux-stat-data">
+                  <span className="ux-stat-label">Actifs</span>
+                  <span className="ux-stat-value">{stats.active}</span>
+                </div>
+              </div>
+              <div className="ux-stat-card">
+                <div className="ux-stat-icon red"><ShieldAlert size={24} /></div>
+                <div className="ux-stat-data">
+                  <span className="ux-stat-label">Suspendus</span>
+                  <span className="ux-stat-value">{stats.suspended}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="ux-welcome-banner">
+              <div className="ux-banner-text">
+                <h3>Voulez-vous lancer un nouveau partenaire ?</h3>
+                <p>La configuration prend moins de 2 minutes.</p>
+              </div>
+              <button className="ux-btn-accent" onClick={() => setActiveTab('create')}>Lancer la création</button>
             </div>
           </div>
-          <div className="stat-luxe-card">
-            <div className="stat-icon-box active"><CheckCircle2 size={24} /></div>
-            <div className="stat-info">
-              <h4>Commerces Actifs</h4>
-              <div className="number">{stats.active}</div>
-            </div>
-          </div>
-          <div className="stat-luxe-card">
-            <div className="stat-icon-box suspended"><ShieldAlert size={24} /></div>
-            <div className="stat-info">
-              <h4>Comptes Suspendus</h4>
-              <div className="number">{stats.suspended}</div>
-            </div>
-          </div>
-        </section>
-
-        {/* MESSAGES */}
-        {error && <div className="luxe-alert error" style={{marginBottom: '24px'}}><AlertCircle size={18} />{error}</div>}
-        {success && <div className="luxe-alert" style={{marginBottom: '24px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981'}}><CheckCircle2 size={18} />{success}</div>}
-
-        {/* CREATE SECTION */}
-        {showCreateForm && (
-          <section className="admin-luxe-section">
-            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '24px'}}>
-              <h2 style={{fontSize: '20px', fontWeight: 800}}>Nouvelle Entreprise</h2>
-              <button onClick={() => setShowCreateForm(false)} className="btn-ent-action"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleCreateCompany} className="luxe-form-grid">
-              <div className="luxe-form-group">
-                <label>Nom du commerce</label>
-                <input 
-                  type="text" value={formData.nom} 
-                  onChange={e => setFormData({...formData, nom: e.target.value})}
-                  placeholder="Ex: Brasserie du Centre" 
-                  required
-                />
-              </div>
-              <div className="luxe-form-group">
-                <label>Email de contact</label>
-                <input 
-                  type="email" value={formData.email} 
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                  placeholder="pro@commerce.com" 
-                  required
-                />
-              </div>
-              <div className="luxe-form-group">
-                <label>Système de fidélité</label>
-                <select value={formData.loyalty_type} onChange={e => setFormData({...formData, loyalty_type: e.target.value})}>
-                  <option value="points">Points cumulables</option>
-                  <option value="stamps">Tampons (Stamps)</option>
-                </select>
-              </div>
-              <div style={{display: 'flex', alignItems: 'flex-end'}}>
-                <button type="submit" disabled={submitting} className="btn-luxe-create" style={{width: '100%', justifyContent: 'center'}}>
-                  {submitting ? <Loader2 className="spin" size={20} /> : 'Confirmer la création'}
-                </button>
-              </div>
-            </form>
-          </section>
         )}
 
-        {/* CONTROLS */}
-        <section className="admin-controls-luxe">
-          <div className="search-wrapper-luxe">
-            <Search size={20} />
-            <input 
-              type="text" 
-              placeholder="Rechercher par ID, Email ou Nom..." 
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button onClick={() => setShowCreateForm(true)} className="btn-luxe-create">
-            <Plus size={20} /> Nouvelle entreprise
-          </button>
-        </section>
-
-        {/* GRID */}
-        {loading ? (
-          <div style={{textAlign: 'center', padding: '60px'}}><Loader2 className="spin" size={40} color="#007AFF" /></div>
-        ) : enterprises.length === 0 ? (
-          <div style={{textAlign: 'center', padding: '60px', color: '#94A3B8'}}>Aucune entreprise trouvée</div>
-        ) : filteredEnterprises.length === 0 ? (
-          <div style={{textAlign: 'center', padding: '60px', color: '#94A3B8'}}>Aucun résultat pour cette recherche</div>
-        ) : (
-          <div className="enterprises-grid-luxe">
-            {filteredEnterprises.map(ent => (
-              <div key={ent.id} className={`ent-luxe-card status-${ent.statut}`}>
-                <div className="status-indicator"></div>
-                <div className="ent-card-header">
-                  <h3>{ent.nom}</h3>
-                  <span className={`badge-luxe ${ent.statut}`}>{ent.statut === 'actif' ? 'Actif' : 'Suspendu'}</span>
+        {/* VIEW: LIST */}
+        {activeTab === 'list' && (
+          <div className="ux-view-fade">
+            <header className="ux-view-header">
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px'}}>
+                <div>
+                  <h2>Gestion des Commerces</h2>
+                  <p>Administrez les accès et le statut des partenaires.</p>
                 </div>
-                <div className="ent-card-body">
-                  <div className="ent-info-row">
-                    <span className="label">Identifiant</span>
-                    <span className="value id">#{ent.id}</span>
-                  </div>
-                  <div className="ent-info-row">
-                    <span className="label">Contact</span>
-                    <span className="value">{ent.email}</span>
-                  </div>
-                  {ent.temporary_password && (
-                    <div className="ent-info-row">
-                      <span className="label"><Key size={14} /> Pass Temp</span>
-                      <span className="value" style={{color: '#38BDF8', fontWeight: 700}}>{ent.temporary_password}</span>
-                    </div>
-                  )}
-                  <div className="ent-info-row">
-                    <span className="label">Fidélité</span>
-                    <span className="value">{ent.loyalty_type === 'points' ? <><Star size={14} /> Points</> : <><Stamp size={14} /> Timbres</>}</span>
-                  </div>
-                </div>
-                <div className="ent-card-actions">
-                  {ent.statut === 'actif' ? (
-                    <button onClick={() => handleSuspend(ent.id)} className="btn-ent-action">
-                      <Lock size={14} /> Suspendre
-                    </button>
-                  ) : (
-                    <button onClick={() => handleReactivate(ent.id)} className="btn-ent-action">
-                      <Unlock size={14} /> Réactiver
-                    </button>
-                  )}
-                  <button onClick={() => handleDelete(ent.id)} className="btn-ent-action danger">
-                    <Trash2 size={14} /> Supprimer
-                  </button>
+                <div className="ux-search-box">
+                  <Search size={18} />
+                  <input 
+                    type="text" placeholder="Rechercher..." 
+                    value={searchTerm} onChange={e => setSearchTerm(e.target.value)} 
+                  />
+                  <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                    <option value="tous">Tous</option>
+                    <option value="actif">Actifs</option>
+                    <option value="suspendu">Suspendus</option>
+                  </select>
                 </div>
               </div>
-            ))}
+            </header>
+
+            {loading ? (
+              <div className="ux-loading-center"><Loader2 size={40} className="spin" /></div>
+            ) : enterprises.length === 0 ? (
+              <div className="ux-empty-state">Aucun commerce disponible.</div>
+            ) : (
+              <div className="ux-grid-commerces">
+                {filteredEnterprises.map(ent => (
+                  <div key={ent.id} className={`ux-ent-card ${ent.statut}`}>
+                    <div className="ux-card-top">
+                      <h3>{ent.nom}</h3>
+                      <span className={`ux-badge ${ent.statut}`}>{ent.statut === 'actif' ? 'Actif' : 'Suspendu'}</span>
+                    </div>
+                    
+                    <div className="ux-card-details">
+                      <div className="ux-detail">
+                        <span>ID</span>
+                        <code className="ux-id-code">#{ent.id}</code>
+                      </div>
+                      <div className="ux-detail">
+                        <span>Contact</span>
+                        <strong>{ent.email}</strong>
+                      </div>
+                      <div className="ux-detail">
+                        <span>Système</span>
+                        <strong>{ent.loyalty_type === 'points' ? 'Points' : 'Tampons'}</strong>
+                      </div>
+                    </div>
+
+                    <div className="ux-card-footer">
+                      <div className="ux-actions-cluster">
+                        {ent.statut === 'actif' ? (
+                          <button onClick={() => handleSuspend(ent.id)} className="ux-btn-icon" title="Suspendre"><Lock size={16} /></button>
+                        ) : (
+                          <button onClick={() => handleReactivate(ent.id)} className="ux-btn-icon green" title="Réactiver"><Unlock size={16} /></button>
+                        )}
+                        <button onClick={() => handleDelete(ent.id)} className="ux-btn-icon red" title="Supprimer"><Trash2 size={16} /></button>
+                      </div>
+                      <button className="ux-btn-outline small" onClick={() => window.open(`mailto:${ent.email}`)}><ExternalLink size={14} /> Contact</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* VIEW: CREATE */}
+        {activeTab === 'create' && (
+          <div className="ux-view-fade">
+             <header className="ux-view-header">
+              <h2>Nouveau Partenaire</h2>
+              <p>Remplissez les informations pour générer un compte commerçant.</p>
+            </header>
+
+            <div className="ux-form-container">
+              <form onSubmit={handleCreateCompany} className="ux-form-premium">
+                <div className="ux-form-group">
+                  <label>Nom de l'entreprise</label>
+                  <input 
+                    type="text" value={formData.nom} 
+                    onChange={e => setFormData({...formData, nom: e.target.value})}
+                    placeholder="Brasserie, Boutique, Coiffeur..." 
+                    required
+                  />
+                </div>
+                <div className="ux-form-group">
+                  <label>Email Administrateur</label>
+                  <input 
+                    type="email" value={formData.email} 
+                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    placeholder="contact@commerce.fr" 
+                    required
+                  />
+                </div>
+                <div className="ux-form-group">
+                  <label>Type de Fidélité</label>
+                  <div className="ux-radio-group">
+                    <label className={`ux-radio-card ${formData.loyalty_type === 'points' ? 'active' : ''}`}>
+                      <input type="radio" value="points" checked={formData.loyalty_type === 'points'} onChange={e => setFormData({...formData, loyalty_type: e.target.value})} />
+                      <Star size={20} />
+                      <div>
+                        <strong>Points</strong>
+                        <span>Cagnotte cumulable</span>
+                      </div>
+                    </label>
+                    <label className={`ux-radio-card ${formData.loyalty_type === 'stamps' ? 'active' : ''}`}>
+                      <input type="radio" value="stamps" checked={formData.loyalty_type === 'stamps'} onChange={e => setFormData({...formData, loyalty_type: e.target.value})} />
+                      <Stamp size={20} />
+                      <div>
+                        <strong>Tampons</strong>
+                        <span>Carte à compléter</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="ux-form-footer">
+                  <button type="submit" className="ux-btn-primary lrg" disabled={submitting}>
+                    {submitting ? <Loader2 className="spin" size={22} /> : 'Finaliser la création'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </main>

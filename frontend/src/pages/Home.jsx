@@ -102,7 +102,6 @@ function Home() {
 
           {/* Pro Role */}
           <div className="pilier-card glass-card active-border">
-            <div className="pilier-tag">Hautement Recommandé</div>
             <div className="pilier-header border-pro">
               <Users size={32} />
               <h3>Tableau de Bord Pro</h3>

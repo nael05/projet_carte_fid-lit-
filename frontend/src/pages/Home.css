@@ -452,8 +452,13 @@
 }
 
 .search-icon {
-  position: absolute; left: 16px; color: #38BDF8;
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #38BDF8;
   pointer-events: none;
+  z-index: 5;
 }
 
 .demo-form-luxe input {
@@ -461,7 +466,7 @@
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  padding: 14px 16px 14px 48px; /* FIXED PADDING FOR ICON */
+  padding: 14px 16px 14px 52px !important; /* INCREASED PADDING TO PREVENT OVERLAP */
   color: white;
   font-size: 15px;
   transition: all 0.3s ease;

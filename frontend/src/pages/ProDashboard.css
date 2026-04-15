@@ -497,7 +497,7 @@
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: var(--bg-dark);
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: var(--radius-sm);
@@ -509,7 +509,7 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
-.pro-copy-btn:hover { background: #2C2C2E; }
+.pro-copy-btn:hover { background: var(--accent-hover); }
 
 /* ---- CLIENT MODAL ---- */
 .pro-modal {
@@ -1244,7 +1244,7 @@
   font-size: 14px;
 }
 
-.pro-btn-primary-premium { background: var(--bg-dark); color: #fff; border: none; }
+.pro-btn-primary-premium { background: var(--accent); color: #fff; border: none; }
 .pro-btn-secondary-premium { background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border-light); }
 
 /* Success View */
@@ -1323,7 +1323,7 @@
 .pro-btn-finish {
   width: 100%;
   padding: 14px;
-  background: var(--bg-dark);
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 14px;

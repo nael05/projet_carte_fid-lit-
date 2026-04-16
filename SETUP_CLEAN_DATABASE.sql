@@ -197,6 +197,11 @@ CREATE TABLE wallet_cards (
     client_id VARCHAR(36) NOT NULL,
     company_id VARCHAR(36) NOT NULL,
     pass_serial_number VARCHAR(255) NOT NULL UNIQUE,
+    authentication_token VARCHAR(255),
+    points_balance INT DEFAULT 0,
+    stamps_balance INT DEFAULT 0,
+    qr_code_value VARCHAR(255),
+    wallet_added_at TIMESTAMP NULL,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
     FOREIGN KEY (company_id) REFERENCES entreprises(id) ON DELETE CASCADE

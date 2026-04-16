@@ -669,7 +669,7 @@ function ProDashboard() {
                       <div className="pro-client-actions">
                         <button className="pro-action-btn" onClick={() => adjustPoints(client.id, -1)} title="-1"><Minus size={16} /></button>
                         <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(client.id, 1)} title="+1"><Plus size={16} /></button>
-                        <button className="pro-action-btn pro-action-delete" onClick={() => handleDeleteClient(client.id, `${client.prenom} ${client.nom}`)} title="Supprimer client"><Trash2 size={16} /></button>
+                        <button className="pro-action-btn pro-action-delete" onClick={(e) => { e.stopPropagation(); handleDeleteClient(client.id, `${client.prenom} ${client.nom}`); }} title="Supprimer client"><Trash2 size={16} /></button>
                       </div>
                     </div>
                   ))}

@@ -2050,17 +2050,29 @@ button:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
-.summary-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.summary-badges {
+.summary-left {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.final-balance-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  text-align: right;
+}
+
+.final-balance-val {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent);
+  text-align: right;
 }
 
 .summary-badges span {
@@ -2068,6 +2080,7 @@ button:active {
   border-radius: 6px;
   font-size: 13px;
   font-weight: 700;
+  margin-right: 4px;
 }
 
 .badge-red { background: #fee2e2; color: #ef4444; }

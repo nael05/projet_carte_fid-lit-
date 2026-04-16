@@ -572,11 +572,19 @@ function ProDashboard() {
 
                       <div className="modal-footer-v2">
                         <div className="summary-v2">
-                           <span className="summary-label">Récapitulatif :</span>
-                           <div className="summary-badges">
-                              {selectedReward && <span className="badge-red">-{selectedReward.points_required}</span>}
-                              {Number(pointsToAdd) > 0 && <span className="badge-green">+{pointsToAdd}</span>}
-                              {!selectedReward && (!pointsToAdd || pointsToAdd === '0') && <span className="badge-none">0 modification</span>}
+                           <div className="summary-left">
+                              <span className="summary-label">Récapitulatif :</span>
+                              <div className="summary-badges">
+                                 {selectedReward && <span className="badge-red">-{selectedReward.points_required} pts</span>}
+                                 {Number(pointsToAdd) > 0 && <span className="badge-green">+{pointsToAdd} pts</span>}
+                                 {!selectedReward && (!pointsToAdd || pointsToAdd === '0') && <span className="badge-none">0 modification</span>}
+                              </div>
+                           </div>
+                           <div className="summary-right">
+                              <span className="final-balance-label">Nouveau solde</span>
+                              <span className="final-balance-val">
+                                {transactionData.currentPoints - (selectedReward?.points_required || 0) + (Number(pointsToAdd) || 0)} pts
+                              </span>
                            </div>
                         </div>
                         <button 

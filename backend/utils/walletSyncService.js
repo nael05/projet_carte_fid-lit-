@@ -52,7 +52,8 @@ class WalletSyncService {
       );
 
       if (walletRows.length > 0) {
-        for (const wallet of walletRows) {
+        // 🔄 PARALLÉLISATION : On lance toutes les mises à jour (Apple et Google) en même temps
+        const syncPromises = walletRows.map(async (wallet) => {
           const serial = wallet.pass_serial_number;
 
           // SYNCHRO APPLE WALLET
@@ -64,22 +65,20 @@ class WalletSyncService {
 
             if (registrations.length > 0) {
               const tokens = registrations.map(r => r.push_token);
-              logger.info(`   🍎 [SYNC] Envoi Push Apple à ${tokens.length} appareil(s) pour le serial [${serial}]`);
-              // Non-bloquant pour la réactivité du Dashboard
-              apnService.sendBulkUpdateNotifications(tokens).catch(err => 
-                logger.error(`   🍎 [SYNC] Échec Push arrière-plan pour serial [${serial}]:`, err.message)
-              );
-            } else {
-              logger.info(`   ℹ️ [SYNC] Aucun appareil Apple enregistré pour le serial [${serial}]`);
+              logger.info(`   🍎 [SYNC] Envoi Push Apple (${tokens.length} tokens)`);
+              return apnService.sendBulkUpdateNotifications(tokens);
             }
           }
 
           // SYNCHRO GOOGLE WALLET
           if (serial && serial.startsWith('GOOGLE_')) {
-            await googleWalletGenerator.updateLoyaltyObject(clientId, companyId, newBalance, tiers);
-            logger.info(`   🤖 Google Wallet synchronisé pour ${clientId}`);
+            logger.info(`   🤖 [SYNC] Mise à jour Google Wallet`);
+            return googleWalletGenerator.updateLoyaltyObject(clientId, companyId, newBalance, tiers);
           }
-        }
+        });
+
+        // On attend que TOUT soit lancé
+        await Promise.all(syncPromises).catch(err => logger.error('Parallel sync error', err));
       }
 
       return { success: true, balance: newBalance };

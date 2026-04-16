@@ -191,9 +191,9 @@ CREATE TABLE reward_tiers (
     INDEX idx_points (points_required)
 ) ENGINE=InnoDB;
 
--- 9. WALLET CARDS (Serial numbers management)
+-- 9. WALLET CARDS (Serial numbers management - OPTIMIZED)
 CREATE TABLE wallet_cards (
-    id VARCHAR(36) PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY,
     client_id VARCHAR(36) NOT NULL,
     company_id VARCHAR(36) NOT NULL,
     pass_serial_number VARCHAR(255) NOT NULL UNIQUE,
@@ -202,12 +202,15 @@ CREATE TABLE wallet_cards (
     stamps_balance INT DEFAULT 0,
     qr_code_value VARCHAR(255),
     wallet_added_at TIMESTAMP NULL,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
-    FOREIGN KEY (company_id) REFERENCES entreprises(id) ON DELETE CASCADE
+    FOREIGN KEY (company_id) REFERENCES entreprises(id) ON DELETE CASCADE,
+    INDEX idx_serial_lookup (pass_serial_number),
+    INDEX idx_sync_lookup (client_id, company_id),
+    INDEX idx_company_sync (company_id)
 ) ENGINE=InnoDB;
 
--- 10. APPLE PASS REGISTRATIONS
+-- 10. APPLE PASS REGISTRATIONS (OPTIMIZED)
 CREATE TABLE apple_pass_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     device_library_identifier VARCHAR(255) NOT NULL,
@@ -215,7 +218,9 @@ CREATE TABLE apple_pass_registrations (
     pass_type_identifier VARCHAR(255) NOT NULL,
     pass_serial_number VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_registration (device_library_identifier, pass_serial_number)
+    UNIQUE KEY unique_registration (device_library_identifier, pass_serial_number),
+    INDEX idx_device_id (device_library_identifier),
+    INDEX idx_reg_serial (pass_serial_number)
 ) ENGINE=InnoDB;
 
 -- 11. PUSH NOTIFICATIONS SENT (Global History)

@@ -29,10 +29,13 @@ function ProDashboard() {
   const [copied, setCopied] = useState(false)
   const [clientSearch, setClientSearch] = useState('')
 
-  // Scanner extra flows
-  const [inputModal, setInputModal] = useState(null); // { clientId }
-  const [pointsToAdd, setPointsToAdd] = useState('');
   const [redeemModal, setRedeemModal] = useState(null); // { clientId, clientName, rewards }
+  const [pointsToAdd, setPointsToAdd] = useState('');
+
+  // New Transaction Flow
+  const [transactionData, setTransactionData] = useState(null); // { clientName, currentPoints, allRewards, nextTier, clientId }
+  const [selectedReward, setSelectedReward] = useState(null);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   // Loyalty Settings
   const [loyaltyConfig, setLoyaltyConfig] = useState({
@@ -173,58 +176,51 @@ function ProDashboard() {
     }
   }
 
-  const processScan = (clientId) => {
-    if (loyaltyConfig.points_adding_mode === 'manual') {
-      setInputModal({ clientId })
-    } else {
-      handleScanSubmit(clientId, loyaltyConfig.points_per_purchase)
+  const processScan = async (clientId) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/pro/scan-lookup/${clientId}`);
+      setTransactionData({
+        ...response.data,
+        clientId
+      });
+      // Préparer les points par défaut
+      setPointsToAdd(loyaltyConfig.points_adding_mode === 'auto' ? loyaltyConfig.points_per_purchase.toString() : '');
+      setSelectedReward(null);
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Erreur lors de la lecture du QR Code', 'error');
+    } finally {
+      setLoading(false);
     }
   }
 
-  const handleScanSubmit = async (clientId, points) => {
+  const handleFinalizeTransaction = async () => {
+    if (!transactionData) return;
+    
     try {
-      setLoading(true)
-      setInputModal(null)
-      setPointsToAdd('')
-      
-      const payload = { clientId }
-      if (points !== undefined && points !== null) {
-        payload.points_to_add = points
-      }
+      setIsFinalizing(true);
+      const response = await api.post('/pro/scan/finalize', {
+        clientId: transactionData.clientId,
+        pointsToAdd: Number(pointsToAdd) || 0,
+        rewardTierId: selectedReward?.id || null
+      });
 
-      const response = await api.post('/pro/scan', payload)
+      addToast(response.data.message || 'Transaction réussie !');
       
-      const successData = {
+      // Update local state to show success summary if needed, or just reset
+      setLastScan({
         success: true,
-        clientName: response.data.clientName,
-        message: response.data.message,
-        clientId,
+        clientName: transactionData.clientName,
         newPoints: response.data.newPoints,
-        availableRewards: response.data.allRewards,
-        nextTier: response.data.nextTier
-      }
+        message: response.data.message
+      });
       
-      // Si pas de récompense ni de progression de palier complexe, on utilise un toast
-      if (!response.data.allRewards?.length && !response.data.nextTier) {
-        addToast(`${response.data.clientName} : ${response.data.message}`)
-      } else {
-        setLastScan(successData)
-      }
-      loadClients()
-
-      if (response.data.allRewards && response.data.allRewards.length > 0) {
-        setRedeemModal({
-          clientId,
-          clientName: response.data.clientName,
-          rewards: response.data.allRewards,
-          currentPoints: response.data.newPoints
-        })
-      }
+      setTransactionData(null);
+      loadClients();
     } catch (err) {
-      setLastScan({ success: false, error: err.response?.data?.error || 'Erreur scan' })
-      setTimeout(() => setLastScan(null), 4000)
+      addToast(err.response?.data?.error || 'Erreur lors de la validation', 'error');
     } finally {
-      setLoading(false)
+      setIsFinalizing(false);
     }
   }
 
@@ -447,7 +443,7 @@ function ProDashboard() {
                 </div>
               </div>
 
-              {!inputModal && !redeemModal && !lastScan?.nextTier && (
+              {!transactionData && (
                 <div className="pro-scanner-area">
                   {!scannerActive ? (
                     <button className="pro-scan-btn-premium" onClick={() => setScannerActive(true)}>
@@ -480,138 +476,117 @@ function ProDashboard() {
                 </div>
               )}
 
-              {/* Modal de saisie manuelle PREMIUM */}
-              {inputModal && !redeemModal && (
+              {/* ===== NOUVEAU : PANNEAU DE TRANSACTION UNIFIÉ ===== */}
+              {transactionData && (
                 <div className="scan-action-modal">
-                   <div className="pro-modal-box-premium">
-                      <div className="modal-header">
-                        <Users size={24} />
-                        <h3>Ajouter des points</h3>
-                      </div>
-                      
-                      <div className="points-input-section">
-                        <div className="points-current-val">{pointsToAdd || '0'}</div>
-                        <div className="points-shortcuts">
-                          {[5, 10, 20, 50].map(val => (
-                            <button key={val} type="button" onClick={() => setPointsToAdd(val.toString())}>+{val}</button>
-                          ))}
+                   <div className="pro-modal-box-premium transaction-panel">
+                      <div className="modal-header-v2">
+                        <div className="client-badge-large">
+                          <div className="client-avatar-v2">{transactionData.clientName[0]}</div>
+                          <div className="client-meta-v2">
+                            <h3>{transactionData.clientName}</h3>
+                            <span className="current-pts-badge">{transactionData.currentPoints} pts actuels</span>
+                          </div>
                         </div>
-                        <input 
-                          type="number" 
-                          autoFocus
-                          value={pointsToAdd} 
-                          onChange={(e) => setPointsToAdd(e.target.value)} 
-                          placeholder="Ou saisissez ici..."
-                          className="manual-points-input"
-                        />
+                        <button className="close-btn-v2" onClick={() => setTransactionData(null)}><X size={20} /></button>
                       </div>
 
-                      <div className="modal-footer-actions">
-                        <button className="pro-btn-secondary-premium" onClick={() => setInputModal(null)}>Annuler</button>
-                        <button className="pro-btn-primary-premium" onClick={() => handleScanSubmit(inputModal.clientId, pointsToAdd)}>
-                          Confirmer <Check size={18} />
+                      <div className="transaction-scroll-area">
+                        {/* Section Cadeaux */}
+                        <div className="trans-section">
+                           <div className="trans-section-title">
+                             <Award size={18} />
+                             <h4>Cadeaux & Récompenses</h4>
+                           </div>
+                           <div className="rewards-grid-v2">
+                              {transactionData.allRewards.length === 0 ? (
+                                <p className="no-rewards-v2">Aucun cadeau configuré</p>
+                              ) : (
+                                transactionData.allRewards.map(reward => {
+                                  const canAfford = transactionData.currentPoints >= reward.points_required;
+                                  const isSelected = selectedReward?.id === reward.id;
+                                  return (
+                                    <button 
+                                      key={reward.id} 
+                                      className={`reward-card-v2 ${isSelected ? 'selected' : ''} ${!canAfford ? 'disabled' : ''}`}
+                                      disabled={!canAfford}
+                                      onClick={() => setSelectedReward(isSelected ? null : reward)}
+                                    >
+                                      <div className="reward-card-icon">
+                                        {isSelected ? <Check size={16} /> : <Award size={16} />}
+                                      </div>
+                                      <div className="reward-card-content">
+                                        <strong>{reward.title}</strong>
+                                        <span>{reward.points_required} pts</span>
+                                      </div>
+                                    </button>
+                                  );
+                                })
+                              )}
+                           </div>
+                        </div>
+
+                        {/* Section Points */}
+                        <div className="trans-section">
+                           <div className="trans-section-title">
+                             <Plus size={18} />
+                             <h4>Points à ajouter</h4>
+                           </div>
+                           <div className="points-input-v2">
+                              <div className="pts-shortcuts-v2">
+                                {[5, 10, 20, 50].map(val => (
+                                  <button 
+                                    key={val} 
+                                    className={pointsToAdd === val.toString() ? 'active' : ''} 
+                                    onClick={() => setPointsToAdd(val.toString())}
+                                  >
+                                    +{val}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="pts-manual-v2">
+                                <input 
+                                  type="number" 
+                                  placeholder="Autre montant..." 
+                                  value={pointsToAdd}
+                                  onChange={(e) => setPointsToAdd(e.target.value)}
+                                />
+                                <span className="pts-unit-v2">pts</span>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+
+                      {/* Barème de progression (Motivation) */}
+                      {transactionData.nextTier && !selectedReward && (
+                        <div className="next-tier-hint-v2">
+                           <div className="hint-info">
+                              <span>Palier suivant : <strong>{transactionData.nextTier.title}</strong></span>
+                              <small>Encore {transactionData.nextTier.points_required - transactionData.currentPoints} pts</small>
+                           </div>
+                           <div className="hint-bar-bg">
+                              <div className="hint-bar-fill" style={{ width: `${Math.min(100, (transactionData.currentPoints / transactionData.nextTier.points_required) * 100)}%` }}></div>
+                           </div>
+                        </div>
+                      )}
+
+                      <div className="modal-footer-v2">
+                        <div className="summary-v2">
+                           <span className="summary-label">Récapitulatif :</span>
+                           <div className="summary-badges">
+                              {selectedReward && <span className="badge-red">-{selectedReward.points_required}</span>}
+                              {Number(pointsToAdd) > 0 && <span className="badge-green">+{pointsToAdd}</span>}
+                              {!selectedReward && (!pointsToAdd || pointsToAdd === '0') && <span className="badge-none">0 modification</span>}
+                           </div>
+                        </div>
+                        <button 
+                          className="pro-btn-primary-premium finalize-btn" 
+                          disabled={isFinalizing || (!selectedReward && (!pointsToAdd || pointsToAdd === '0'))}
+                          onClick={handleFinalizeTransaction}
+                        >
+                          {isFinalizing ? <Loader2 className="pro-spin" size={20} /> : <><Check size={20} /> Finaliser</>}
                         </button>
                       </div>
-                   </div>
-                </div>
-              )}
-
-              {/* Écran de succès et progression Reward */}
-              {lastScan?.success && (lastScan.nextTier || lastScan.availableRewards) && (
-                <div className="scan-action-modal">
-                   <div className="pro-modal-box-premium success-view">
-                      <div className="success-check-anim">
-                        <div className="circle-check">
-                          <Check size={40} />
-                        </div>
-                      </div>
-
-                      <h2 className="success-title">Points Ajoutés !</h2>
-                      <p className="success-subtitle"><strong>{lastScan.clientName}</strong> dispose maintenant de <strong>{lastScan.newPoints} pts</strong></p>
-
-                      {/* Barre de progression vers le prochain palier */}
-                      {lastScan.nextTier && (
-                        <div className="reward-progress-card">
-                           <div className="progress-info">
-                              <span>Prochain cadeau : <strong>{lastScan.nextTier.title}</strong></span>
-                              <span className="pts-remaining">Encore <strong>{lastScan.nextTier.points_required - lastScan.newPoints}</strong> pts</span>
-                           </div>
-                           <div className="progress-bar-bg">
-                              <div 
-                                className="progress-bar-fill" 
-                                style={{ width: `${Math.min(100, (lastScan.newPoints / lastScan.nextTier.points_required) * 100)}%` }}
-                              ></div>
-                           </div>
-                        </div>
-                      )}
-
-                      {/* Bouton pour voir les récompenses si dispo */}
-                      {(lastScan.availableRewards?.length > 0) ? (
-                        <div className="unlocked-section">
-                           <div className="unlocked-header">
-                              <Award size={18} />
-                              <span>{lastScan.availableRewards.length} Cadeau(x) prêt(s)</span>
-                           </div>
-                           <button className="pro-btn-reward-claim" onClick={() => {
-                              setRedeemModal({
-                                clientId: lastScan.clientId,
-                                clientName: lastScan.clientName,
-                                rewards: lastScan.availableRewards
-                              });
-                           }}>
-                             Utiliser un cadeau maintenant
-                           </button>
-                        </div>
-                      ) : (
-                        <button className="pro-btn-finish" onClick={() => setLastScan(null)}>
-                          Terminer
-                        </button>
-                      )}
-                      
-                      {!lastScan.availableRewards?.length && (
-                        <button className="close-final-btn" onClick={() => setLastScan(null)}><X size={20} /></button>
-                      )}
-                   </div>
-                </div>
-              )}
-
-              {/* Modal de sélection cadeau PREMIUM */}
-              {redeemModal && (
-                <div className="scan-action-modal">
-                   <div className="pro-modal-box-premium reward-selection">
-                      <div className="modal-header">
-                        <Award size={24} color="var(--accent)" />
-                        <h3>Choisir un cadeau</h3>
-                      </div>
-                      
-                      <div className="reward-scroll-list">
-                        {redeemModal.rewards.map(r => {
-                          const isLocked = redeemModal.currentPoints < r.points_required;
-                          return (
-                            <div key={r.id} className={`reward-item-premium ${isLocked ? 'locked' : ''}`}>
-                               <div className="reward-item-info">
-                                  <strong>{r.title}</strong>
-                                  <span>{isLocked ? `Manque ${r.points_required - redeemModal.currentPoints} pts` : `Coût : ${r.points_required} pts`}</span>
-                               </div>
-                               <button 
-                                 className="claim-item-btn" 
-                                 disabled={isLocked}
-                                 onClick={() => handleRedeem(r.id)}
-                               >
-                                 {isLocked ? <Settings size={14} /> : 'Valider'}
-                               </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <button 
-                        className="pro-btn-secondary-premium" 
-                        style={{ width: '100%', marginTop: '15px' }} 
-                        onClick={() => { setRedeemModal(null); setLastScan(null); }}
-                      >
-                         Plus tard
-                      </button>
                    </div>
                 </div>
               )}

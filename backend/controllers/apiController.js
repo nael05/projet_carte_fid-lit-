@@ -628,23 +628,135 @@ export const handleScan = async (req, res) => {
       [empresaId]
     );
 
-    res.json({ 
-      success: true, 
-      clientId,
-      clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, 
-      pointsAdded: pointsToAdd, 
-      newPoints: newPoints,
-      availableRewards: tiers,
-      allRewards: allTiers,
-      nextTier
     });
   } catch (err) {
-    logger.error('Handle scan error for enterprise: ' + empresaId, { 
-      clientId, 
-      error: err.message, 
-      stack: err.stack 
-    });
+    logger.error('Handle scan error', err);
     res.status(500).json({ error: 'Erreur SQL [SCAN]: ' + err.message });
+  }
+};
+ * Recherche les infos d'un client lors d'un scan (Sans modification)
+ */
+export const getScanInfo = async (req, res) => {
+  const { clientId } = req.params;
+  const empresaId = req.user.id;
+
+  try {
+    const [clientRows] = await pool.query(
+      'SELECT nom, prenom, points FROM clients WHERE id = ? AND entreprise_id = ?',
+      [clientId, empresaId]
+    );
+
+    if (clientRows.length === 0) {
+      return res.status(404).json({ error: 'Client non trouvé' });
+    }
+
+    const client = clientRows[0];
+
+    // 1. Récupérer TOUS les paliers pour affichage complet
+    const [allTiers] = await pool.query(
+      'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
+      [empresaId]
+    );
+
+    // 2. Détection du prochain palier (motivation)
+    const [nextTiers] = await pool.query(
+      'SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required > ? ORDER BY points_required ASC LIMIT 1',
+      [empresaId, client.points]
+    );
+
+    res.json({
+      success: true,
+      clientName: `${client.prenom} ${client.nom}`,
+      currentPoints: client.points || 0,
+      allRewards: allTiers,
+      nextTier: nextTiers.length > 0 ? nextTiers[0] : null
+    });
+
+  } catch (err) {
+    logger.error('Error in getScanInfo', err);
+    res.status(500).json({ error: 'Erreur serveur lors de la lecture des infos client' });
+  }
+};
+
+/**
+ * Finalise une transaction complète (Cadeau + Points)
+ */
+export const finalizeFullTransaction = async (req, res) => {
+  const { clientId, pointsToAdd, rewardTierId } = req.body;
+  const empresaId = req.user.id;
+
+  try {
+    // 1. Récupérer le client
+    const [clientRows] = await pool.query(
+      'SELECT points, nom, prenom FROM clients WHERE id = ? AND entreprise_id = ?',
+      [clientId, empresaId]
+    );
+
+    if (clientRows.length === 0) return res.status(404).json({ error: 'Client non trouvé' });
+    const client = clientRows[0];
+    let currentPoints = Number(client.points) || 0;
+    let totalChange = 0;
+    let descriptionParts = [];
+
+    // 2. Gérer le cadeau en premier (si présent)
+    if (rewardTierId) {
+      const [tierRows] = await pool.query(
+        'SELECT id, title, points_required FROM reward_tiers WHERE id = ? AND entreprise_id = ?',
+        [rewardTierId, empresaId]
+      );
+      if (tierRows.length > 0) {
+        const tier = tierRows[0];
+        if (currentPoints >= tier.points_required) {
+          currentPoints -= tier.points_required;
+          totalChange -= tier.points_required;
+          descriptionParts.push(`Cadeau "${tier.title}" utilisé (-${tier.points_required} pts)`);
+          
+          // Log transaction cadeau
+          await pool.query(
+            "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'redeem_reward', ?, ?)",
+            [randomUUID(), clientId, empresaId, -tier.points_required, `Utilisation : ${tier.title}`]
+          );
+        } else {
+          return res.status(400).json({ error: 'Points insuffisants pour ce cadeau' });
+        }
+      }
+    }
+
+    // 3. Ajouter les points du jour
+    const ptsToAdd = Number(pointsToAdd) || 0;
+    if (ptsToAdd > 0) {
+      currentPoints += ptsToAdd;
+      totalChange += ptsToAdd;
+      descriptionParts.push(`${ptsToAdd} points ajoutés pour l'achat`);
+      
+      // Log transaction ajout
+      await pool.query(
+        "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
+        [randomUUID(), clientId, empresaId, ptsToAdd, `${ptsToAdd} points ajoutés`]
+      );
+    }
+
+    // 4. Mettre à jour le solde final
+    await pool.query(
+      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
+      [currentPoints, clientId, empresaId]
+    );
+
+    // 5. Notification de synchronisation
+    const { sendLoyaltyUpdateNotification } = await import('../utils/notificationService.js');
+    sendLoyaltyUpdateNotification(clientId, empresaId, totalChange, rewardTierId ? true : false).catch(e => 
+      logger.warn('Push transaction notification failed', e.message)
+    );
+
+    res.json({
+      success: true,
+      newPoints: currentPoints,
+      message: descriptionParts.join(' | ') || 'Transaction effectuée'
+    });
+
+  } catch (err) {
+    logger.error('Error in finalizeFullTransaction', err);
+    res.status(500).json({ error: 'Erreur lors de la finalisation de la transaction' });
   }
 };
 

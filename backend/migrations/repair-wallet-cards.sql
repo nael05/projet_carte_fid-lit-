@@ -1,0 +1,5 @@
+ALTER TABLE wallet_cards ADD COLUMN IF NOT EXISTS authentication_token VARCHAR(255);
+ALTER TABLE wallet_cards ADD COLUMN IF NOT EXISTS points_balance INT DEFAULT 0;
+ALTER TABLE wallet_cards ADD COLUMN IF NOT EXISTS stamps_balance INT DEFAULT 0;
+ALTER TABLE wallet_cards ADD COLUMN IF NOT EXISTS qr_code_value VARCHAR(255);
+ALTER TABLE wallet_cards ADD COLUMN IF NOT EXISTS wallet_added_at TIMESTAMP NULL;

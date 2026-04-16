@@ -257,7 +257,7 @@ INSERT INTO super_admins (id, identifiant, mot_de_passe)
 VALUES (
     'admin-master-001',
     'master_admin',
-    '$2b$10$Bv2X9D.F8Z/8E2QF5q0h2eP1Y7T9V6Z3K5L4M1N2O3P4Q5R6S7T8U' -- password: admin
+    '$2a$10$H.Xh4iIF7FFgGkK55mePoeK7omoprf1ioH6BAfktYNmRnlgxrsPRK' -- password: admin
 ) ON DUPLICATE KEY UPDATE id=id;
 
 -- Summary query

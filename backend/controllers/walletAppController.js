@@ -418,14 +418,14 @@ export const downloadClientPass = async (req, res) => {
         if (existing.length === 0) {
           const googleToken = `GOOGLE_${randomUUID()}`;
           await db.query(
-            `INSERT INTO wallet_cards (client_id, company_id, pass_serial_number, authentication_token, points_balance, stamps_balance, qr_code_value)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO wallet_cards (id, client_id, company_id, pass_serial_number, authentication_token, points_balance, stamps_balance, qr_code_value)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE 
                pass_serial_number = VALUES(pass_serial_number),
                authentication_token = VALUES(authentication_token),
                points_balance = VALUES(points_balance),
                last_updated = NOW()`,
-            [client.id, client.company_id, `GOOGLE_${client.id}`, googleToken, client.points || 0, 0, client.id.toString()]
+            [randomUUID(), client.id, client.company_id, `GOOGLE_${client.id}`, googleToken, client.points || 0, 0, client.id.toString()]
           );
         }
 
@@ -486,14 +486,15 @@ export const downloadClientPass = async (req, res) => {
     // 6️⃣ Sauvegarder en BD (CRITIQUE pour Apple Wallet Sync)
     await db.query(
       `INSERT INTO wallet_cards (
-        client_id, company_id, pass_serial_number, authentication_token,
+        id, client_id, company_id, pass_serial_number, authentication_token,
         points_balance, stamps_balance, qr_code_value
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         pass_serial_number = VALUES(pass_serial_number),
         points_balance = VALUES(points_balance),
         last_updated = NOW()`,
       [
+        randomUUID(),
         client.id,
         client.company_id,
         serialNumber,

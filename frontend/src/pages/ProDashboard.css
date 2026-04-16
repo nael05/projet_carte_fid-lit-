@@ -1767,13 +1767,18 @@ button:active {
 }
 /* ==================== TWO-STEP SCAN FLOW (PREMIUM) ==================== */
 .centered-modal {
+  position: fixed !important;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
   display: flex !important;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: transparent !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .floating-card {

@@ -578,13 +578,16 @@ export const handleScan = async (req, res) => {
 
     const loyaltyConfig = config[0];
     
-    // Calcul des points à ajouter : Priorité à la valeur saisie dans le Scan Modal si elle est valide
-    let pointsToAdd = Number(points_to_add);
+    // Calcul des points à ajouter : Priorité à la valeur saisie
+    let pointsToAdd = points_to_add !== undefined ? Number(points_to_add) : NaN;
     
-    // Fallback sur la config si rien n'est saisi ou si la valeur est invalide
-    if (isNaN(pointsToAdd) || pointsToAdd <= 0) {
+    // Si la valeur est invalide (pas un nombre), on prend la config auto
+    if (isNaN(pointsToAdd)) {
       pointsToAdd = Number(loyaltyConfig.points_per_purchase) || 10;
     }
+    
+    // On autorise 0 points (si le commerçant veut juste valider le passage sans donner de points)
+    if (pointsToAdd < 0) pointsToAdd = 0;
 
     const currentPoints = Number(clientRows[0].points) || 0;
     const newPoints = currentPoints + pointsToAdd;
@@ -600,43 +603,19 @@ export const handleScan = async (req, res) => {
       [transactionId, clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
     );
 
-    // 🔄 Sync via le service de notification (qui gère déjà l'Apple Update interne)
-
-    // 🔔 Envoi de la notification Push VISUELLE (Alerte "Points ajoutés ! ✨")
-    // On ne fait pas de 'await' ici pour que le Dashboard réponde instantanément au commerçant.
-    // La notification partira en arrière-plan.
-    sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false).catch(e => 
+    // 🔄 Sync via le service de notification (Apple + Google)
+    // On AWAIT ici pour que le "Succès" au tableau de bord soit synchronisé avec le "Ding" sur le téléphone
+    await sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false).catch(e => 
       logger.warn('Push scan notification failed', e.message)
     );
-
-    // 6. Détection des récompenses disponibles (Logique filtrée)
-    const [tiers] = await pool.query(
-      'SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required <= ? ORDER BY points_required ASC', 
-      [empresaId, newPoints]
-    );
-
-    // 7. Détection du prochain palier (motivation)
-    const [nextTiers] = await pool.query(
-      'SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required > ? ORDER BY points_required ASC LIMIT 1',
-      [empresaId, newPoints]
-    );
-    const nextTier = nextTiers.length > 0 ? nextTiers[0] : null;
-
-    // 8. Récupérer TOUS les paliers pour affichage complet
-    const [allTiers] = await pool.query(
-      'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
-      [empresaId]
-    );
-
+    
+    // 🚀 RÉPONSE RAPIDE : On ne recalcule pas tout (le frontend a déjà les infos du lookup)
     res.json({ 
       success: true, 
       clientId,
       clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, 
       pointsAdded: pointsToAdd, 
-      newPoints: newPoints,
-      availableRewards: tiers,
-      allRewards: allTiers,
-      nextTier
+      newPoints: newPoints
     });
   } catch (err) {
     logger.error('Handle scan error', err);
@@ -1156,10 +1135,7 @@ export const redeemReward = async (req, res) => {
     }
 
     
-    // 5. On renvoie les récompenses encore disponibles après ce retrait
-    const [availableRewards] = await pool.query('SELECT * FROM reward_tiers WHERE entreprise_id = ? AND points_required <= ? ORDER BY points_required ASC', [empresaId, newPoints]);
-    
-    res.json({ success: true, message: 'Cadeau validé avec succès ! (-' + tier.points_required + ' pts)', newPoints, availableRewards });
+    res.json({ success: true, message: 'Cadeau validé ! (-' + tier.points_required + ' pts)', newPoints });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

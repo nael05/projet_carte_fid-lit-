@@ -171,30 +171,29 @@ export class PassGenerator {
       template.setCertificate(cleanCert);
       template.setPrivateKey(cleanKey, this.certPassword || undefined);
 
-      const logoBuffer = await this.fetchImageBuffer(customization?.apple_logo_url);
+      // 2. Chargement PARALLÈLE des images (Gain de temps majeur)
+      const [logoBuffer, iconBuffer, stripBuffer] = await Promise.all([
+        this.fetchImageBuffer(customization?.apple_logo_url),
+        this.fetchImageBuffer(customization?.apple_icon_url),
+        this.fetchImageBuffer(customization?.apple_strip_image_url)
+      ]);
+
       if (logoBuffer) {
         await template.images.add("logo", logoBuffer);
-        logger.info('   🖼️ Logo ajouté au pass');
       } else {
-        logger.warn('   ⚠️ Logo manquant, utilisation du défaut');
         const defaultLogo = await this.fetchImageBuffer('https://dummyimage.com/160x50/000/fff.png&text=Logo');
         if (defaultLogo) await template.images.add("logo", defaultLogo);
       }
 
-      const iconBuffer = await this.fetchImageBuffer(customization?.apple_icon_url);
       if (iconBuffer) {
         await template.images.add("icon", iconBuffer);
-        logger.info('   🖼️ Icône ajoutée au pass');
       } else {
-        logger.warn('   ⚠️ Icône manquante, utilisation du défaut');
         const defaultIcon = await this.fetchImageBuffer('https://dummyimage.com/29x29/000/fff.png&text=Icon');
         if (defaultIcon) await template.images.add("icon", defaultIcon);
       }
 
-      const stripBuffer = await this.fetchImageBuffer(customization?.apple_strip_image_url);
       if (stripBuffer) {
         await template.images.add("strip", stripBuffer);
-        logger.info('   🖼️ Strip image ajoutée au pass');
       }
 
       const pass = template.createPass({

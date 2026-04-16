@@ -92,11 +92,11 @@ export class APNService {
       // Apple Wallet exige très strictement un payload vide {"aps": {}}
       notification.rawPayload = { aps: {} };
 
-      // Indiquer explicitement que c'est une notification de background push (obligatoire sous iOS 13+ pour PassKit)
-      notification.pushType = 'background';
+      // Apple Wallet exige le type 'pass' pour l'instantanéité
+      notification.pushType = 'pass';
 
-      // Priorité 5 est requise en pushType 'background' sous iOS 13+ avec "aps": {}
-      notification.priority = 5;
+      // Priorité 10 (Maximum) pour une livraison immédiate
+      notification.priority = 10;
       const topic = (process.env.APPLE_PASS_TYPE_ID || '').trim();
       notification.topic = topic;
 

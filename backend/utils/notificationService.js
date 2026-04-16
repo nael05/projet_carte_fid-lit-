@@ -53,23 +53,18 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
       [clientId]
     );
 
-    if (registrations.length === 0) {
-      logger.info(`ℹ️ Pas d'appareil push trouvé pour client ${clientId}, notification visuelle ignorée.`);
-      return;
-    }
-
-    // 5. Lancer tout en parallèle (Apple et Google)
-    const { walletSyncService } = await import('./walletSyncService.js');
+    // 5. Lancer tout en parallèle (Apple et Google) - SANS ATTENDRE (Un-await pour dashboard instantané)
+    const walletSyncModule = await import('./walletSyncService.js');
+    const walletSyncService = walletSyncModule.default;
     const pushTokens = registrations.map(r => r.push_token);
 
-    // On ne fait PAS de await ici sur syncClientWallet pour libérer l'API immédiatement
-    // Mais on attend les Alertes visuelles pour s'assurer qu'elles partent
-    await Promise.all([
+    // On lance en arrière-plan pour ne pas faire attendre le commerçant sur son dashboard
+    Promise.all([
       walletSyncService.syncClientWallet(clientId, empresaId),
       registrations.length > 0 ? apnService.sendBulkAlertNotifications(pushTokens, title, body) : Promise.resolve()
     ]).catch(err => logger.error('Notification parallel error', err));
 
-    logger.info(`✅ Flux de notification complété pour ${clientId}`);
+    logger.info(`✅ Flux de notification lancé en tâche de fond pour ${clientId}`);
 
   } catch (err) {
     logger.error(`❌ Erreur service notification fidélité: ${err.message}`);

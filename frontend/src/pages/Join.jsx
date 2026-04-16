@@ -301,14 +301,35 @@ function Join() {
 
           <button 
             type="submit" 
-            className="btn-luxe-submit"
+            className="btn-luxe-submit-wallet"
             disabled={formSubmitting}
-            style={{ width: '100%' }}
+            style={{ 
+              width: '100%', 
+              background: 'transparent', 
+              padding: 0, 
+              border: 'none',
+              boxShadow: 'none',
+              marginTop: '12px'
+            }}
           >
             {formSubmitting ? (
-              <Loader2 className="spin" size={20} />
+              <div className="btn-luxe-submit" style={{ width: '100%' }}>
+                <Loader2 className="spin" size={20} />
+              </div>
             ) : (
-              <>Créer ma carte <Check size={20} /></>
+              <img 
+                src={selectedWallet === 'apple' ? '/apple-wallet-button.png' : '/google-wallet-button.svg'} 
+                alt={selectedWallet === 'apple' ? 'Add to Apple Wallet' : 'Save to Google Pay'}
+                style={{ 
+                  width: '100%', 
+                  height: 'auto', 
+                  maxHeight: '54px', 
+                  objectFit: 'contain',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease'
+                }}
+                className="wallet-submit-img"
+              />
             )}
           </button>
         </form>

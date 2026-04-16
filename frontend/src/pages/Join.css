@@ -37,6 +37,15 @@
   }
 }
 
+.wallet-submit-img:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+.wallet-submit-img:active {
+  transform: scale(0.98);
+}
+
 .join-btn-submit {
   width: 100%;
   margin-top: 12px;

@@ -11,6 +11,15 @@ import './Home.css'
 function Home() {
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark'
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark-mode')
+    } else {
+      document.documentElement.classList.remove('dark-mode')
+    }
+  }, [])
+
   return (
     <div className="home-luxe-container">
       {/* Background Decorative Elements */}

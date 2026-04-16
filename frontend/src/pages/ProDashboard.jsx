@@ -11,7 +11,10 @@ import './ProDashboard.css'
 
 function ProDashboard() {
   const [activeTab, setActiveTab] = useState('scanner')
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === null ? true : saved === 'dark';
+  })
   const [toasts, setToasts] = useState([])
   const [clients, setClients] = useState([])
   const [scannerActive, setScannerActive] = useState(false)

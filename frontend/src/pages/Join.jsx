@@ -22,6 +22,16 @@ function Join() {
   })
   const [selectedWallet, setSelectedWallet] = useState('apple')
 
+  useEffect(() => {
+    // Force dark mode by default for Premium Experience
+    const savedTheme = localStorage.getItem('theme') || 'dark'
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark-mode')
+    } else {
+      document.documentElement.classList.remove('dark-mode')
+    }
+  }, [])
+
   // Charger les infos de l'entreprise
   useEffect(() => {
     if (!empresaId) {

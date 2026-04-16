@@ -19,10 +19,12 @@ function ProLogin() {
 
   // Theme initialization
   useEffect(() => {
-    const savedTheme = localStorage.getItem('fidelyz-theme')
+    const savedTheme = localStorage.getItem('theme') || 'dark'
     if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark-mode')
       document.documentElement.setAttribute('data-theme', 'dark')
     } else {
+      document.documentElement.classList.remove('dark-mode')
       document.documentElement.setAttribute('data-theme', 'light')
     }
   }, [])

@@ -360,9 +360,9 @@ export const getUpdatedPass = async (req, res) => {
       return res.status(503).json({ error: 'Service temporairement indisponible (Génération Pass)' });
     }
 
-    // 4️⃣ Mettre à jour la date de génération et le SOLDE synchronisé (Précision ms)
+    // 4️⃣ Mettre à jour SEULEMENT le solde synchronisé (NE PAS toucher à last_updated ici pour éviter les boucles infinies)
     await db.query(
-      'UPDATE wallet_cards SET points_balance = ?, last_updated = NOW(3) WHERE pass_serial_number = ?',
+      'UPDATE wallet_cards SET points_balance = ? WHERE pass_serial_number = ?',
       [currentPoints, serialNumber]
     );
 

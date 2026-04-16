@@ -64,15 +64,20 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
       return;
     }
 
-    // 5. Envoyer les notifications d'alerte (visibles)
+    // 5. Déclencher la synchronisation technique (DB + Google + Signal Silencieux Apple)
+    // On le fait en premier pour que les données soient prêtes quand l'iPhone se réveillera avec l'alerte
+    const { walletSyncService } = await import('./walletSyncService.js');
+    await walletSyncService.syncClientWallet(clientId, empresaId).catch(err => 
+      logger.error('Sync failed inside notificationService', err)
+    );
+
+    // 6. Envoyer la notification d'alerte VISIBLE (Alerte Apple)
+    // L'iPhone recevra l'alerte, et comme syncClientWallet a déjà été appelé,
+    // le signal silencieux est déjà parti ou en route.
     const pushTokens = registrations.map(r => r.push_token);
     await apnService.sendBulkAlertNotifications(pushTokens, title, body);
 
-    // 6. Envoyer le signal silencieux (Update) pour forcer Apple Wallet à rafraîchir le contenu
-    // Cela évite que le client voie la notification mais que la carte ne soit pas à jour.
-    await apnService.sendBulkUpdateNotifications(pushTokens);
-
-    logger.info(`✅ Notification de fidélité et signal Update envoyés au client ${clientId}: ${body}`);
+    logger.info(`✅ Notification de fidélité envoyée au client ${clientId}: ${body}`);
 
   } catch (err) {
     logger.error(`❌ Erreur service notification fidélité: ${err.message}`);

@@ -600,10 +600,7 @@ export const handleScan = async (req, res) => {
       [transactionId, clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
     );
 
-    // 🔄 Sync TOUS les Wallets (Apple et Google) en arrière-plan (pour plus de réactivité)
-    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
-      logger.error('Wallet sync failed in handleScan', { error: e.message })
-    );
+    // 🔄 Sync via le service de notification (qui gère déjà l'Apple Update interne)
 
     // 🔔 Envoi de la notification Push VISUELLE (Alerte "Points ajoutés ! ✨")
     // On ne fait pas de 'await' ici pour que le Dashboard réponde instantanément au commerçant.
@@ -678,10 +675,7 @@ export const adjustPoints = async (req, res) => {
       [newPoints, clientId, empresaId]
     );
 
-    // 🔄 Sync TOUS les Wallets (Apple et Google) en arrière-plan
-    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
-      logger.error('Wallet sync failed in adjustPoints', { error: e.message })
-    );
+    // 🔄 Sync via le service de notification
 
     // Envoi de la notification Push (Visuelle + Silencieuse)
     // Non-bloquant pour une réactivité instantanée du Dashboard

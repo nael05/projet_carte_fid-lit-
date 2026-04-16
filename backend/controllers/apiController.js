@@ -628,6 +628,15 @@ export const handleScan = async (req, res) => {
       [empresaId]
     );
 
+    res.json({ 
+      success: true, 
+      clientId,
+      clientName: clientRows[0].prenom + ' ' + clientRows[0].nom, 
+      pointsAdded: pointsToAdd, 
+      newPoints: newPoints,
+      availableRewards: tiers,
+      allRewards: allTiers,
+      nextTier
     });
   } catch (err) {
     logger.error('Handle scan error', err);

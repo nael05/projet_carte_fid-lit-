@@ -578,16 +578,15 @@ export const handleScan = async (req, res) => {
 
     const loyaltyConfig = config[0];
     
-    // Calcul des points à ajouter : Priorité à la valeur saisie
-    let pointsToAdd = points_to_add !== undefined ? Number(points_to_add) : NaN;
+    // Calcul des points à ajouter : On vérifie si on a une valeur numérique valide > 0
+    let pointsToAdd = Number(points_to_add);
     
-    // Si la valeur est invalide (pas un nombre), on prend la config auto
-    if (isNaN(pointsToAdd)) {
+    // Si la valeur est 0, vide ou invalide, et qu'on est en mode auto, on prend la config
+    if ((isNaN(pointsToAdd) || pointsToAdd <= 0) && loyaltyConfig.points_adding_mode === 'auto') {
       pointsToAdd = Number(loyaltyConfig.points_per_purchase) || 10;
+    } else if (isNaN(pointsToAdd) || pointsToAdd < 0) {
+      pointsToAdd = 0; // Sécurité pour le mode manuel
     }
-    
-    // On autorise 0 points (si le commerçant veut juste valider le passage sans donner de points)
-    if (pointsToAdd < 0) pointsToAdd = 0;
 
     const currentPoints = Number(clientRows[0].points) || 0;
     const newPoints = currentPoints + pointsToAdd;

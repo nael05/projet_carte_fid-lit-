@@ -6,7 +6,7 @@ import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 import CardCustomizer from '../components/CardCustomizer'
-import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2, Sun, Moon } from 'lucide-react'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2, Sun, Moon, Gift, Lock, ChevronRight, PlusCircle } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {

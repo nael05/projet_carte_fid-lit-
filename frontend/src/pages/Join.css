@@ -1,150 +1,40 @@
-/* ============================================================
-   JOIN PAGE — Client Registration & Card Creation
-   Premium Slate Grey — Glassmorphism Edition
-   ============================================================ */
+@import './Auth.css';
 
-.join-container {
-  min-height: 100vh;
-  min-height: 100dvh;
-  background: radial-gradient(circle at top right, #1e293b, #020617);
-  padding: 60px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow-x: hidden;
+/* Spécificités pour la page d'inscription Luxe */
+
+.luxe-auth-card {
+  max-width: 500px !important;
 }
 
-/* Background Accents */
-.join-container::before {
-  content: '';
-  position: absolute;
-  top: -10%; right: -10%;
-  width: 40%; height: 40%;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.08), transparent);
-  filter: blur(80px);
-  z-index: 0;
+/* Animations additionnelles pour les options de wallet */
+.luxe-wallet-opt {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Loading & Error States */
-.join-loading, .join-error {
-  background: var(--glass-bg);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: 40px;
-  max-width: 460px;
-  width: 100%;
-  text-align: center;
-  box-shadow: var(--shadow-lg);
-  color: var(--text-primary);
-  z-index: 1;
+.luxe-wallet-opt:hover:not(.active) {
+  background: var(--bg-hover) !important;
+  transform: translateY(-1px);
 }
 
-/* Main Card */
-.join-card {
-  background: var(--glass-bg);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl), 0 0 40px rgba(0,0,0,0.3);
-  max-width: 540px;
-  width: 100%;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
+.luxe-wallet-opt.active {
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px var(--accent-light);
 }
 
-/* Header */
-.join-header {
-  padding: 48px 40px 24px;
-  text-align: center;
-}
-
-.join-logo-wrapper {
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: center;
-}
-
-.join-logo-container {
-  width: 80px; height: 80px;
-  background: white;
-  padding: 12px;
-  border-radius: 22px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  display: flex; align-items: center; justify-content: center;
-}
-
-.join-logo-container img {
-  max-width: 100%; max-height: 100%; object-fit: contain;
-}
-
-.join-header h1 {
-  margin: 0 0 12px;
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  color: #ffffff;
-  line-height: 1;
-}
-
-.join-company {
-  margin: 0;
-  font-size: 16px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.join-company strong {
-  color: #3b82f6;
-  font-weight: 700;
-}
-
-/* Form Content */
-.join-form {
-  padding: 32px 40px 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 600;
-  margin-bottom: 10px;
-  font-size: 14px;
-  padding-left: 2px;
-}
-
-.form-group input {
-  padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  font-size: 16px;
-  color: #ffffff;
-  transition: var(--transition);
-}
-
-.form-group input:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+/* Responsive fixes */
+@media (max-width: 640px) {
+  .luxe-auth-container {
+    padding: 20px;
+    background: var(--bg-app);
+  }
+  
+  .luxe-auth-card {
+    padding: 40px 24px;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    backdrop-filter: none;
+  }
 }
 
 .join-btn-submit {

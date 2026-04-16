@@ -165,65 +165,61 @@ function Join() {
   }
 
   return (
-    <div className="join-container">
-      <div className="join-card">
-        {/* Header with Logo */}
-        <div className="join-header">
+    <div className="luxe-auth-container">
+      <div className="luxe-auth-bg"></div>
+      
+      <div className="luxe-auth-card" style={{ maxWidth: '500px' }}>
+        <div className="luxe-auth-header">
           {companyInfo?.logo && (
-            <div className="join-logo-wrapper">
-              <div className="join-logo-container">
-                <img src={companyInfo.logo} alt={companyInfo.nom} />
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+              <div style={{ width: '70px', height: '70px', background: 'white', padding: '10px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}>
+                <img src={companyInfo.logo} alt={companyInfo.nom} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
             </div>
           )}
           <h1>Rejoignez-nous</h1>
           {companyInfo && (
-            <p className="join-company">Carte de fidélité pour <strong>{companyInfo.nom}</strong></p>
+            <p>Votre carte de fidélité chez <strong>{companyInfo.nom}</strong></p>
           )}
         </div>
 
-        {/* Form Content */}
-        <form onSubmit={handleSubmit} className="join-form">
-          {error && (
-            <div className="alert error" style={{ borderRadius: '12px', fontSize: '13px' }}>
-              <AlertCircle size={16} /> <span>{error}</span>
-            </div>
-          )}
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="firstName">Prénom</label>
-              <input
-                id="firstName"
-                type="text"
-                name="firstName"
-                placeholder="Votre prénom"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                disabled={formSubmitting}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="lastName">Nom</label>
-              <input
-                id="lastName"
-                type="text"
-                name="lastName"
-                placeholder="Votre nom"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                disabled={formSubmitting}
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="luxe-auth-form">
+          <div className="luxe-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+             <div className="luxe-form-group">
+                <label htmlFor="firstName">Prénom</label>
+                <input
+                  id="firstName"
+                  className="luxe-input"
+                  type="text"
+                  name="firstName"
+                  placeholder="Jean"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  disabled={formSubmitting}
+                  required
+                />
+              </div>
+              <div className="luxe-form-group">
+                <label htmlFor="lastName">Nom</label>
+                <input
+                  id="lastName"
+                  className="luxe-input"
+                  type="text"
+                  name="lastName"
+                  placeholder="Dupont"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  disabled={formSubmitting}
+                  required
+                />
+              </div>
           </div>
 
-          <div className="form-group">
+          <div className="luxe-form-group">
             <label htmlFor="email">Email</label>
             <input
               id="email"
+              className="luxe-input"
               type="email"
               name="email"
               placeholder="votre@email.com"
@@ -234,10 +230,11 @@ function Join() {
             />
           </div>
 
-          <div className="form-group">
+          <div className="luxe-form-group">
             <label htmlFor="phone">Téléphone</label>
             <input
               id="phone"
+              className="luxe-input"
               type="tel"
               name="phone"
               placeholder="06 12 34 56 78"
@@ -248,44 +245,70 @@ function Join() {
             />
           </div>
 
-          <div className="wallet-selector-group">
-            <label className="wallet-selector-label" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: '500', marginBottom: '8px' }}>
-              INSTALLER SUR :
-            </label>
-            <div className="wallet-options">
+          <div className="luxe-form-group">
+            <label style={{ fontSize: '11px', opacity: 0.6 }}>INSTALLER SUR :</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '4px' }}>
               <div
-                className={`wallet-option ${selectedWallet === 'apple' ? 'active' : ''}`}
+                className={`luxe-wallet-opt ${selectedWallet === 'apple' ? 'active' : ''}`}
                 onClick={() => setSelectedWallet('apple')}
+                style={{
+                  padding: '12px',
+                  borderRadius: '16px',
+                  border: '1px solid var(--border-light)',
+                  background: selectedWallet === 'apple' ? 'var(--accent-light)' : 'var(--bg-subtle)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  cursor: 'pointer', transition: 'all 0.3s ease',
+                  borderColor: selectedWallet === 'apple' ? 'var(--accent)' : 'var(--border-light)'
+                }}
               >
-                <Smartphone size={24} color={selectedWallet === 'apple' ? '#3b82f6' : 'rgba(255,255,255,0.3)'} />
-                <span>iPhone</span>
+                <Smartphone size={18} color={selectedWallet === 'apple' ? 'var(--accent)' : 'var(--text-tertiary)'} />
+                <span style={{ fontSize: '14px', fontWeight: '600', color: selectedWallet === 'apple' ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>iPhone</span>
               </div>
               <div
-                className={`wallet-option ${selectedWallet === 'google' ? 'active' : ''}`}
+                className={`luxe-wallet-opt ${selectedWallet === 'google' ? 'active' : ''}`}
                 onClick={() => setSelectedWallet('google')}
+                style={{
+                  padding: '12px',
+                  borderRadius: '16px',
+                  border: '1px solid var(--border-light)',
+                  background: selectedWallet === 'google' ? 'var(--accent-light)' : 'var(--bg-subtle)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  cursor: 'pointer', transition: 'all 0.3s ease',
+                  borderColor: selectedWallet === 'google' ? 'var(--accent)' : 'var(--border-light)'
+                }}
               >
-                <Smartphone size={24} color={selectedWallet === 'google' ? '#3b82f6' : 'rgba(255,255,255,0.3)'} style={{ transform: 'rotate(180deg)' }} />
-                <span>Android</span>
+                <Smartphone size={18} color={selectedWallet === 'google' ? 'var(--accent)' : 'var(--text-tertiary)'} style={{ transform: 'rotate(180deg)' }} />
+                <span style={{ fontSize: '14px', fontWeight: '600', color: selectedWallet === 'google' ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>Android</span>
               </div>
             </div>
           </div>
 
-          <button type="submit" className="join-btn-submit" disabled={formSubmitting}>
+          {error && (
+            <div className="luxe-alert error">
+              <AlertCircle size={18} /> <span>{error}</span>
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="btn-luxe-submit"
+            disabled={formSubmitting}
+            style={{ width: '100%' }}
+          >
             {formSubmitting ? (
-              <Loader2 className="animate-spin" size={20} />
+              <Loader2 className="spin" size={20} />
             ) : (
-              <>C'est parti ! <Check size={20} /></>
+              <>Créer ma carte <Check size={20} /></>
             )}
           </button>
         </form>
 
-        <div className="join-info-footer">
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-             Plateforme de fidélité sécurisée par <strong>Fidelyz</strong>
-          </p>
+        <div className="luxe-auth-footer">
+          <p>© 2026 Fidelyz • Plateforme de Fidélité Pro</p>
         </div>
       </div>
     </div>
+
 
   )
 }

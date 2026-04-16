@@ -167,39 +167,37 @@ function Join() {
   return (
     <div className="join-container">
       <div className="join-card">
-        {/* Header */}
+        {/* Header with Logo */}
         <div className="join-header">
-          <button className="join-back" onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ArrowLeft size={18} /> Retour
-          </button>
-          <h1>Créer votre carte de fidélité</h1>
+          {companyInfo?.logo && (
+            <div className="join-logo-wrapper">
+              <div className="join-logo-container">
+                <img src={companyInfo.logo} alt={companyInfo.nom} />
+              </div>
+            </div>
+          )}
+          <h1>Rejoignez-nous</h1>
           {companyInfo && (
-            <p className="join-company">pour <strong>{companyInfo.nom}</strong></p>
+            <p className="join-company">Carte de fidélité pour <strong>{companyInfo.nom}</strong></p>
           )}
         </div>
 
-        {/* Alerts */}
-        {error && (
-          <div className="alert error">
-            <AlertCircle size={18} /> <span>{error}</span>
-          </div>
-        )}
-        {success && (
-          <div className="alert success">
-            <CheckCircle2 size={18} /> <span>{success}</span>
-          </div>
-        )}
-
-        {/* Form */}
+        {/* Form Content */}
         <form onSubmit={handleSubmit} className="join-form">
+          {error && (
+            <div className="alert error" style={{ borderRadius: '12px', fontSize: '13px' }}>
+              <AlertCircle size={16} /> <span>{error}</span>
+            </div>
+          )}
+          
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="firstName">Prénom *</label>
+              <label htmlFor="firstName">Prénom</label>
               <input
                 id="firstName"
                 type="text"
                 name="firstName"
-                placeholder="Jean"
+                placeholder="Votre prénom"
                 value={formData.firstName}
                 onChange={handleInputChange}
                 disabled={formSubmitting}
@@ -208,12 +206,12 @@ function Join() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="lastName">Nom *</label>
+              <label htmlFor="lastName">Nom</label>
               <input
                 id="lastName"
                 type="text"
                 name="lastName"
-                placeholder="Dupont"
+                placeholder="Votre nom"
                 value={formData.lastName}
                 onChange={handleInputChange}
                 disabled={formSubmitting}
@@ -223,12 +221,12 @@ function Join() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email *</label>
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
               name="email"
-              placeholder="jean.dupont@example.com"
+              placeholder="votre@email.com"
               value={formData.email}
               onChange={handleInputChange}
               disabled={formSubmitting}
@@ -237,12 +235,12 @@ function Join() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone">Numéro de téléphone *</label>
+            <label htmlFor="phone">Téléphone</label>
             <input
               id="phone"
               type="tel"
               name="phone"
-              placeholder="+33 6 12 34 56 78"
+              placeholder="06 12 34 56 78"
               value={formData.phone}
               onChange={handleInputChange}
               disabled={formSubmitting}
@@ -250,49 +248,45 @@ function Join() {
             />
           </div>
 
-          {/* Wallet Selector */}
           <div className="wallet-selector-group">
-            <label className="wallet-selector-label">Quel type de smartphone utilisez-vous ?</label>
+            <label className="wallet-selector-label" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: '500', marginBottom: '8px' }}>
+              INSTALLER SUR :
+            </label>
             <div className="wallet-options">
               <div
                 className={`wallet-option ${selectedWallet === 'apple' ? 'active' : ''}`}
                 onClick={() => setSelectedWallet('apple')}
               >
-                <Smartphone size={24} />
+                <Smartphone size={24} color={selectedWallet === 'apple' ? '#3b82f6' : 'rgba(255,255,255,0.3)'} />
                 <span>iPhone</span>
               </div>
               <div
                 className={`wallet-option ${selectedWallet === 'google' ? 'active' : ''}`}
                 onClick={() => setSelectedWallet('google')}
               >
-                <Smartphone size={24} style={{ transform: 'rotate(180deg)' }} />
+                <Smartphone size={24} color={selectedWallet === 'google' ? '#3b82f6' : 'rgba(255,255,255,0.3)'} style={{ transform: 'rotate(180deg)' }} />
                 <span>Android</span>
               </div>
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={formSubmitting}
-            style={{ width: '100%', marginTop: 'var(--space-2)' }}
-          >
+          <button type="submit" className="join-btn-submit" disabled={formSubmitting}>
             {formSubmitting ? (
-              <><Loader2 className="animate-spin" size={18} style={{ animation: 'spin 1s linear infinite' }} /> Création en cours...</>
+              <Loader2 className="animate-spin" size={20} />
             ) : (
-              <><Check size={18} /> Créer ma carte</>
+              <>C'est parti ! <Check size={20} /></>
             )}
           </button>
         </form>
 
-        {/* Info Footer */}
-        <div className="join-footer">
-          <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '0' }}>
-            Vos données sont sécurisées et ne seront utilisées que pour votre carte de fidélité.
+        <div className="join-info-footer">
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+             Plateforme de fidélité sécurisée par <strong>Fidelyz</strong>
           </p>
         </div>
       </div>
     </div>
+
   )
 }
 

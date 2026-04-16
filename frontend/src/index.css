@@ -1,81 +1,81 @@
 /* ============================================================
-   FIDELYZ - DESIGN SYSTEM v2
-   Theme: Modern Slate Grey — Premium, Clean, Sophisticated
+   FIDELYZ - PREMIUM DESIGN SYSTEM v3
+   Theme: Slate Grey Luxe — Glassmorphism & Modernity
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* ===== PALETTE CLAIRE (Default) ===== */
-  --bg-app: #F5F5F7;
-  --bg-surface: rgba(255, 255, 255, 0.85); /* For glassmorphism */
-  --bg-elevated: #FFFFFF;
-  --bg-subtle: #F0F0F3;
-  --bg-hover: #E8E8EC;
-  --bg-dark: #1D1D1F;
+  /* ===== PALETTE PREMIUM SLATE (Light Base) ===== */
+  --bg-app: #f8fafc;
+  --bg-surface: rgba(255, 255, 255, 0.82);
+  --bg-elevated: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-hover: #e2e8f0;
+  --bg-dark: #0f172a;
 
-  /* ===== BORDURES ===== */
-  --border-light: rgba(0, 0, 0, 0.08);
-  --border-medium: rgba(0, 0, 0, 0.15);
-  --border-dark: #8E8E93;
-
-  /* ===== TYPOGRAPHIE ===== */
-  --text-primary: #111827;   /* Deep near-black for maximum readability */
-  --text-secondary: #4B5563; /* Sophisticated Slate Gray */
-  --text-tertiary: #9CA3AF;
-  --text-inverse: #FFFFFF;
-
-  /* ===== ACCENT ===== */
-  --accent: #007AFF;
-  --accent-hover: #0066D6;
-  --accent-light: rgba(0, 122, 255, 0.12);
-
-  /* ===== OMBRES ===== */
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
-  --shadow-md: 0 10px 25px rgba(0,0,0,0.08);
-  --shadow-lg: 0 20px 50px rgba(0,0,0,0.12);
-  --shadow-xl: 0 30px 80px rgba(0,0,0,0.18);
-  --shadow-focus: 0 0 0 4px rgba(0, 122, 255, 0.25);
-
-  /* ===== DESIGN SYSTEM V3 UTILS ===== */
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.4);
-  --blur: blur(20px);
+  /* ===== BORDURES & EFFETS ===== */
+  --border-light: rgba(148, 163, 184, 0.15);
+  --border-medium: rgba(148, 163, 184, 0.25);
+  --border-dark: #475569;
   
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --blur: blur(14px);
+
+  /* ===== TYPOGRAPHIE SLATE ===== */
+  --text-primary: #0f172a;   /* Slate 900 */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-tertiary: #94a3b8;  /* Slate 400 */
+  --text-inverse: #ffffff;
+
+  /* ===== ACCENT & ETATS ===== */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-light: rgba(37, 99, 235, 0.1);
+  
+  --success-bg: #f0fdf4;
+  --success-text: #166534;
+  --success-border: #bbf7d0;
+  
+  --error-bg: #fef2f2;
+  --error-text: #991b1b;
+  --error-border: #fecaca;
+
+  /* ===== DESIGN SYSTEM UTILS ===== */
   --radius-sm: 10px;
   --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 32px;
+  --radius-lg: 24px;
+  --radius-xl: 40px;
   
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --font-family: 'Inter', -apple-system, sans-serif;
+  --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
 
-/* ===== MODE SOMBRE (Active via .dark-mode) ===== */
+/* ===== MODE SOMBRE PREMIUM (Premium Slate) ===== */
 .dark-mode {
-  --bg-app: #08090D;      /* Deep Midnight Black */
-  --bg-surface: rgba(17, 19, 26, 0.85);
-  --bg-elevated: #151821;  /* Rich Charcoal Blue */
-  --bg-subtle: #1E222E;
-  --bg-hover: #262B3B;
-  --bg-dark: #FFFFFF;
+  --bg-app: #020617;      /* Slate 950 */
+  --bg-surface: rgba(15, 23, 42, 0.8);
+  --bg-elevated: #0f172a;  /* Slate 900 */
+  --bg-subtle: #1e293b;   /* Slate 800 */
+  --bg-hover: #334155;    /* Slate 700 */
   
-  --border-light: rgba(255, 255, 255, 0.06);
-  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-light: rgba(148, 163, 184, 0.1);
+  --border-medium: rgba(148, 163, 184, 0.2);
   
-  --text-primary: #F8FAFC;   /* Crisp Slate White */
-  --text-secondary: #94A3B8; /* Muted Slate Gray */
-  --text-tertiary: #64748B;
-  --text-inverse: #000000;
+  --text-primary: #f8fafc;   /* Slate 50 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --text-tertiary: #64748b;  /* Slate 500 */
   
-  --accent-light: rgba(59, 130, 246, 0.15);
-  
-  --shadow-sm: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-md: 0 12px 30px rgba(0,0,0,0.5);
-  --shadow-lg: 0 25px 60px rgba(0,0,0,0.6);
-  
-  --glass-bg: rgba(13, 15, 21, 0.78);
+  --glass-bg: rgba(15, 23, 42, 0.85);
   --glass-border: rgba(255, 255, 255, 0.05);
+  
+  --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.5);
 }
 
 /* ============================================================

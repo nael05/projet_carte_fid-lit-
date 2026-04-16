@@ -1,116 +1,120 @@
 /* ============================================================
    JOIN PAGE — Client Registration & Card Creation
-   Modern Slate Grey Theme
+   Premium Slate Grey — Glassmorphism Edition
    ============================================================ */
 
 .join-container {
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--bg-app);
-  padding: 40px 20px;
+  background: radial-gradient(circle at top right, #1e293b, #020617);
+  padding: 60px 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Background Accents */
+.join-container::before {
+  content: '';
+  position: absolute;
+  top: -10%; right: -10%;
+  width: 40%; height: 40%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.08), transparent);
+  filter: blur(80px);
+  z-index: 0;
 }
 
 /* Loading & Error States */
 .join-loading, .join-error {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 40px;
   max-width: 460px;
   width: 100%;
   text-align: center;
   box-shadow: var(--shadow-lg);
-}
-
-.join-loading p { color: var(--text-secondary); margin-top: 12px; }
-
-.join-error p {
-  color: var(--error-text);
-  background: var(--error-bg);
-  padding: 16px;
-  border-radius: var(--radius-md);
-  margin-bottom: 24px;
-  border: 1px solid var(--error-border);
-  font-size: 14px;
+  color: var(--text-primary);
+  z-index: 1;
 }
 
 /* Main Card */
 .join-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  max-width: 520px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl), 0 0 40px rgba(0,0,0,0.3);
+  max-width: 540px;
   width: 100%;
   overflow: hidden;
   position: relative;
+  z-index: 1;
 }
 
 /* Header */
 .join-header {
-  padding: 40px 32px 24px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-light);
-  position: relative;
+  padding: 48px 40px 24px;
+  text-align: center;
 }
 
-.join-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
+.join-logo-wrapper {
   margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
 }
 
-.join-back:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+.join-logo-container {
+  width: 80px; height: 80px;
+  background: white;
+  padding: 12px;
+  border-radius: 22px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.join-logo-container img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
 }
 
 .join-header h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: var(--text-primary);
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: #ffffff;
+  line-height: 1;
 }
 
 .join-company {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-secondary);
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .join-company strong {
-  color: var(--text-primary);
-  font-weight: 600;
+  color: #3b82f6;
+  font-weight: 700;
 }
 
 /* Form Content */
 .join-form {
-  padding: 32px;
+  padding: 32px 40px 48px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 .form-group {
@@ -119,117 +123,106 @@
 }
 
 .form-group label {
-  color: var(--text-secondary);
-  font-weight: 500;
-  margin-bottom: 8px;
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 14px;
+  padding-left: 2px;
 }
 
 .form-group input {
-  padding: 12px 16px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  font-size: 15px;
-  font-family: var(--font-family);
-  background: var(--bg-surface);
-  color: var(--text-primary);
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  font-size: 16px;
+  color: #ffffff;
   transition: var(--transition);
-}
-
-.form-group input::placeholder {
-  color: var(--text-tertiary);
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
 }
 
-.form-group input:disabled {
-  background: var(--bg-subtle);
-  color: var(--text-tertiary);
-  cursor: not-allowed;
+.join-btn-submit {
+  width: 100%;
+  margin-top: 12px;
+  padding: 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 18px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
 }
 
-/* Footer */
-.join-footer {
-  padding: 24px 32px;
-  background: var(--bg-subtle);
-  border-top: 1px solid var(--border-light);
-  text-align: center;
+.join-btn-submit:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4);
 }
 
 /* Wallet Selector Styles */
 .wallet-selector-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.wallet-selector-label {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 13px;
+  gap: 14px;
 }
 
 .wallet-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 16px;
 }
 
 .wallet-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
   padding: 16px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
 }
 
 .wallet-option:hover {
-  border-color: var(--border-medium);
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .wallet-option.active {
-  background: var(--bg-app);
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.wallet-option svg {
-  color: var(--text-tertiary);
-  transition: color 0.2s ease;
-}
-
-.wallet-option.active svg {
-  color: var(--accent);
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+  box-shadow: inset 0 0 0 1px #3b82f6;
 }
 
 .wallet-option span {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.wallet-option.active span {
-  color: var(--text-primary);
+/* Footer Info */
+.join-info-footer {
+  padding: 24px 40px;
+  text-align: center;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 /* Responsive */
 @media (max-width: 640px) {
-  .join-container { padding: 0; background: var(--bg-surface); }
+  .join-container { padding: 0; background: #020617; }
   .join-card { border: none; border-radius: 0; box-shadow: none; min-height: 100vh; }
-  .join-header { padding: 48px 24px 24px; border-bottom: none; }
+  .join-header { padding: 60px 24px 20px; }
+  .join-header h1 { font-size: 28px; }
   .join-form { padding: 24px; }
   .form-row { grid-template-columns: 1fr; }
-  .join-footer { background: transparent; padding: 24px; }
 }

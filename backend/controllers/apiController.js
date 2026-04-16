@@ -634,6 +634,8 @@ export const handleScan = async (req, res) => {
     res.status(500).json({ error: 'Erreur SQL [SCAN]: ' + err.message });
   }
 };
+
+/**
  * Recherche les infos d'un client lors d'un scan (Sans modification)
  */
 export const getScanInfo = async (req, res) => {

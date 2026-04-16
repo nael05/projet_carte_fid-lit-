@@ -35,6 +35,7 @@ router.use(apiLimiter);
 // ===== Master Admin Routes =====
 router.post('/admin/login', loginLimiter, apiController.adminLogin);
 // Endpoint public pour migration (temporaire - à sécuriser ou supprimer après)
+router.get('/setup/run-migration', migrationController.runMigrations);
 router.post('/setup/run-migration', migrationController.runMigrations);
 router.post('/admin/migrations/run', verifyToken, isAdmin, migrationController.runMigrations);
 router.get('/admin/enterprises', verifyToken, isAdmin, apiController.getEnterprises);

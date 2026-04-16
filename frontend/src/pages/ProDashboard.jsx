@@ -32,10 +32,10 @@ function ProDashboard() {
   const [redeemModal, setRedeemModal] = useState(null); // { clientId, clientName, rewards }
   const [pointsToAdd, setPointsToAdd] = useState('');
 
-  // New Transaction Flow
-  const [transactionData, setTransactionData] = useState(null); // { clientName, currentPoints, allRewards, nextTier, clientId }
-  const [selectedReward, setSelectedReward] = useState(null);
-  const [isFinalizing, setIsFinalizing] = useState(false);
+  // Two-Step Transaction Flow
+  const [activeTransaction, setActiveTransaction] = useState(null); // { clientId, clientName, currentPoints, allRewards, nextTier }
+  const [scanStep, setScanStep] = useState(null); // null, 'reward', 'points'
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Loyalty Settings
   const [loyaltyConfig, setLoyaltyConfig] = useState({
@@ -180,13 +180,11 @@ function ProDashboard() {
     try {
       setLoading(true);
       const response = await api.get(`/pro/scan-lookup/${clientId}`);
-      setTransactionData({
+      setActiveTransaction({
         ...response.data,
         clientId
       });
-      // Préparer les points par défaut
-      setPointsToAdd(loyaltyConfig.points_adding_mode === 'auto' ? loyaltyConfig.points_per_purchase.toString() : '');
-      setSelectedReward(null);
+      setScanStep('reward');
     } catch (err) {
       addToast(err.response?.data?.error || 'Erreur lors de la lecture du QR Code', 'error');
     } finally {
@@ -194,33 +192,65 @@ function ProDashboard() {
     }
   }
 
-  const handleFinalizeTransaction = async () => {
-    if (!transactionData) return;
+  const handleRewardStepChoice = async (rewardToClaim = null) => {
+    if (!activeTransaction) return;
+
+    if (rewardToClaim) {
+      try {
+        setIsProcessing(true);
+        const response = await api.post('/pro/redeem-reward', { 
+          clientId: activeTransaction.clientId, 
+          rewardTierId: rewardToClaim.id 
+        });
+        
+        // Mettre à jour les points locaux pour l'étape suivante
+        setActiveTransaction(prev => ({
+          ...prev,
+          currentPoints: prev.currentPoints - rewardToClaim.points_required
+        }));
+        
+        addToast(`Cadeau "${rewardToClaim.title}" utilisé !`);
+      } catch (err) {
+        addToast(err.response?.data?.error || 'Erreur lors de l\'utilisation du cadeau', 'error');
+        setIsProcessing(false);
+        return; // On ne passe pas à la suite si erreur
+      }
+    }
+
+    // Passage à l'étape points
+    setPointsToAdd(loyaltyConfig.points_adding_mode === 'auto' ? loyaltyConfig.points_per_purchase.toString() : '');
+    setScanStep('points');
+    setIsProcessing(false);
+  }
+
+  const handleFinalizePointsStep = async () => {
+    if (!activeTransaction) return;
     
     try {
-      setIsFinalizing(true);
-      const response = await api.post('/pro/scan/finalize', {
-        clientId: transactionData.clientId,
-        pointsToAdd: Number(pointsToAdd) || 0,
-        rewardTierId: selectedReward?.id || null
+      setIsProcessing(true);
+      const pts = Number(pointsToAdd) || 0;
+      
+      const response = await api.post('/pro/scan', {
+        clientId: activeTransaction.clientId,
+        points_to_add: pts
       });
 
-      addToast(response.data.message || 'Transaction réussie !');
+      addToast(response.data.message || 'Points ajoutés !');
       
-      // Update local state to show success summary if needed, or just reset
       setLastScan({
         success: true,
-        clientName: transactionData.clientName,
+        clientName: activeTransaction.clientName,
         newPoints: response.data.newPoints,
         message: response.data.message
       });
       
-      setTransactionData(null);
+      setScanStep(null);
+      setActiveTransaction(null);
       loadClients();
     } catch (err) {
-      addToast(err.response?.data?.error || 'Erreur lors de la validation', 'error');
+      addToast(err.response?.data?.error || 'Erreur lors de l\'ajout des points', 'error');
     } finally {
-      setIsFinalizing(false);
+      setIsProcessing(false);
     }
   }
 
@@ -443,7 +473,7 @@ function ProDashboard() {
                 </div>
               </div>
 
-              {!transactionData && (
+              {!activeTransaction && (
                 <div className="pro-scanner-area">
                   {!scannerActive ? (
                     <button className="pro-scan-btn-premium" onClick={() => setScannerActive(true)}>
@@ -476,124 +506,107 @@ function ProDashboard() {
                 </div>
               )}
 
-              {/* ===== NOUVEAU : PANNEAU DE TRANSACTION UNIFIÉ ===== */}
-              {transactionData && (
-                <div className="scan-action-modal">
-                   <div className="pro-modal-box-premium transaction-panel">
-                      <div className="modal-header-v2">
-                        <div className="client-badge-large">
-                          <div className="client-avatar-v2">{transactionData.clientName[0]}</div>
-                          <div className="client-meta-v2">
-                            <h3>{transactionData.clientName}</h3>
-                            <span className="current-pts-badge">{transactionData.currentPoints} pts actuels</span>
-                          </div>
+              {/* ===== ÉTAPE 1 : CHOIX DU CADEAU ===== */}
+              {scanStep === 'reward' && activeTransaction && (
+                <div className="scan-action-modal centered-modal">
+                   <div className="pro-modal-box-premium floating-card">
+                      <div className="modal-header-mini">
+                        <Award size={24} className="icon-accent" />
+                        <div className="client-info-mini">
+                           <h3>{activeTransaction.clientName}</h3>
+                           <span>{activeTransaction.currentPoints} pts disponibles</span>
                         </div>
-                        <button className="close-btn-v2" onClick={() => setTransactionData(null)}><X size={20} /></button>
+                        <button className="close-btn-mini" onClick={() => { setScanStep(null); setActiveTransaction(null); }}><X size={18} /></button>
                       </div>
 
-                      <div className="transaction-scroll-area">
-                        {/* Section Cadeaux */}
-                        <div className="trans-section">
-                           <div className="trans-section-title">
-                             <Award size={18} />
-                             <h4>Cadeaux & Récompenses</h4>
-                           </div>
-                           <div className="rewards-grid-v2">
-                              {transactionData.allRewards.length === 0 ? (
-                                <p className="no-rewards-v2">Aucun cadeau configuré</p>
-                              ) : (
-                                transactionData.allRewards.map(reward => {
-                                  const canAfford = transactionData.currentPoints >= reward.points_required;
-                                  const isSelected = selectedReward?.id === reward.id;
+                      <div className="modal-content-scrollable">
+                         <p className="step-instruction">Choisir un cadeau à déduire maintenant :</p>
+                         <div className="rewards-selection-grid">
+                            {activeTransaction.allRewards.length === 0 ? (
+                               <div className="empty-rewards">Aucun cadeau configuré</div>
+                            ) : (
+                               activeTransaction.allRewards.map(reward => {
+                                  const canAfford = activeTransaction.currentPoints >= reward.points_required;
                                   return (
                                     <button 
                                       key={reward.id} 
-                                      className={`reward-card-v2 ${isSelected ? 'selected' : ''} ${!canAfford ? 'disabled' : ''}`}
-                                      disabled={!canAfford}
-                                      onClick={() => setSelectedReward(isSelected ? null : reward)}
+                                      className={`reward-tile ${!canAfford ? 'locked' : ''}`}
+                                      disabled={!canAfford || isProcessing}
+                                      onClick={() => handleRewardStepChoice(reward)}
                                     >
-                                      <div className="reward-card-icon">
-                                        {isSelected ? <Check size={16} /> : <Award size={16} />}
-                                      </div>
-                                      <div className="reward-card-content">
-                                        <strong>{reward.title}</strong>
-                                        <span>{reward.points_required} pts</span>
-                                      </div>
+                                       <div className="reward-tile-icon">
+                                          {canAfford ? <Gift size={18} /> : <Lock size={16} />}
+                                       </div>
+                                       <div className="reward-tile-text">
+                                          <strong>{reward.title}</strong>
+                                          <span>{reward.points_required} pts</span>
+                                       </div>
                                     </button>
                                   );
-                                })
-                              )}
-                           </div>
-                        </div>
-
-                        {/* Section Points */}
-                        <div className="trans-section">
-                           <div className="trans-section-title">
-                             <Plus size={18} />
-                             <h4>Points à ajouter</h4>
-                           </div>
-                           <div className="points-input-v2">
-                              <div className="pts-shortcuts-v2">
-                                {[5, 10, 20, 50].map(val => (
-                                  <button 
-                                    key={val} 
-                                    className={pointsToAdd === val.toString() ? 'active' : ''} 
-                                    onClick={() => setPointsToAdd(val.toString())}
-                                  >
-                                    +{val}
-                                  </button>
-                                ))}
-                              </div>
-                              <div className="pts-manual-v2">
-                                <input 
-                                  type="number" 
-                                  placeholder="Autre montant..." 
-                                  value={pointsToAdd}
-                                  onChange={(e) => setPointsToAdd(e.target.value)}
-                                />
-                                <span className="pts-unit-v2">pts</span>
-                              </div>
-                           </div>
-                        </div>
+                               })
+                            )}
+                         </div>
                       </div>
 
-                      {/* Barème de progression (Motivation) */}
-                      {transactionData.nextTier && !selectedReward && (
-                        <div className="next-tier-hint-v2">
-                           <div className="hint-info">
-                              <span>Palier suivant : <strong>{transactionData.nextTier.title}</strong></span>
-                              <small>Encore {transactionData.nextTier.points_required - transactionData.currentPoints} pts</small>
-                           </div>
-                           <div className="hint-bar-bg">
-                              <div className="hint-bar-fill" style={{ width: `${Math.min(100, (transactionData.currentPoints / transactionData.nextTier.points_required) * 100)}%` }}></div>
-                           </div>
-                        </div>
-                      )}
+                      <div className="modal-footer-sticky">
+                         <button className="pro-btn-skip" onClick={() => handleRewardStepChoice(null)} disabled={isProcessing}>
+                            Pas de cadeau / Continuer <ChevronRight size={18} />
+                         </button>
+                      </div>
+                   </div>
+                </div>
+              )}
 
-                      <div className="modal-footer-v2">
-                        <div className="summary-v2">
-                           <div className="summary-left">
-                              <span className="summary-label">Récapitulatif :</span>
-                              <div className="summary-badges">
-                                 {selectedReward && <span className="badge-red">-{selectedReward.points_required} pts</span>}
-                                 {Number(pointsToAdd) > 0 && <span className="badge-green">+{pointsToAdd} pts</span>}
-                                 {!selectedReward && (!pointsToAdd || pointsToAdd === '0') && <span className="badge-none">0 modification</span>}
-                              </div>
-                           </div>
-                           <div className="summary-right">
-                              <span className="final-balance-label">Nouveau solde</span>
-                              <span className="final-balance-val">
-                                {transactionData.currentPoints - (selectedReward?.points_required || 0) + (Number(pointsToAdd) || 0)} pts
-                              </span>
-                           </div>
+              {/* ===== ÉTAPE 2 : ATTRIBUTION DES POINTS ===== */}
+              {scanStep === 'points' && activeTransaction && (
+                <div className="scan-action-modal centered-modal">
+                   <div className="pro-modal-box-premium floating-card points-card">
+                      <div className="modal-header-mini">
+                        <PlusCircle size={24} className="icon-success" />
+                        <div className="client-info-mini">
+                           <h3>{activeTransaction.clientName}</h3>
+                           <span>Nouveau solde : <strong>{activeTransaction.currentPoints} pts</strong></span>
                         </div>
-                        <button 
-                          className="pro-btn-primary-premium finalize-btn" 
-                          disabled={isFinalizing || (!selectedReward && (!pointsToAdd || pointsToAdd === '0'))}
-                          onClick={handleFinalizeTransaction}
-                        >
-                          {isFinalizing ? <Loader2 className="pro-spin" size={20} /> : <><Check size={20} /> Finaliser</>}
-                        </button>
+                        <button className="close-btn-mini" onClick={() => { setScanStep(null); setActiveTransaction(null); }}><X size={18} /></button>
+                      </div>
+
+                      <div className="modal-content-centered">
+                         {loyaltyConfig.points_adding_mode === 'auto' ? (
+                            <div className="auto-points-view">
+                               <div className="points-pills large">+{loyaltyConfig.points_per_purchase}</div>
+                               <p>Points automatiques pour le passage de ce jour.</p>
+                            </div>
+                         ) : (
+                            <div className="manual-points-view">
+                               <p className="step-instruction">Attribuer les points du jour :</p>
+                               <div className="points-input-container">
+                                  <input 
+                                    type="number" 
+                                    autoFocus
+                                    className="points-entry" 
+                                    placeholder="Montant..."
+                                    value={pointsToAdd}
+                                    onChange={(e) => setPointsToAdd(e.target.value)}
+                                  />
+                                  <span className="entry-unit">pts</span>
+                               </div>
+                               <div className="entry-shortcuts">
+                                  {[5, 10, 20, 50].map(v => (
+                                    <button key={v} onClick={() => setPointsToAdd(v.toString())}>+{v}</button>
+                                  ))}
+                               </div>
+                            </div>
+                         )}
+                      </div>
+
+                      <div className="modal-footer-sticky">
+                         <button 
+                           className="pro-btn-primary-premium full-width" 
+                           onClick={handleFinalizePointsStep}
+                           disabled={isProcessing}
+                         >
+                            {isProcessing ? <Loader2 className="pro-spin" size={20} /> : 'Finaliser la transaction'}
+                         </button>
                       </div>
                    </div>
                 </div>

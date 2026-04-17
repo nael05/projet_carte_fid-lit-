@@ -1181,7 +1181,9 @@ export const forgotPassword = async (req, res) => {
     );
 
     // 4. Envoyer l'email
-    await emailService.sendPasswordResetEmail(email, token);
+    const frontendUrl = process.env.FRONTEND_URL || 'https://fidelyzapp.fr';
+    const resetUrl = `${frontendUrl}/pro/reset-password?token=${token}`;
+    await emailService.sendPasswordResetEmail(email, resetUrl);
 
     res.json({ 
       success: true, 

@@ -47,11 +47,15 @@ function PublicResetPassword() {
         return
       }
 
-      // Validation basique
-      if (newPassword.length < 6) {
-        setError('Le mot de passe doit faire au moins 6 caractères')
-        setLoading(false)
-        return
+      // Validation rigoureuse (Majuscule + Chiffre/Spécial + 6 chars)
+      const hasMinLength = newPassword.length >= 6;
+      const hasUppercase = /(?=.*[A-Z])/.test(newPassword);
+      const hasSpecial = /(?=.*[0-9!@#$%^&*])/.test(newPassword);
+
+      if (!hasMinLength || !hasUppercase || !hasSpecial) {
+        setError('Le mot de passe ne respecte pas les critères de sécurité');
+        setLoading(false);
+        return;
       }
 
       await api.post('/pro/reset-password', { token, newPassword })
@@ -148,13 +152,22 @@ function PublicResetPassword() {
               </button>
             </div>
 
-            <div className="luxe-criteria-box">
-              <ul className="luxe-criteria-list">
-                <li className={`luxe-criteria-item ${newPassword.length >= 6 ? 'valid' : ''}`}>
-                  {newPassword.length >= 6 ? <CheckCircle2 size={14} /> : <Circle size={14} />} 6 caractères min.
-                </li>
-              </ul>
-            </div>
+            {newPassword && (
+              <div className="luxe-criteria-box" style={{ marginTop: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Sécurité Requise</span>
+                <ul className="luxe-criteria-list">
+                  <li className={`luxe-criteria-item ${newPassword.length >= 6 ? 'valid' : ''}`}>
+                    {newPassword.length >= 6 ? <CheckCircle2 size={14} /> : <Circle size={14} />} 6 caractères min.
+                  </li>
+                  <li className={`luxe-criteria-item ${/(?=.*[A-Z])/.test(newPassword) ? 'valid' : ''}`}>
+                    {/(?=.*[A-Z])/.test(newPassword) ? <CheckCircle2 size={14} /> : <Circle size={14} />} Une majuscule
+                  </li>
+                  <li className={`luxe-criteria-item ${/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? 'valid' : ''}`}>
+                    {/(?=.*[0-9!@#$%^&*])/.test(newPassword) ? <CheckCircle2 size={14} /> : <Circle size={14} />} Chiffre / Spécial
+                  </li>
+                </ul>
+              </div>
+            )}
 
             {error && (
               <div className="luxe-alert error">

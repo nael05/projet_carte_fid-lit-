@@ -1182,7 +1182,7 @@ export const forgotPassword = async (req, res) => {
 
     // 4. Envoyer l'email
     const frontendUrl = process.env.FRONTEND_URL || 'https://fidelyzapp.fr';
-    const resetUrl = `${frontendUrl}/pro/reset-password?token=${token}`;
+    const resetUrl = `${frontendUrl}/password-recovery?token=${token}`;
     await emailService.sendPasswordResetEmail(email, resetUrl);
 
     res.json({ 

@@ -30,7 +30,7 @@ function App() {
           {/* Pro */}
           <Route path="/pro/login" element={<ProLogin />} />
           <Route path="/pro/forgot-password" element={<ForgotPassword />} />
-          <Route path="/pro/reset-password" element={<PublicResetPassword />} />
+          <Route path="/password-recovery" element={<PublicResetPassword />} />
           <Route path="/pro/secure-password" element={<ProResetPassword />} />
           <Route path="/pro/dashboard" element={<PrivateProRoute element={<ProDashboard />} />} />
 

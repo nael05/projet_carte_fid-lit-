@@ -16,9 +16,14 @@ function PublicResetPassword() {
   const navigate = useNavigate()
   const location = useLocation()
   
-  // Extraire le token de l'URL (?token=...)
   const queryParams = new URLSearchParams(location.search)
   const token = queryParams.get('token')
+
+  // Initialisation du thème
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('fidelyz-theme') || 'dark'
+    document.documentElement.setAttribute('data-theme', savedTheme)
+  }, [])
 
   useEffect(() => {
     if (!token) {

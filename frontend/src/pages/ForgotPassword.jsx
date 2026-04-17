@@ -1,11 +1,19 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { AlertCircle, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react'
 import './Auth.css'
 
 function ForgotPassword() {
   const [email, setEmail] = useState('')
+  const navigate = useNavigate()
+
+  // Initialisation du thème
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('fidelyz-theme') || 'dark'
+    document.documentElement.setAttribute('data-theme', savedTheme)
+  }, [])
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)

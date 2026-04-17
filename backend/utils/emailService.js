@@ -7,29 +7,25 @@ import logger from './logger.js';
 class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST || 'smtp-mail.outlook.com',
-      port: process.env.MAIL_PORT || 587,
+      host: 'smtp-relay.brevo.com',
+      port: 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-      tls: {
-        ciphers: 'SSLv3',
-        rejectUnauthorized: false
+        user: process.env.MAIL_USER || 'fidelyz@outlook.fr', // Votre email de compte Brevo
+        pass: process.env.BREVO_API_KEY || process.env.MAIL_PASS,
       }
     });
 
-    // Optionnel: Vérifier la connexion au démarrage
+    // Vérifier la connexion au démarrage
     this.verifyConnection();
   }
 
   async verifyConnection() {
     try {
       await this.transporter.verify();
-      logger.info('✅ Service d\'email prêt (Outlook SMTP)');
+      logger.info('✅ Service d\'email prêt (Brevo SMTP)');
     } catch (err) {
-      logger.error('❌ Erreur de connexion au service d\'email:', err.message);
+      logger.error('❌ Erreur de connexion au service d\'email (Brevo):', err.message);
     }
   }
 

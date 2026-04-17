@@ -9,6 +9,8 @@ import ProLogin from './pages/ProLogin'
 import ProResetPassword from './pages/ProResetPassword'
 import ProDashboard from './pages/ProDashboard'
 import Join from './pages/Join'
+import ForgotPassword from './pages/ForgotPassword'
+import PublicResetPassword from './pages/PublicResetPassword'
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
 
           {/* Pro */}
           <Route path="/pro/login" element={<ProLogin />} />
+          <Route path="/pro/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<PublicResetPassword />} />
           <Route path="/pro/reset-password" element={<ProResetPassword />} />
           <Route path="/pro/dashboard" element={<PrivateProRoute element={<ProDashboard />} />} />
 

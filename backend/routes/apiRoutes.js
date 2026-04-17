@@ -51,6 +51,8 @@ router.get('/pro/sessions', verifyToken, isPro, apiController.getProSessions);
 router.post('/pro/logout-device', verifyToken, isPro, apiController.logoutProDevice);
 router.post('/pro/logout-all', verifyToken, isPro, apiController.logoutProAll);
 router.put('/pro/change-password', verifyToken, isPro, apiController.changePassword);
+router.post('/pro/forgot-password', apiController.forgotPassword);
+router.post('/pro/reset-password', apiController.resetPassword);
 router.get('/pro/clients', verifyToken, isPro, apiController.getClients);
 router.post('/pro/scan', verifyToken, isPro, apiController.handleScan);
 router.get('/pro/scan-lookup/:clientId', verifyToken, isPro, apiController.getScanInfo);

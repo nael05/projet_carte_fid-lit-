@@ -13,6 +13,8 @@ import apnService from '../utils/apnService.js';
 import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import { sendLoyaltyUpdateNotification } from '../utils/notificationService.js';
 import walletSyncService from '../utils/walletSyncService.js';
+import emailService from '../utils/emailService.js';
+import crypto from 'crypto';
 
 // ===== MASTER ADMIN CONTROLLERS =====
 
@@ -1137,5 +1139,103 @@ export const redeemReward = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// ===== PASSWORD RESET CONTROLLERS =====
+
+/**
+ * Demande de réinitialisation de mot de passe
+ */
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email requis' });
+  }
+
+  try {
+    // 1. Vérifier si l'email existe dans la table entreprises
+    const [rows] = await pool.query(
+      'SELECT id, nom FROM entreprises WHERE email = ?',
+      [email]
+    );
+
+    if (rows.length === 0) {
+      // Pour la sécurité, on ne dit pas si l'email existe ou pas
+      return res.json({ 
+        success: true, 
+        message: 'Si cet email est enregistré, vous recevrez un lien de réinitialisation sous peu.' 
+      });
+    }
+
+    // 2. Générer un jeton sécurisé
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000); // 1 heure de validité
+
+    // 3. Enregistrer en base de données (supprimer les anciens jetons pour cet email avant)
+    await pool.query('DELETE FROM password_resets WHERE email = ?', [email]);
+    await pool.query(
+      'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)',
+      [email, token, expiresAt]
+    );
+
+    // 4. Envoyer l'email
+    await emailService.sendPasswordResetEmail(email, token);
+
+    res.json({ 
+      success: true, 
+      message: 'Si cet email est enregistré, vous recevrez un lien de réinitialisation sous peu.' 
+    });
+  } catch (err) {
+    logger.error('Forgot password error', { error: err.message });
+    res.status(500).json({ error: 'Erreur lors de la demande de réinitialisation' });
+  }
+};
+
+/**
+ * Exécution de la réinitialisation de mot de passe
+ */
+export const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token et nouveau mot de passe requis' });
+  }
+
+  try {
+    // 1. Vérifier la validité du jeton
+    const [resetRows] = await pool.query(
+      'SELECT email FROM password_resets WHERE token = ? AND expires_at > NOW()',
+      [token]
+    );
+
+    if (resetRows.length === 0) {
+      return res.status(400).json({ error: 'Jeton invalide ou expiré' });
+    }
+
+    const email = resetRows[0].email;
+
+    // 2. Hacher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 3. Mettre à jour l'entreprise
+    await pool.query(
+      'UPDATE entreprises SET mot_de_passe = ?, updated_at = NOW() WHERE email = ?',
+      [hashedPassword, email]
+    );
+
+    // 4. Supprimer le jeton utilisé
+    await pool.query('DELETE FROM password_resets WHERE token = ?', [token]);
+
+    logger.info(`✅ Mot de passe réinitialisé avec succès pour ${email}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Votre mot de passe a été mis à jour avec succès.' 
+    });
+  } catch (err) {
+    logger.error('Reset password error', { error: err.message });
+    res.status(500).json({ error: 'Erreur lors de la réinitialisation' });
   }
 };

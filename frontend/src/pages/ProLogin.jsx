@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
-import { AlertCircle, Loader2, Eye, EyeOff, Building2 } from 'lucide-react'
+import { AlertCircle, Loader2, Eye, EyeOff, Building2, HelpCircle } from 'lucide-react'
 import './Auth.css'
 
 function ProLogin() {
@@ -137,14 +137,13 @@ function ProLogin() {
               disabled={loading}
               required
             />
-            <button
-              type="button"
-              className="password-toggle-btn"
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex="-1"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-15px', marginBottom: '15px' }}>
+            <Link to="/pro/forgot-password" style={{ fontSize: '13px', color: '#6366F1', textDecoration: 'none', fontWeight: '500' }}>
+              Mot de passe oublié ?
+            </Link>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '-12px' }}>

@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { 
-  Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw, 
-  Globe, FileText, ChevronRight, Smartphone, Apple, User, PhoneCall, Share2, 
+import {
+  Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw,
+  Globe, FileText, ChevronRight, Smartphone, Apple, User, PhoneCall, Share2,
   ShieldCheck, Phone, MapPin
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import './CardCustomizer.css';
 
-const CardCustomizer = ({ proInfo }) => {
+const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
   const [platform, setPlatform] = useState('apple');
   const [activeTab, setActiveTab] = useState('appearance');
   const [previewSide, setPreviewSide] = useState('front');
   const [config, setConfig] = useState({
-    // Apple specific
     primary_color: '#1f2937',
     text_color: '#ffffff',
     accent_color: '#3b82f6',
@@ -22,8 +21,8 @@ const CardCustomizer = ({ proInfo }) => {
     icon_url: '',
     strip_image_url: '',
     logo_text: '',
-    card_title: 'Carte de Fidélité',
-    card_subtitle: 'Merci de votre confiance',
+    card_subtitle: '',
+    card_title: '',
     back_fields_info: '',
     back_fields_terms: '',
     back_fields_website: '',
@@ -33,18 +32,24 @@ const CardCustomizer = ({ proInfo }) => {
     back_fields_facebook: '',
     back_fields_tiktok: '',
     apple_organization_name: '',
-    apple_pass_description: 'Votre carte de fidélité numérique',
-    // Google specific
-    google_primary_color: '#1f2937',
-    google_text_color: '#ffffff',
-    google_logo_url: '',
-    google_hero_image_url: '',
-    google_card_title: 'Carte Fidélité',
-    google_card_subtitle: 'Scannez lors de votre passage',
-    // Shared
+    apple_pass_description: '',
+    apple_background_color: '',
+    apple_text_color: '',
+    apple_label_color: '',
+    apple_logo_url: '',
+    apple_icon_url: '',
+    apple_strip_image_url: '',
     latitude: '',
     longitude: '',
-    relevant_text: ''
+    relevant_text: '',
+    google_primary_color: '',
+    google_text_color: '',
+    google_logo_url: '',
+    google_hero_image_url: '',
+    google_card_title: '',
+    google_card_subtitle: '',
+    push_icon_url: '',
+    dashboard_logo_url: ''
   });
 
   const [loading, setLoading] = useState(true);
@@ -70,7 +75,7 @@ const CardCustomizer = ({ proInfo }) => {
     setLoading(true);
     try {
       const { data } = await api.get(`/pro/card-customization/${proInfo.id}?loyaltyType=${proInfo.loyalty_type || 'points'}`);
-      
+
       // Update config with data or defaults
       setConfig(prev => ({
         ...prev,
@@ -108,18 +113,20 @@ const CardCustomizer = ({ proInfo }) => {
 
     setUploadingType(type);
     setStatus({ type: '', message: '' });
-    
+
     try {
       const response = await api.post(`/pro/upload-logo?imageType=${type}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       if (response.data.success) {
         let fieldName = '';
         if (type === 'logo') fieldName = platform === 'apple' ? 'logo_url' : 'google_logo_url';
         else if (type === 'icon') fieldName = 'icon_url';
         else if (type === 'strip') fieldName = 'strip_image_url';
         else if (type === 'hero') fieldName = 'google_hero_image_url';
+        else if (type === 'notification_icon') fieldName = 'push_icon_url';
+        else if (type === 'dashboard_logo') fieldName = 'dashboard_logo_url';
 
         setConfig(prev => ({ ...prev, [fieldName]: response.data.url }));
         setStatus({ type: 'success', message: 'Image mise à jour ! N\'oubliez pas de sauvegarder.' });
@@ -137,14 +144,15 @@ const CardCustomizer = ({ proInfo }) => {
     setStatus({ type: '', message: '' });
     try {
       await api.put(`/pro/card-customization/${proInfo.id}?loyaltyType=${proInfo.loyalty_type || 'points'}`, config);
-      setStatus({ type: 'success', message: 'Design de la carte enregistré avec succès !' });
+      setStatus({ type: 'success', message: 'Design sauvegardé avec succès !' });
+      if (onSaveSuccess) onSaveSuccess();
     } catch (err) {
       console.error('Save error:', err);
       setStatus({ type: 'error', message: 'Erreur lors de la sauvegarde.' });
     } finally {
       setSaving(false);
       // Auto-hide success message
-      setTimeout(() => setStatus({type: '', message: ''}), 4000);
+      setTimeout(() => setStatus({ type: '', message: '' }), 4000);
     }
   };
 
@@ -152,7 +160,7 @@ const CardCustomizer = ({ proInfo }) => {
     if (!hexcolor) return '#ffffff';
     // If it's not a hex color (like 'transparent' or similar), default to white or black
     if (!hexcolor.startsWith('#')) return '#000000';
-    
+
     const r = parseInt(hexcolor.slice(1, 3), 16);
     const g = parseInt(hexcolor.slice(3, 5), 16);
     const b = parseInt(hexcolor.slice(5, 7), 16);
@@ -162,21 +170,22 @@ const CardCustomizer = ({ proInfo }) => {
 
   const getMediaUrl = (url) => {
     if (!url) return null;
-    
+
     // If it's already a full external URL, return as is
     if (url.startsWith('http') && !url.includes('localhost') && !url.includes('loca.lt')) {
       return url;
     }
-    
+
     // Extract everything after /uploads/ or just the path if already relative
     const relativeMatch = url.match(/uploads\/.+/);
     const cleanPath = relativeMatch ? relativeMatch[0] : url.replace(/^\//, '');
-    
-    // Use API base URL directly (which already includes /api)
+
+    // Use API base URL but strip the /api prefix for static media files
     let baseUrl = api.defaults.baseURL || '/api';
-    baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash if any
-    
-    return `${baseUrl}/${cleanPath}`;
+    // Remove trailing slash AND /api suffix if present
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '').replace(/\/api$/, '');
+
+    return `${cleanBaseUrl}/${cleanPath}`;
   };
 
   if (loading) return (
@@ -188,19 +197,19 @@ const CardCustomizer = ({ proInfo }) => {
 
   return (
     <div className="customizer-container">
-      
+
       {/* Settings Panel */}
       <div className="customizer-settings">
-        
+
         {/* Platform Selector */}
         <div className="platform-selector">
-          <button 
+          <button
             className={`platform-btn apple ${platform === 'apple' ? 'active' : ''}`}
             onClick={() => { setPlatform('apple'); setActiveTab('appearance'); }}
           >
             <Apple size={20} /> Apple Wallet
           </button>
-          <button 
+          <button
             className={`platform-btn google ${platform === 'google' ? 'active' : ''}`}
             onClick={() => { setPlatform('google'); setActiveTab('appearance'); }}
           >
@@ -210,27 +219,27 @@ const CardCustomizer = ({ proInfo }) => {
 
         {/* Tabs Navigation */}
         <div className="customizer-tabs">
-          <button 
+          <button
             className={`customizer-tab ${activeTab === 'appearance' ? 'active' : ''}`}
             onClick={() => setActiveTab('appearance')}
           >
             <Palette size={16} /> Apparence
           </button>
-          <button 
+          <button
             className={`customizer-tab ${activeTab === 'images' ? 'active' : ''}`}
             onClick={() => setActiveTab('images')}
           >
             <ImageIcon size={16} /> Images
           </button>
           {platform === 'apple' && (
-            <button 
+            <button
               className={`customizer-tab ${activeTab === 'infos' ? 'active' : ''}`}
               onClick={() => setActiveTab('infos')}
             >
               <Info size={16} /> Verso
             </button>
           )}
-          <button 
+          <button
             className={`customizer-tab ${activeTab === 'proximity' ? 'active' : ''}`}
             onClick={() => setActiveTab('proximity')}
           >
@@ -240,7 +249,7 @@ const CardCustomizer = ({ proInfo }) => {
 
         {/* Dynamic Settings Card */}
         <div className="settings-card">
-          
+
           {/* APPLE APPEARANCE */}
           {platform === 'apple' && activeTab === 'appearance' && (
             <>
@@ -248,9 +257,9 @@ const CardCustomizer = ({ proInfo }) => {
 
               <div className="settings-group">
                 <label>Texte à côté du logo (Optionnel)</label>
-                <input 
-                  type="text" name="logo_text" 
-                  value={config.logo_text} 
+                <input
+                  type="text" name="logo_text"
+                  value={config.logo_text}
                   onChange={handleChange}
                   placeholder="Ex: Club Privilège"
                 />
@@ -289,9 +298,9 @@ const CardCustomizer = ({ proInfo }) => {
             <>
               <div className="settings-group">
                 <label>Titre de la carte (Google Wallet)</label>
-                <input 
-                  type="text" name="google_card_title" 
-                  value={config.google_card_title} 
+                <input
+                  type="text" name="google_card_title"
+                  value={config.google_card_title}
                   onChange={handleChange}
                   placeholder="Carte Cadeau / Fidélité"
                 />
@@ -299,9 +308,9 @@ const CardCustomizer = ({ proInfo }) => {
 
               <div className="settings-group">
                 <label>Sous-titre (Description courte)</label>
-                <input 
-                  type="text" name="google_card_subtitle" 
-                  value={config.google_card_subtitle} 
+                <input
+                  type="text" name="google_card_subtitle"
+                  value={config.google_card_subtitle}
                   onChange={handleChange}
                   placeholder="Ex: Scannez lors de votre passage"
                 />
@@ -328,10 +337,10 @@ const CardCustomizer = ({ proInfo }) => {
 
           {activeTab === 'images' && (
             <div className="upload-grid">
-              
+
               <div className="upload-item">
                 <div className="upload-preview">
-                  {platform === 'apple' 
+                  {platform === 'apple'
                     ? (config.logo_url ? <img src={getMediaUrl(config.logo_url)} alt="Logo" /> : <Layout size={20} />)
                     : (config.google_logo_url ? <img src={getMediaUrl(config.google_logo_url)} alt="Logo" /> : <Layout size={20} />)
                   }
@@ -393,18 +402,18 @@ const CardCustomizer = ({ proInfo }) => {
               <div className="settings-grid">
                 <div className="settings-group">
                   <label>Latitude</label>
-                  <input 
-                    type="number" step="any" name="latitude" 
-                    value={config.latitude} 
+                  <input
+                    type="number" step="any" name="latitude"
+                    value={config.latitude}
                     onChange={handleChange}
                     placeholder="Ex: 48.8566"
                   />
                 </div>
                 <div className="settings-group">
                   <label>Longitude</label>
-                  <input 
-                    type="number" step="any" name="longitude" 
-                    value={config.longitude} 
+                  <input
+                    type="number" step="any" name="longitude"
+                    value={config.longitude}
                     onChange={handleChange}
                     placeholder="Ex: 2.3522"
                   />
@@ -413,9 +422,9 @@ const CardCustomizer = ({ proInfo }) => {
 
               <div className="settings-group">
                 <label>Message de proximité (Écran verrouillé)</label>
-                <input 
-                  type="text" name="relevant_text" 
-                  value={config.relevant_text} 
+                <input
+                  type="text" name="relevant_text"
+                  value={config.relevant_text}
                   onChange={handleChange}
                   placeholder="Ex: Vous êtes proche de notre boutique !"
                   maxLength={100}
@@ -440,9 +449,9 @@ const CardCustomizer = ({ proInfo }) => {
                 <div className="form-grid">
                   <div className="form-field">
                     <label>Nom de l'enseigne (En-tête)</label>
-                    <input 
-                      type="text" name="apple_organization_name" 
-                      value={config.apple_organization_name || ''} 
+                    <input
+                      type="text" name="apple_organization_name"
+                      value={config.apple_organization_name || ''}
                       onChange={handleChange}
                       placeholder={proInfo.nom || "Votre établissement"}
                     />
@@ -450,18 +459,18 @@ const CardCustomizer = ({ proInfo }) => {
                   </div>
                   <div className="form-field">
                     <label>Sous-titre accrocheur</label>
-                    <input 
-                      type="text" name="card_subtitle" 
-                      value={config.card_subtitle || ''} 
+                    <input
+                      type="text" name="card_subtitle"
+                      value={config.card_subtitle || ''}
                       onChange={handleChange}
                       placeholder="Ex: Passion & Fidélité"
                     />
                   </div>
                   <div className="form-field full-width">
                     <label>Description (VoiceOver)</label>
-                    <input 
-                      type="text" name="apple_pass_description" 
-                      value={config.apple_pass_description || ''} 
+                    <input
+                      type="text" name="apple_pass_description"
+                      value={config.apple_pass_description || ''}
                       onChange={handleChange}
                       placeholder="Ex: Carte de fidélité numérique pour vos avantages"
                     />
@@ -478,27 +487,27 @@ const CardCustomizer = ({ proInfo }) => {
                 <div className="form-grid">
                   <div className="form-field">
                     <label><Phone size={14} /> Téléphone</label>
-                    <input 
-                      type="text" name="back_fields_phone" 
-                      value={config.back_fields_phone || ''} 
+                    <input
+                      type="text" name="back_fields_phone"
+                      value={config.back_fields_phone || ''}
                       onChange={handleChange}
                       placeholder="01 23 45 67 89"
                     />
                   </div>
                   <div className="form-field">
                     <label><Globe size={14} /> Site Internet</label>
-                    <input 
-                      type="text" name="back_fields_website" 
-                      value={config.back_fields_website || ''} 
+                    <input
+                      type="text" name="back_fields_website"
+                      value={config.back_fields_website || ''}
                       onChange={handleChange}
                       placeholder="www.votre-site.fr"
                     />
                   </div>
                   <div className="form-field full-width">
                     <label><MapPin size={14} /> Adresse physique</label>
-                    <input 
-                      type="text" name="back_fields_address" 
-                      value={config.back_fields_address || ''} 
+                    <input
+                      type="text" name="back_fields_address"
+                      value={config.back_fields_address || ''}
                       onChange={handleChange}
                       placeholder="Ex: 12 avenue des Champs, Paris"
                     />
@@ -515,27 +524,27 @@ const CardCustomizer = ({ proInfo }) => {
                 <div className="form-grid">
                   <div className="form-field">
                     <label><Share2 size={14} /> Instagram</label>
-                    <input 
-                      type="text" name="back_fields_instagram" 
-                      value={config.back_fields_instagram || ''} 
+                    <input
+                      type="text" name="back_fields_instagram"
+                      value={config.back_fields_instagram || ''}
                       onChange={handleChange}
                       placeholder="@votrecompte"
                     />
                   </div>
                   <div className="form-field">
                     <label><Share2 size={14} /> Facebook</label>
-                    <input 
-                      type="text" name="back_fields_facebook" 
-                      value={config.back_fields_facebook || ''} 
+                    <input
+                      type="text" name="back_fields_facebook"
+                      value={config.back_fields_facebook || ''}
                       onChange={handleChange}
                       placeholder="MaPageFidelyz"
                     />
                   </div>
                   <div className="form-field">
                     <label>TikTok</label>
-                    <input 
-                      type="text" name="back_fields_tiktok" 
-                      value={config.back_fields_tiktok || ''} 
+                    <input
+                      type="text" name="back_fields_tiktok"
+                      value={config.back_fields_tiktok || ''}
                       onChange={handleChange}
                       placeholder="votrecompte"
                     />
@@ -552,9 +561,9 @@ const CardCustomizer = ({ proInfo }) => {
                 <div className="form-grid">
                   <div className="form-field full-width">
                     <label>Conditions d'utilisation</label>
-                    <textarea 
-                      name="back_fields_terms" 
-                      value={config.back_fields_terms || ''} 
+                    <textarea
+                      name="back_fields_terms"
+                      value={config.back_fields_terms || ''}
                       onChange={handleChange}
                       rows={3}
                       placeholder="Expliquez ici les règles d'utilisation de la carte..."
@@ -562,9 +571,9 @@ const CardCustomizer = ({ proInfo }) => {
                   </div>
                   <div className="form-field full-width">
                     <label>Infos complémentaires (Au dos)</label>
-                    <textarea 
-                      name="back_fields_info" 
-                      value={config.back_fields_info || ''} 
+                    <textarea
+                      name="back_fields_info"
+                      value={config.back_fields_info || ''}
                       onChange={handleChange}
                       rows={2}
                       placeholder="Ex: Valable dans tous nos points de vente."
@@ -592,7 +601,7 @@ const CardCustomizer = ({ proInfo }) => {
 
       {/* Preview Section */}
       <div className="customizer-preview">
-        
+
         {platform === 'apple' ? (
           <>
             <div className="preview-toggle">
@@ -600,13 +609,13 @@ const CardCustomizer = ({ proInfo }) => {
               <button className={previewSide === 'back' ? 'active' : ''} onClick={() => setPreviewSide('back')}>Verso</button>
             </div>
 
-            <div className={`apple-card ${previewSide === 'back' ? 'flipped' : ''}`} style={{ 
+            <div className={`apple-card ${previewSide === 'back' ? 'flipped' : ''}`} style={{
               backgroundColor: config.primary_color,
               color: config.text_color,
               '--stamp-color': config.accent_color,
               '--label-color': config.accent_color
             }}>
-              
+
               {/* APPLE FRONT PREMIUM */}
               <div className="card-front">
                 <div className="card-header-premium">
@@ -617,12 +626,12 @@ const CardCustomizer = ({ proInfo }) => {
                     <span className="card-logo-text">{config.logo_text || (!config.logo_url ? proInfo.nom : '')}</span>
                   </div>
                   <div className="card-points-header">
-                     <span className="card-field-label">POINTS</span>
-                     <span className="card-field-value">96</span>
+                    <span className="card-field-label">POINTS</span>
+                    <span className="card-field-value">96</span>
                   </div>
                 </div>
 
-                <div className="card-strip-premium" style={{ 
+                <div className="card-strip-premium" style={{
                   backgroundImage: config.strip_image_url ? `url(${getMediaUrl(config.strip_image_url)})` : 'none',
                   backgroundColor: !config.strip_image_url ? 'rgba(0,0,0,0.1)' : ''
                 }}>
@@ -641,13 +650,13 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
 
                 <div className="card-barcode-premium">
-                   <QRCodeCanvas 
-                     value="https://fidelyzapp.fr/c/2BF10B" 
-                     size={135}
-                     level="H"
-                     includeMargin={false}
-                   />
-                   <div className="barcode-id-premium">N° Carte : 2BF10B</div>
+                  <QRCodeCanvas
+                    value="https://fidelyzapp.fr/c/2BF10B"
+                    size={135}
+                    level="H"
+                    includeMargin={false}
+                  />
+                  <div className="barcode-id-premium">N° Carte : 2BF10B</div>
                 </div>
 
 
@@ -712,8 +721,8 @@ const CardCustomizer = ({ proInfo }) => {
                 </div>
               </div>
             </div>
-            <p className="pro-hint" style={{textAlign:'center', marginTop: '1rem'}}>
-              <RotateCw size={12} style={{marginRight:4}} />
+            <p className="pro-hint" style={{ textAlign: 'center', marginTop: '1rem' }}>
+              <RotateCw size={12} style={{ marginRight: 4 }} />
               Aperçu Apple Wallet approximatif.
             </p>
           </>
@@ -724,10 +733,10 @@ const CardCustomizer = ({ proInfo }) => {
               <div className="google-card-new-header">
                 <div className="google-wallet-icon">
                   <svg viewBox="0 0 48 48" width="24" height="24">
-                    <path fill="#4285F4" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4z"/>
-                    <path fill="#34A853" d="M40 12H8c-2.2 0-4 1.8-4 4v4h40v-4c0-2.2-1.8-4-4-4z"/>
-                    <path fill="#FBBC05" d="M40 12H8c-2.2 0-4 1.8-4 4v8h40v-8c0-2.2-1.8-4-4-4z"/>
-                    <path fill="#EA4335" d="M40 12H8c-2.2 0-4 1.8-4 4v12h40v-12c0-2.2-1.8-4-4-4z"/>
+                    <path fill="#4285F4" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4z" />
+                    <path fill="#34A853" d="M40 12H8c-2.2 0-4 1.8-4 4v4h40v-4c0-2.2-1.8-4-4-4z" />
+                    <path fill="#FBBC05" d="M40 12H8c-2.2 0-4 1.8-4 4v8h40v-8c0-2.2-1.8-4-4-4z" />
+                    <path fill="#EA4335" d="M40 12H8c-2.2 0-4 1.8-4 4v12h40v-12c0-2.2-1.8-4-4-4z" />
                   </svg>
                 </div>
                 <span className="google-org-name-top" style={{ color: getContrastColor(config.google_primary_color) }}>{proInfo.nom}</span>
@@ -736,7 +745,7 @@ const CardCustomizer = ({ proInfo }) => {
               <div className="google-card-content">
                 {/* Large Title */}
                 <h2 className="google-main-title" style={{ color: getContrastColor(config.google_primary_color) }}>
-                   {config.google_card_title || 'Programme Fidélité'}
+                  {config.google_card_title || 'Programme Fidélité'}
                 </h2>
 
                 {/* Points Section */}
@@ -757,14 +766,14 @@ const CardCustomizer = ({ proInfo }) => {
               </div>
 
               <div className="google-footer-actions">
-                 <div className="google-add-btn-minimal">
-                    <img src="https://www.gstatic.com/wallet/apple-wallet-icons/en_US/add_to_google_wallet_wallet_button.png" alt="Add to Google Wallet" style={{ height: '36px' }} />
-                 </div>
+                <div className="google-add-btn-minimal">
+                  <img src="https://www.gstatic.com/wallet/apple-wallet-icons/en_US/add_to_google_wallet_wallet_button.png" alt="Add to Google Wallet" style={{ height: '36px' }} />
+                </div>
               </div>
             </div>
-            <p className="pro-hint" style={{textAlign:'center', marginTop: '1rem'}}>
-               <Smartphone size={12} style={{marginRight:4}} />
-               Aperçu Google Wallet fidèle au modèle officiel.
+            <p className="pro-hint" style={{ textAlign: 'center', marginTop: '1rem' }}>
+              <Smartphone size={12} style={{ marginRight: 4 }} />
+              Aperçu Google Wallet fidèle au modèle officiel.
             </p>
           </>
         )}

@@ -603,8 +603,8 @@ export const handleScan = async (req, res) => {
     );
 
     // 🔄 Sync via le service de notification (Apple + Google)
-    // On AWAIT ici pour que le "Succès" au tableau de bord soit synchronisé avec le "Ding" sur le téléphone
-    await sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false).catch(e => 
+    // OPTIMISATION : Non-bloquant pour une réponse instantanée au marchand
+    sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false).catch(e => 
       logger.warn('Push scan notification failed', e.message)
     );
     
@@ -1122,16 +1122,15 @@ export const redeemReward = async (req, res) => {
     await pool.query('UPDATE clients SET points = ? WHERE id = ?', [newPoints, clientId]);
     
     // 🔄 Sync TOUS les Wallets (Apple et Google)
-    await walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
+    // OPTIMISATION : Non-bloquant
+    walletSyncService.syncClientWallet(clientId, empresaId).catch(e => 
       logger.error('Wallet sync failed in redeemReward', e.message)
     );
 
     // 4. Envoi notification visuelle (+ silencieuse auto)
-    try {
-      await sendLoyaltyUpdateNotification(clientId, empresaId, -tier.points_required, true);
-    } catch (pushErr) {
-      logger.warn('Push redeem notification failed', pushErr.message);
-    }
+    sendLoyaltyUpdateNotification(clientId, empresaId, -tier.points_required, true).catch(pushErr => 
+      logger.warn('Push redeem notification failed', pushErr.message)
+    );
 
     
     res.json({ success: true, message: 'Cadeau validé ! (-' + tier.points_required + ' pts)', newPoints });

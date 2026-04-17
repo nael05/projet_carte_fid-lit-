@@ -146,19 +146,34 @@ class WalletSyncService {
       );
 
       if (googleWallets.length > 0) {
-        // Pour Google, on récupère le nouveau solde et les paliers pour forcer un rafraîchissement de l'objet
+        // Pour Google, on récupère les paliers pour forcer un rafraîchissement
         const [rewardTiers] = await db.query(
           'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
           [companyId]
         );
 
-        for (const wallet of googleWallets) {
-          const [clientData] = await db.query('SELECT points FROM clients WHERE id = ?', [wallet.client_id]);
-          if (clientData.length > 0) {
-            await googleWalletGenerator.updateLoyaltyObject(wallet.client_id, companyId, clientData[0].points, rewardTiers);
-          }
+        logger.info(`   🤖 [SYNC BATCH] Début mise à jour de ${googleWallets.length} objets Google Wallet...`);
+
+        // OPTIMISATION : Traitement par Chunks (Paquets de 25) pour la Vitesse
+        const chunkSize = 25;
+        for (let i = 0; i < googleWallets.length; i += chunkSize) {
+          const chunk = googleWallets.slice(i, i + chunkSize);
+          
+          await Promise.all(chunk.map(async (wallet) => {
+            try {
+              const [clientData] = await db.query('SELECT points FROM clients WHERE id = ?', [wallet.client_id]);
+              if (clientData.length > 0) {
+                return googleWalletGenerator.updateLoyaltyObject(wallet.client_id, companyId, clientData[0].points, rewardTiers);
+              }
+            } catch (err) {
+              logger.error(`      ❌ Erreur sync Google pour client ${wallet.client_id}:`, err.message);
+            }
+          }));
+
+          logger.info(`   🤖 [SYNC BATCH] Progression : ${Math.min(i + chunkSize, googleWallets.length)}/${googleWallets.length}`);
         }
-        logger.info(`   🤖 Google Wallet objects touchés (${googleWallets.length} clients)`);
+
+        logger.info(`   🤖 [SYNC BATCH] Terminé !`);
       }
       
       return { success: true, recipients: registrations.length };

@@ -137,6 +137,13 @@ function ProLogin() {
               disabled={loading}
               required
             />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex="-1"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 

@@ -140,40 +140,44 @@ class WalletSyncService {
       }
 
       // 4. Forcer la mise à jour visuelle pour Google Wallet (Touch des objets individuels)
+      // V8.6 : Requête groupée (JOIN) pour éviter de requêter dans la boucle !
       const [googleWallets] = await db.query(
-        'SELECT client_id FROM wallet_cards WHERE company_id = ? AND pass_serial_number LIKE "GOOGLE_%"',
+        `SELECT w.client_id, c.points 
+         FROM wallet_cards w
+         JOIN clients c ON w.client_id = c.id
+         WHERE w.company_id = ? AND w.pass_serial_number LIKE "GOOGLE_%"`,
         [companyId]
       );
 
       if (googleWallets.length > 0) {
-        // Pour Google, on récupère les paliers pour forcer un rafraîchissement
         const [rewardTiers] = await db.query(
           'SELECT * FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
           [companyId]
         );
 
-        logger.info(`   🤖 [SYNC BATCH] Début mise à jour de ${googleWallets.length} objets Google Wallet...`);
+        logger.info(`   🚀 [SUPERCHARGED SYNC] Lancement global pour ${googleWallets.length} objets Google...`);
 
-        // OPTIMISATION : Traitement par Chunks (Paquets de 25) pour la Vitesse
+        // V8.6 : Regroupement total en paquets de 25 lancés EN PARALLÈLE
         const chunkSize = 25;
+        const chunks = [];
         for (let i = 0; i < googleWallets.length; i += chunkSize) {
-          const chunk = googleWallets.slice(i, i + chunkSize);
-          
-          await Promise.all(chunk.map(async (wallet) => {
-            try {
-              const [clientData] = await db.query('SELECT points FROM clients WHERE id = ?', [wallet.client_id]);
-              if (clientData.length > 0) {
-                return googleWalletGenerator.updateLoyaltyObject(wallet.client_id, companyId, clientData[0].points, rewardTiers);
-              }
-            } catch (err) {
-              logger.error(`      ❌ Erreur sync Google pour client ${wallet.client_id}:`, err.message);
-            }
-          }));
-
-          logger.info(`   🤖 [SYNC BATCH] Progression : ${Math.min(i + chunkSize, googleWallets.length)}/${googleWallets.length}`);
+          chunks.push(googleWallets.slice(i, i + chunkSize));
         }
 
-        logger.info(`   🤖 [SYNC BATCH] Terminé !`);
+        // On lance TOUS les paquets en même temps sans attendre le précédent
+        await Promise.all(chunks.map(async (chunk, index) => {
+          try {
+            await Promise.all(chunk.map(wallet => 
+              googleWalletGenerator.updateLoyaltyObject(wallet.client_id, companyId, wallet.points, rewardTiers)
+                .catch(err => logger.error(`      ❌ Erreur sync Google client ${wallet.client_id}:`, err.message))
+            ));
+            logger.debug(`   🤖 [SYNC V8.6] Paquet ${index + 1}/${chunks.length} terminé`);
+          } catch (err) {
+            logger.error(`   ❌ Échec partiel dans le paquet ${index + 1}:`, err.message);
+          }
+        }));
+
+        logger.info(`   ✅ [SUPERCHARGED SYNC] Terminé avec succès !`);
       }
       
       return { success: true, recipients: registrations.length };

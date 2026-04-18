@@ -283,8 +283,7 @@ export const addPointsToWallet = async (req, res) => {
     res.json({
       success: true,
       oldBalance,
-      newBalance,
-      notificationsSent,
+      newBalance: wallet.points,
       message: `${pointsToAdd} point(s) ajouté(s)`,
     });
   } catch (error) {
@@ -481,7 +480,18 @@ export const downloadClientPass = async (req, res) => {
       back_fields_tiktok: client.back_fields_tiktok,
     };
 
-    const passBuffer = await passGenerator.generateLoyaltyPass(passData, customization, serialNumber, authenticationToken);
+    // Détermination de l'URL du webservice (Indispensable pour la synchro)
+    let backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    if (backendUrl.startsWith('http://')) backendUrl = backendUrl.replace('http://', 'https://');
+    const webServiceURL = `${backendUrl}/api/wallet`;
+
+    const passBuffer = await passGenerator.generateLoyaltyPass(
+      passData, 
+      customization, 
+      serialNumber, 
+      authenticationToken,
+      { webServiceURL }
+    );
 
     // 6️⃣ Sauvegarder en BD (CRITIQUE pour Apple Wallet Sync)
     await db.query(

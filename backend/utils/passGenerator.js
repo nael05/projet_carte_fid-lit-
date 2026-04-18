@@ -163,6 +163,8 @@ export class PassGenerator {
         authenticationToken: authToken,
       });
 
+      logger.info(`🌐 WebServiceURL pour ce pass: ${template.webServiceURL}`);
+
       logger.info(`   🔧 Template Couleurs : Fond=${template.backgroundColor}, Texte=${template.foregroundColor}`);
 
       const cleanCert = this.extractPEM(certificateBuffer);

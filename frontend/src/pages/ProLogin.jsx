@@ -79,7 +79,7 @@ function ProLogin() {
         const mustChange = response.data.mustChangePassword === true
         
         if (mustChange) {
-          navigate('/pro/reset-password', { 
+          navigate('/pro/secure-password', { 
             state: { email, firstTime: true, fromLogin: true } 
           })
         } else {

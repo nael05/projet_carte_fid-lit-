@@ -42,9 +42,9 @@ export function PrivateProRoute({ element }) {
 
   // 🔐 Forcer le changement de mot de passe si must_change_password = true
   // Sauf si on est déjà sur la page de changement de mot de passe
-  if (mustChangePassword === true && window.location.pathname !== '/pro/reset-password') {
+  if (mustChangePassword === true && window.location.pathname !== '/pro/secure-password') {
     console.warn('⚠️ Changement de mot de passe obligatoire - Redirection...')
-    return <Navigate to="/pro/reset-password" state={{ firstTime: true }} replace />
+    return <Navigate to="/pro/secure-password" state={{ firstTime: true }} replace />
   }
 
   return element

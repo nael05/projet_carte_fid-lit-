@@ -378,7 +378,7 @@ export class PassGenerator {
           try {
             const urlObj = new URL(url);
             let paths = urlObj.pathname.split('/').filter(Boolean);
-            displayHandle = paths.length > 0 ? `@${paths[paths.length - 1]}` : url;
+            displayHandle = paths.length > 0 ? `@${paths[paths.length - 1].replace(/^@/, '')}` : url;
           } catch (e) {
             displayHandle = url;
           }
@@ -390,7 +390,9 @@ export class PassGenerator {
           else if (platform === 'facebook') url = `https://facebook.com/${handle}`;
         }
     
-        return { value: displayHandle, attributedValue: `<a href="${url}">${displayHandle}</a>` };
+        // On met l'URL dans value (iOS la détectera via PKDataDetectorTypeLink)
+        // et le handle propre dans attributedValue pour les versions supportant le HTML
+        return { url, displayHandle };
       };
 
       if (customization?.back_fields_instagram) {
@@ -399,8 +401,8 @@ export class PassGenerator {
           this.safeAddField(pass.backFields, {
             key: 'instagram',
             label: 'INSTAGRAM',
-            value: social.value,
-            attributedValue: social.attributedValue
+            value: social.url,
+            attributedValue: `<a href="${social.url}">${social.displayHandle}</a>`
           });
         }
       }
@@ -411,8 +413,8 @@ export class PassGenerator {
           this.safeAddField(pass.backFields, {
             key: 'facebook',
             label: 'FACEBOOK',
-            value: social.value,
-            attributedValue: social.attributedValue
+            value: social.url,
+            attributedValue: `<a href="${social.url}">${social.displayHandle}</a>`
           });
         }
       }
@@ -423,8 +425,8 @@ export class PassGenerator {
           this.safeAddField(pass.backFields, {
             key: 'tiktok',
             label: 'TIKTOK',
-            value: social.value,
-            attributedValue: social.attributedValue
+            value: social.url,
+            attributedValue: `<a href="${social.url}">${social.displayHandle}</a>`
           });
         }
       }

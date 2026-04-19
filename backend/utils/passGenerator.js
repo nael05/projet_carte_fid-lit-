@@ -29,7 +29,7 @@ export class PassGenerator {
 
       this.certPath = process.env.APPLE_CERT_PATH;
       this.keyPath = process.env.APPLE_KEY_PATH || this.certPath;
-      
+
       // Convertir en chemins absolus si nécessaire
       if (this.certPath && !path.isAbsolute(this.certPath)) {
         this.certPath = path.resolve(__dirname, '..', this.certPath);
@@ -98,10 +98,10 @@ export class PassGenerator {
       if (isLocalUpload) {
         // Diagnostic : voir d'où on part
         const currentCwd = process.cwd();
-        
+
         // Nettoyer le chemin (enlever le slash initial s'il existe et tout ce qui précède 'uploads/')
         const cleanPath = urlOrPath.substring(urlOrPath.indexOf('uploads/'));
-        
+
         // TENTATIVE 1 : Chemin relatif direct (souvent le bon en PM2)
         let fullPath = path.resolve(currentCwd, cleanPath);
         if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
@@ -109,7 +109,7 @@ export class PassGenerator {
         // TENTATIVE 2 : Remonter d'un cran (cas backend/backend)
         fullPath = path.resolve(currentCwd, '..', cleanPath);
         if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
-        
+
         // TENTATIVE 3 : Descendre d'un cran (cas racine projet)
         fullPath = path.resolve(currentCwd, 'backend', cleanPath);
         if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
@@ -120,7 +120,7 @@ export class PassGenerator {
 
         logger.debug(`⚠️ Image introuvable. Tentatives échouées pour: ${cleanPath}`);
       }
-      
+
       if (urlOrPath.startsWith('http')) {
         const response = await axios.get(urlOrPath, {
           responseType: 'arraybuffer',
@@ -186,7 +186,7 @@ export class PassGenerator {
           pass.addLocation(locData);
           return true;
         }
-        
+
         const currentLocations = Array.isArray(pass.locations) ? pass.locations : [];
         currentLocations.push(locData);
         pass.locations = currentLocations;
@@ -274,8 +274,8 @@ export class PassGenerator {
       let locationsArray = [];
       if (customization?.locations) {
         try {
-          locationsArray = typeof customization.locations === 'string' 
-            ? JSON.parse(customization.locations) 
+          locationsArray = typeof customization.locations === 'string'
+            ? JSON.parse(customization.locations)
             : customization.locations;
         } catch (e) {
           // ignore parsing error
@@ -301,7 +301,7 @@ export class PassGenerator {
       }
 
       // --- LAYOUT PREMIUM (Style Fidelyz) ---
-      
+
       // 1. Points (Header)
       this.safeAddField(pass.headerFields, {
         key: 'points_header',

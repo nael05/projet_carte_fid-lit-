@@ -281,15 +281,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
             <>
 
 
-              <div className="settings-group">
-                <label>Texte à côté du logo (Optionnel)</label>
-                <input
-                  type="text" name="logo_text"
-                  value={config.logo_text}
-                  onChange={handleChange}
-                  placeholder="Ex: Club Privilège"
-                />
-              </div>
+
 
               <div className="color-grid">
                 <div className="settings-group">

@@ -114,8 +114,8 @@ export class PassGenerator {
         fullPath = path.resolve(currentCwd, 'backend', cleanPath);
         if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
 
-        // TENTATIVE 4 : Absolu via CWD (fallback ultime)
-        fullPath = path.join(currentCwd, cleanPath);
+        // TENTATIVE 4 : Chemin absolu VPS (Hardcoded fallback)
+        fullPath = path.join('/var/www/projet_carte_fid-lit-/backend', cleanPath);
         if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
 
         logger.debug(`⚠️ Image introuvable. Tentatives échouées pour: ${cleanPath}`);
@@ -224,8 +224,6 @@ export class PassGenerator {
         authenticationToken: authToken,
       });
 
-      logger.info(`   🔧 Template Couleurs : Fond=${template.backgroundColor}, Texte=${template.foregroundColor}`);
-
       const cleanCert = this.extractPEM(certificateBuffer);
       const cleanKey = this.extractPEM(keyBuffer);
 
@@ -285,16 +283,6 @@ export class PassGenerator {
         label: 'BONJOUR',
         value: (clientData.firstName || 'Client').toUpperCase()
       });
-
-      // 3. Section PROMO / OFFRE (Auxiliary - Très visible sur l'iPhone)
-      if (customization?.relevant_text) {
-        this.safeAddField(pass.auxiliaryFields, {
-          key: 'promotion',
-          label: 'OFFRE EN COURS',
-          value: customization.relevant_text,
-          changeMessage: "Nouvelle offre : %@"
-        });
-      }
 
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
@@ -392,6 +380,16 @@ export class PassGenerator {
           key: 'extra_info',
           label: 'INFOS COMPLÉMENTAIRES',
           value: customization.back_fields_info
+        });
+      }
+
+      // --- SECTION PROMO AU DOS (Comme demandé) ---
+      if (customization?.relevant_text) {
+        this.safeAddField(pass.backFields, {
+          key: 'promotion',
+          label: 'OFFRE EN COURS',
+          value: customization.relevant_text,
+          changeMessage: "Nouvelle offre : %@"
         });
       }
 

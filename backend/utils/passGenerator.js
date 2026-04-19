@@ -320,7 +320,7 @@ export class PassGenerator {
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
         label: 'DÉTAILS DES RÉCOMPENSES',
-        value: 'Au dos 👆 ...'
+        value: 'Au dos 👆 '
       });
 
       // 4. Barcode

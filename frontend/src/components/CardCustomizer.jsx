@@ -112,9 +112,9 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
   const addLocation = () => {
     const current = config.locations || [];
     if (current.length >= 10) return;
-    setConfig(prev => ({ 
-      ...prev, 
-      locations: [...current, { latitude: '', longitude: '', relevantText: '' }] 
+    setConfig(prev => ({
+      ...prev,
+      locations: [...current, { latitude: '', longitude: '', relevantText: '' }]
     }));
   };
 
@@ -191,12 +191,12 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
   const getMediaUrl = (url) => {
     if (!url) return null;
-    
+
     // Maintient les URLs externes qui ne sont pas des uploads locaux
     if (url.startsWith('http') && !url.includes('uploads/')) {
       return url;
     }
-    
+
     // 1. On nettoie le chemin pour garder uniquement ce qui est après uploads/
     let cleanPath = url;
     if (url.includes('uploads/')) {
@@ -204,11 +204,11 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     } else {
       cleanPath = cleanPath.replace(/^\//, '');
     }
-    
+
     // 2. On récupère la base URL
     let baseUrl = import.meta.env.VITE_API_URL || window.location.origin + '/api';
     baseUrl = baseUrl.replace(/\/$/, '');
-    
+
     // 3. On force le passage par /api/uploads pour le proxy VPS
     const finalBase = baseUrl.includes('/api') ? baseUrl : `${baseUrl}/api`;
     return `${finalBase}/uploads/${cleanPath}`;
@@ -465,7 +465,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                         Retirer
                       </button>
                     </div>
-                    
+
                     <div className="settings-grid">
                       <div className="settings-group" style={{ marginBottom: '10px' }}>
                         <label style={{ fontSize: '0.8rem' }}>Latitude</label>
@@ -497,7 +497,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     </div>
                   </div>
                 ))}
-                
+
                 {(!config.locations || config.locations.length === 0) && (
                   <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed #374151', color: '#9ca3af' }}>
                     Aucun lieu configuré. Vos clients ne recevront pas de notification à proximité.
@@ -643,7 +643,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     />
                   </div>
                   <div className="form-field full-width">
-                    <label>Infos complémentaires (Au dos)</label>
+                    <label>Infos complémentaires ()</label>
                     <textarea
                       name="back_fields_info"
                       value={config.back_fields_info || ''}

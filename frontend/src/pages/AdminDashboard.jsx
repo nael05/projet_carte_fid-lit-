@@ -6,7 +6,7 @@ import {
   AlertCircle, CheckCircle2, Loader2, X, Plus, Search, 
   Lock, Unlock, Trash2, Key, Star, Stamp, LogOut, 
   ShieldAlert, LayoutDashboard, Copy, ExternalLink, Users,
-  Sun, Moon, PieChart, PlusCircle, Filter, Edit2, TrendingUp, Activity, Building2, Store
+  Sun, Moon, PieChart, PlusCircle, Filter, Edit2, TrendingUp, Activity, Building2, Store, AlertTriangle
 } from 'lucide-react'
 import './AdminDashboard.css'
 
@@ -22,6 +22,7 @@ function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('tous')
   const [newCompanyCredentials, setNewCompanyCredentials] = useState(null)
   const [editingCompany, setEditingCompany] = useState(null)
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(null)
   
   const [formData, setFormData] = useState({
     nom: '',
@@ -157,14 +158,16 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
     }
   }
 
-  const handleDelete = async (companyId) => {
-    if (!window.confirm('❗️ ATTENTION ❗️\n\nSuppression définitive !\nCette action va détruire cette entreprise, TOUTES ses cartes configurées, et TOUS les clients associés de façon irréversible. \n\nÊtes-vous absolument sûr ?')) return
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmModal) return
     try {
-      await api.delete(`/admin/delete-company/${companyId}`)
+      await api.delete(`/admin/delete-company/${deleteConfirmModal.id}`)
       setSuccess('Entreprise supprimée définitivement')
+      setDeleteConfirmModal(null)
       loadEnterprises()
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la suppression')
+      setDeleteConfirmModal(null)
     }
   }
 
@@ -231,6 +234,31 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
             <button onClick={() => setNewCompanyCredentials(null)} className="ux-btn-primary full">
               Fermer et continuer
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRM DELETE */}
+      {deleteConfirmModal && (
+        <div className="ux-modal-overlay" onClick={() => setDeleteConfirmModal(null)}>
+          <div className="ux-modal-card danger" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <div className="ux-modal-header" style={{ marginBottom: '1.5rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', margin: 0, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={24} /> ❗️ ATTENTION ❗️
+                </h2>
+              </div>
+              <button onClick={() => setDeleteConfirmModal(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            <div style={{ textAlign: 'left', marginBottom: '2rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+              <p style={{ margin: '0 0 10px', color: 'var(--text-primary)', fontWeight: '600' }}>Suppression définitive !</p>
+              <p style={{ margin: '0 0 15px' }}>Cette action va détruire l'entreprise <strong>{deleteConfirmModal.nom}</strong>, TOUTES ses cartes configurées, et TOUS les clients associés de façon irréversible.</p>
+              <p style={{ margin: 0, fontWeight: '500' }}>Êtes-vous absolument sûr ?</p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setDeleteConfirmModal(null)} className="ux-btn-secondary" style={{ flex: 1, padding: '12px' }}>Annuler</button>
+              <button onClick={handleConfirmDelete} style={{ flex: 1, padding: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'none'}>Oui, supprimer</button>
+            </div>
           </div>
         </div>
       )}
@@ -471,7 +499,7 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
                           <button onClick={() => handleReactivate(ent.id)} className="ux-btn-icon green" title="Réactiver"><Unlock size={16} /></button>
                         )}
                         <button onClick={() => setEditingCompany({...ent})} className="ux-btn-icon blue" title="Modifier infos"><Edit2 size={16} /></button>
-                        <button onClick={() => handleDelete(ent.id)} className="ux-btn-icon red" title="Supprimer (Attention)"><Trash2 size={16} /></button>
+                        <button onClick={() => setDeleteConfirmModal(ent)} className="ux-btn-icon red" title="Supprimer (Attention)"><Trash2 size={16} /></button>
                         <button onClick={() => copyAllInfo(ent)} className="ux-btn-icon gray" title="Tout copier"><Copy size={16} /></button>
                       </div>
                     </div>

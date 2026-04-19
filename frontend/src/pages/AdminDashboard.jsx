@@ -472,7 +472,6 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
                         <button onClick={() => handleDelete(ent.id)} className="ux-btn-icon red" title="Supprimer (Attention)"><Trash2 size={16} /></button>
                         <button onClick={() => copyAllInfo(ent)} className="ux-btn-icon gray" title="Tout copier"><Copy size={16} /></button>
                       </div>
-                      <button className="ux-btn-outline small" onClick={() => window.open(`mailto:${ent.email}`)}><ExternalLink size={14} /> Contact</button>
                     </div>
                   </div>
                 ))}

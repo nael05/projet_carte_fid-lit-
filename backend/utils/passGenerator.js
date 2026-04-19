@@ -104,22 +104,21 @@ export class PassGenerator {
         
         // TENTATIVE 1 : Chemin relatif direct (souvent le bon en PM2)
         let fullPath = path.resolve(currentCwd, cleanPath);
-        
-        if (fs.existsSync(fullPath)) {
-          return fs.readFileSync(fullPath);
-        }
+        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
 
-        // TENTATIVE 2 : Si double backend detecté (on remonte d'un cran)
-        if (currentCwd.endsWith('backend')) {
-          fullPath = path.resolve(currentCwd, '..', cleanPath);
-          if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
-        }
+        // TENTATIVE 2 : Remonter d'un cran (cas backend/backend)
+        fullPath = path.resolve(currentCwd, '..', cleanPath);
+        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
         
-        // TENTATIVE 3 : Si on est un cran au dessus de backend
+        // TENTATIVE 3 : Descendre d'un cran (cas racine projet)
         fullPath = path.resolve(currentCwd, 'backend', cleanPath);
         if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
 
-        logger.warn(`⚠️ [IMAGE-DEBUG] Image introuvable. CWD: ${currentCwd}, CleanPath: ${cleanPath}`);
+        // TENTATIVE 4 : Absolu via CWD (fallback ultime)
+        fullPath = path.join(currentCwd, cleanPath);
+        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
+
+        logger.debug(`⚠️ Image introuvable. Tentatives échouées pour: ${cleanPath}`);
       }
       
       if (urlOrPath.startsWith('http')) {
@@ -225,8 +224,6 @@ export class PassGenerator {
         authenticationToken: authToken,
       });
 
-      logger.info(`🌐 WebServiceURL pour ce pass: ${template.webServiceURL}`);
-
       logger.info(`   🔧 Template Couleurs : Fond=${template.backgroundColor}, Texte=${template.foregroundColor}`);
 
       const cleanCert = this.extractPEM(certificateBuffer);
@@ -235,21 +232,21 @@ export class PassGenerator {
       template.setCertificate(cleanCert);
       template.setPrivateKey(cleanKey, this.certPassword || undefined);
 
-      // 2. Chargement PARALLÈLE des images (Gain de temps majeur)
+      // 2. Chargement PARALLÈLE des images
       const [logoBuffer, iconBuffer, stripBuffer] = await Promise.all([
         this.fetchImageBuffer(customization?.apple_logo_url),
         this.fetchImageBuffer(customization?.apple_icon_url),
         this.fetchImageBuffer(customization?.apple_strip_image_url)
       ]);
 
-      // 2. Ajout sécurisé des images
+      // Ajout sécurisé des images
       await this.safeAddImage(template, "logo", logoBuffer);
       await this.safeAddImage(template, "icon", iconBuffer);
       if (stripBuffer) {
         await this.safeAddImage(template, "strip", stripBuffer);
       }
 
-      // Si l'icône ou le logo manquent, tenter des fallbacks par défaut (Si safeAddImage a echoué ou buffer nul)
+      // Fallbacks par défaut (Images 1x1 invisibles si rien n'est trouvé pour éviter les espaces vides)
       if (!iconBuffer) {
         const defaultIcon = await this.fetchImageBuffer('https://dummyimage.com/29x29/000/fff.png&text=Icon');
         if (defaultIcon) await this.safeAddImage(template, "icon", defaultIcon);
@@ -272,7 +269,7 @@ export class PassGenerator {
         });
       }
 
-      // --- LAYOUT PREMIUM (Style KFC) ---
+      // --- LAYOUT PREMIUM (Style Fidelyz) ---
       
       // 1. Points (Header)
       this.safeAddField(pass.headerFields, {
@@ -282,12 +279,22 @@ export class PassGenerator {
         changeMessage: "Solde mis à jour : %@ points"
       });
 
-      // 2. Bonjour [Prénom] & Détails (Secondary Fields)
+      // 2. Bonjour (Secondary)
       this.safeAddField(pass.secondaryFields, {
         key: 'greeting',
         label: 'BONJOUR',
         value: (clientData.firstName || 'Client').toUpperCase()
       });
+
+      // 3. Section PROMO / OFFRE (Auxiliary - Très visible sur l'iPhone)
+      if (customization?.relevant_text) {
+        this.safeAddField(pass.auxiliaryFields, {
+          key: 'promotion',
+          label: 'OFFRE EN COURS',
+          value: customization.relevant_text,
+          changeMessage: "Nouvelle offre : %@"
+        });
+      }
 
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',

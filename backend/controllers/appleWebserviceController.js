@@ -66,13 +66,6 @@ export const registerDevice = async (req, res) => {
     const { deviceLibraryIdentifier, passTypeIdentifier, serialNumber } = req.params;
     const { pushToken } = req.body;
 
-    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    logger.info(`📱 [WEBSERVICE] NOUVELLE REQUÊTE D'ENREGISTREMENT`);
-    logger.info(`   📍 Device : ${deviceLibraryIdentifier.substring(0, 15)}...`);
-    logger.info(`   🎫 Serial : ${serialNumber}`);
-    logger.info(`   🔑 Token  : ${pushToken ? pushToken.substring(0, 15) + '...' : 'MANQUANT'}`);
-    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-
     // 1. Vérification du PassTypeID
     if (passTypeIdentifier !== process.env.APPLE_PASS_TYPE_ID) {
       logger.warn(`⚠️ Tentative d'enregistrement pour un PassTypeID incorrect: ${passTypeIdentifier}`);
@@ -183,8 +176,9 @@ export const getUpdatedPasses = async (req, res) => {
 
     // Retourner la liste des passes mis à jour
     const serialNumbers = updatedPasses.map((p) => p.pass_serial_number);
-    // Utiliser la valeur brute pour garder la précision
-    const lastUpdatedTag = Math.max(...updatedPasses.map((p) => new Date(p.last_updated).getTime())).toString();
+    // Utiliser un tag précis (timestamp + un petit buffer pour forcer la mise à jour si nécessaire)
+    const latestDate = Math.max(...updatedPasses.map((p) => new Date(p.last_updated).getTime()));
+    const lastUpdatedTag = latestDate.toString();
 
     logger.info(`✅ ${serialNumbers.length} pass(es) mis à jour`);
     res.json({
@@ -221,17 +215,9 @@ export const getUpdatedPass = async (req, res) => {
     // 2. Authentification très stricte
     const authHeader = req.headers.authorization;
     let authToken = null;
-    if (!authHeader || !authHeader.startsWith('ApplePass ')) {
-      logger.warn(`⚠️ ALERTE (getUpdatedPass): En-tête Authorization manquant. Bypass temporaire pour debug !`);
-    } else {
+    if (authHeader && authHeader.startsWith('ApplePass ')) {
       authToken = authHeader.split(' ')[1];
     }
-
-    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    logger.info(`📦 [WEBSERVICE] DEMANDE DE TÉLÉCHARGEMENT PASS`);
-    logger.info(`   🎫 Serial : ${serialNumber}`);
-    logger.info(`   🛡️ Auth   : ${authToken ? 'Présent' : 'MANQUANT'}`);
-    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
     // 3. Récupérer les données avec vérification du token
     const [clientRows] = await db.query(

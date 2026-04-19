@@ -902,11 +902,21 @@ export const getCardCustomization = async (req, res) => {
         google_logo_url: null,
         google_hero_image_url: null,
         google_card_title: '',
-        google_card_subtitle: ''
+        google_card_subtitle: '',
+        locations: []
       });
     }
 
-    res.json(customization[0]);
+    let parsedResult = { ...customization[0] };
+    if (typeof parsedResult.locations === 'string') {
+      try {
+        parsedResult.locations = JSON.parse(parsedResult.locations);
+      } catch(e) {
+        parsedResult.locations = [];
+      }
+    }
+    
+    res.json(parsedResult);
   } catch (err) {
     logger.error('Load card customization error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
@@ -951,7 +961,8 @@ export const updateCardCustomization = async (req, res) => {
     google_logo_url,
     google_hero_image_url,
     google_card_title,
-    google_card_subtitle
+    google_card_subtitle,
+    locations
   } = req.body;
 
   try {
@@ -976,8 +987,8 @@ export const updateCardCustomization = async (req, res) => {
           apple_background_color, apple_text_color, apple_label_color, apple_logo_url, apple_icon_url, apple_strip_image_url,
           latitude, longitude, relevant_text,
           google_primary_color, google_text_color, google_logo_url,
-          google_hero_image_url, google_card_title, google_card_subtitle)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          google_hero_image_url, google_card_title, google_card_subtitle, locations)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customizationId, empresaId, loyaltyType, 
           primary_color || '#1f2937', text_color || '#ffffff', accent_color || '#3b82f6', secondary_color || '#374151',
@@ -990,7 +1001,8 @@ export const updateCardCustomization = async (req, res) => {
           apple_logo_url || null, apple_icon_url || null, apple_strip_image_url || null,
           latitude || null, longitude || null, relevant_text || null,
           google_primary_color || '#1f2937', google_text_color || '#ffffff', google_logo_url || null,
-          google_hero_image_url || null, google_card_title || '', google_card_subtitle || ''
+          google_hero_image_url || null, google_card_title || '', google_card_subtitle || '',
+          locations ? JSON.stringify(locations) : null
         ]
       );
     } else {
@@ -1006,7 +1018,7 @@ export const updateCardCustomization = async (req, res) => {
          apple_logo_url = ?, apple_icon_url = ?, apple_strip_image_url = ?,
          latitude = ?, longitude = ?, relevant_text = ?,
          google_primary_color = ?, google_text_color = ?, google_logo_url = ?,
-         google_hero_image_url = ?, google_card_title = ?, google_card_subtitle = ?,
+         google_hero_image_url = ?, google_card_title = ?, google_card_subtitle = ?, locations = ?,
          updated_at = NOW()
          WHERE company_id = ? AND loyalty_type = ?`,
         [
@@ -1045,6 +1057,7 @@ export const updateCardCustomization = async (req, res) => {
           google_hero_image_url || null,
           google_card_title || '',
           google_card_subtitle || '',
+          locations ? JSON.stringify(locations) : null,
           empresaId,
           loyaltyType
         ]

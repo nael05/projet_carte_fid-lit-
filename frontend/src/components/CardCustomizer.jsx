@@ -103,6 +103,27 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     setConfig(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleLocationChange = (index, field, value) => {
+    const updatedLocs = [...(config.locations || [])];
+    updatedLocs[index] = { ...updatedLocs[index], [field]: value };
+    setConfig(prev => ({ ...prev, locations: updatedLocs }));
+  };
+
+  const addLocation = () => {
+    const current = config.locations || [];
+    if (current.length >= 10) return;
+    setConfig(prev => ({ 
+      ...prev, 
+      locations: [...current, { latitude: '', longitude: '', relevantText: '' }] 
+    }));
+  };
+
+  const removeLocation = (index) => {
+    const updatedLocs = [...(config.locations || [])];
+    updatedLocs.splice(index, 1);
+    setConfig(prev => ({ ...prev, locations: updatedLocs }));
+  };
+
   const handleFileUpload = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -425,34 +446,75 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 </div>
               </div>
 
-              <div className="settings-header" style={{ marginTop: '2.5rem' }}>
-                <h3>Géolocalisation & Proximité</h3>
-                <p>La carte s'affichera automatiquement sur l'écran verrouillé lorsqu'il sera à proximité.</p>
+              <div className="settings-header" style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3>Géolocalisation & Proximité</h3>
+                  <p>Affichez la carte sur l'écran verrouillé près de vos établissements (Max 10).</p>
+                </div>
+                <button
+                  onClick={addLocation}
+                  disabled={(config.locations || []).length >= 10}
+                  style={{
+                    background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px',
+                    padding: '8px 12px', cursor: (config.locations || []).length >= 10 ? 'not-allowed' : 'pointer',
+                    opacity: (config.locations || []).length >= 10 ? 0.5 : 1
+                  }}
+                >
+                  + Ajouter un lieu
+                </button>
               </div>
 
-              <div className="settings-grid">
-                <div className="settings-group">
-                  <label>Latitude</label>
-                  <input
-                    type="number" step="any" name="latitude"
-                    value={config.latitude}
-                    onChange={handleChange}
-                    placeholder="Ex: 48.8566"
-                  />
-                </div>
-                <div className="settings-group">
-                  <label>Longitude</label>
-                  <input
-                    type="number" step="any" name="longitude"
-                    value={config.longitude}
-                    onChange={handleChange}
-                    placeholder="Ex: 2.3522"
-                  />
-                </div>
+              <div className="locations-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                {(config.locations || []).map((loc, index) => (
+                  <div key={index} style={{ background: '#1f2937', padding: '1rem', borderRadius: '8px', border: '1px solid #374151' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <strong style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Lieu #{index + 1}</strong>
+                      <button onClick={() => removeLocation(index)} style={{ background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        Retirer
+                      </button>
+                    </div>
+                    
+                    <div className="settings-grid">
+                      <div className="settings-group" style={{ marginBottom: '10px' }}>
+                        <label style={{ fontSize: '0.8rem' }}>Latitude</label>
+                        <input
+                          type="number" step="any"
+                          value={loc.latitude || ''}
+                          onChange={(e) => handleLocationChange(index, 'latitude', e.target.value)}
+                          placeholder="Ex: 48.8566"
+                        />
+                      </div>
+                      <div className="settings-group" style={{ marginBottom: '10px' }}>
+                        <label style={{ fontSize: '0.8rem' }}>Longitude</label>
+                        <input
+                          type="number" step="any"
+                          value={loc.longitude || ''}
+                          onChange={(e) => handleLocationChange(index, 'longitude', e.target.value)}
+                          placeholder="Ex: 2.3522"
+                        />
+                      </div>
+                    </div>
+                    <div className="settings-group">
+                      <label style={{ fontSize: '0.8rem' }}>Texte de notification sur l'écran verrouillé</label>
+                      <input
+                        type="text"
+                        value={loc.relevantText || ''}
+                        onChange={(e) => handleLocationChange(index, 'relevantText', e.target.value)}
+                        placeholder="Ex: Bienvenue ! N'oubliez pas votre carte."
+                      />
+                    </div>
+                  </div>
+                ))}
+                
+                {(!config.locations || config.locations.length === 0) && (
+                  <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed #374151', color: '#9ca3af' }}>
+                    Aucun lieu configuré. Vos clients ne recevront pas de notification à proximité.
+                  </div>
+                )}
               </div>
 
               <div className="info-alert" style={{ marginTop: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px', borderRadius: '8px', color: '#60a5fa', fontSize: '0.85rem' }}>
-                💡 <strong>Astuce :</strong> Vous pouvez trouver vos coordonnées sur Google Maps en faisant un clic droit sur votre adresse (les chiffres sont la latitude et la longitude).
+                💡 <strong>Astuce :</strong> Vous trouvez vos coordonnées sur Google Maps en faisant un clic droit. La notification s'affiche à environ 100m du lieu.
               </div>
             </div>
           )}

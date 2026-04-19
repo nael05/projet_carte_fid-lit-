@@ -271,7 +271,28 @@ export class PassGenerator {
         description: customization?.apple_pass_description || 'Carte de fidélité numérique'
       });
 
-      if (customization?.latitude && customization?.longitude) {
+      let locationsArray = [];
+      if (customization?.locations) {
+        try {
+          locationsArray = typeof customization.locations === 'string' 
+            ? JSON.parse(customization.locations) 
+            : customization.locations;
+        } catch (e) {
+          // ignore parsing error
+        }
+      }
+
+      if (Array.isArray(locationsArray) && locationsArray.length > 0) {
+        locationsArray.slice(0, 10).forEach(loc => {
+          if (loc.latitude && loc.longitude) {
+            this.safeAddLocation(pass, {
+              latitude: Number(loc.latitude),
+              longitude: Number(loc.longitude),
+              relevantText: loc.relevantText || customization.relevant_text || 'Boutique à proximité'
+            });
+          }
+        });
+      } else if (customization?.latitude && customization?.longitude) {
         this.safeAddLocation(pass, {
           latitude: Number(customization.latitude),
           longitude: Number(customization.longitude),

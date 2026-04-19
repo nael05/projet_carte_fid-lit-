@@ -66,6 +66,13 @@ export const registerDevice = async (req, res) => {
     const { deviceLibraryIdentifier, passTypeIdentifier, serialNumber } = req.params;
     const { pushToken } = req.body;
 
+    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    logger.info(`📱 [WEBSERVICE] NOUVELLE REQUÊTE D'ENREGISTREMENT`);
+    logger.info(`   📍 Device : ${deviceLibraryIdentifier.substring(0, 15)}...`);
+    logger.info(`   🎫 Serial : ${serialNumber}`);
+    logger.info(`   🔑 Token  : ${pushToken ? pushToken.substring(0, 15) + '...' : 'MANQUANT'}`);
+    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
     // 1. Vérification du PassTypeID
     if (passTypeIdentifier !== process.env.APPLE_PASS_TYPE_ID) {
       logger.warn(`⚠️ Tentative d'enregistrement pour un PassTypeID incorrect: ${passTypeIdentifier}`);
@@ -220,7 +227,11 @@ export const getUpdatedPass = async (req, res) => {
       authToken = authHeader.split(' ')[1];
     }
 
-    logger.info(`📦 Requête pass mis à jour: ${serialNumber}`);
+    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    logger.info(`📦 [WEBSERVICE] DEMANDE DE TÉLÉCHARGEMENT PASS`);
+    logger.info(`   🎫 Serial : ${serialNumber}`);
+    logger.info(`   🛡️ Auth   : ${authToken ? 'Présent' : 'MANQUANT'}`);
+    logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
     // 3. Récupérer les données avec vérification du token
     const [clientRows] = await db.query(

@@ -65,8 +65,11 @@ class WalletSyncService {
 
             if (registrations.length > 0) {
               const tokens = registrations.map(r => r.push_token);
-              logger.info(`   🍎 [SYNC] Envoi Push Apple (${tokens.length} tokens)`);
+              logger.info(`   🍎 [SYNC-DEBUG] Envoi Push Apple vers ${tokens.length} terminal/terminaux`);
+              logger.info(`   🍎 [SYNC-DEBUG] Tokens : ${tokens.join(', ').substring(0, 100)}...`);
               return apnService.sendBulkUpdateNotifications(tokens);
+            } else {
+              logger.warn(`   ⚠️ [SYNC-DEBUG] AUCUN terminal Apple enregistré pour le serial ${serial}`);
             }
           }
 

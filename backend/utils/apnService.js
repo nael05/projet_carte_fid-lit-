@@ -100,6 +100,10 @@ export class APNService {
       const topic = (process.env.APPLE_PASS_TYPE_ID || '').trim();
       notification.topic = topic;
 
+      logger.info(`📡 [APNS-DEBUG] Tentative d'envoi Push...`);
+      logger.info(`   📍 Topic : ${notification.topic}`);
+      logger.info(`   📍 Token : ${pushToken.substring(0, 20)}...`);
+
       // Envoyer
       const result = await this.provider.send(notification, pushToken);
 

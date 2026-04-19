@@ -366,29 +366,69 @@ export class PassGenerator {
         });
       }
 
+      const formatSocialField = (input, platform) => {
+        let cleanValue = input.trim();
+        if (!cleanValue) return null;
+        
+        let url = '';
+        let displayHandle = '';
+        
+        if (cleanValue.startsWith('http://') || cleanValue.startsWith('https://')) {
+          url = cleanValue;
+          try {
+            const urlObj = new URL(url);
+            let paths = urlObj.pathname.split('/').filter(Boolean);
+            displayHandle = paths.length > 0 ? `@${paths[paths.length - 1]}` : url;
+          } catch (e) {
+            displayHandle = url;
+          }
+        } else {
+          let handle = cleanValue.startsWith('@') ? cleanValue.substring(1) : cleanValue;
+          displayHandle = `@${handle}`;
+          if (platform === 'instagram') url = `https://instagram.com/${handle}`;
+          else if (platform === 'tiktok') url = `https://tiktok.com/@${handle}`;
+          else if (platform === 'facebook') url = `https://facebook.com/${handle}`;
+        }
+    
+        return { value: displayHandle, attributedValue: `<a href="${url}">${displayHandle}</a>` };
+      };
+
       if (customization?.back_fields_instagram) {
-        this.safeAddField(pass.backFields, {
-          key: 'instagram',
-          label: 'INSTAGRAM',
-          value: customization.back_fields_instagram.startsWith('@') ? customization.back_fields_instagram : `@${customization.back_fields_instagram}`
-        });
+        const social = formatSocialField(customization.back_fields_instagram, 'instagram');
+        if (social) {
+          this.safeAddField(pass.backFields, {
+            key: 'instagram',
+            label: 'INSTAGRAM',
+            value: social.value,
+            attributedValue: social.attributedValue
+          });
+        }
       }
 
       if (customization?.back_fields_facebook) {
-        this.safeAddField(pass.backFields, {
-          key: 'facebook',
-          label: 'FACEBOOK',
-          value: customization.back_fields_facebook
-        });
+        const social = formatSocialField(customization.back_fields_facebook, 'facebook');
+        if (social) {
+          this.safeAddField(pass.backFields, {
+            key: 'facebook',
+            label: 'FACEBOOK',
+            value: social.value,
+            attributedValue: social.attributedValue
+          });
+        }
       }
 
       if (customization?.back_fields_tiktok) {
-        this.safeAddField(pass.backFields, {
-          key: 'tiktok',
-          label: 'TIKTOK',
-          value: customization.back_fields_tiktok.startsWith('@') ? customization.back_fields_tiktok : `@${customization.back_fields_tiktok}`
-        });
+        const social = formatSocialField(customization.back_fields_tiktok, 'tiktok');
+        if (social) {
+          this.safeAddField(pass.backFields, {
+            key: 'tiktok',
+            label: 'TIKTOK',
+            value: social.value,
+            attributedValue: social.attributedValue
+          });
+        }
       }
+
 
       if (customization?.back_fields_terms) {
         this.safeAddField(pass.backFields, {

@@ -280,9 +280,11 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
                   />
                 </div>
               </div>
-              <div className="ux-form-footer" style={{ marginTop: '2rem' }}>
-                <button type="button" onClick={() => setEditingCompany(null)} className="ux-btn-outline" style={{ flex: 1 }}>Annuler</button>
-                <button type="submit" className="ux-btn-primary" disabled={submitting} style={{ flex: 2 }}>
+              <div className="ux-form-footer" style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem' }}>
+                <button type="button" onClick={() => setEditingCompany(null)} style={{ flex: 1, padding: '12px', background: 'transparent', border: '1px solid var(--border-medium)', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: '500', fontSize: '1rem', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'var(--bg-surface)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  Annuler
+                </button>
+                <button type="submit" disabled={submitting} style={{ flex: 2, padding: '12px', background: 'var(--accent-color, #3b82f6)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'none'}>
                   {submitting ? <Loader2 className="spin" size={20} /> : 'Enregistrer les modifications'}
                 </button>
               </div>

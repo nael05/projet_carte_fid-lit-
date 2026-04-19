@@ -76,7 +76,20 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     try {
       const { data } = await api.get(`/pro/card-customization/${proInfo.id}?loyaltyType=${proInfo.loyalty_type || 'points'}`);
 
-      // Update config with data or defaults
+      // Note: extractSocialHandle is defined below but hoisted via const — we inline logic here
+      const cleanSocial = (val) => {
+        if (!val) return '';
+        const v = val.trim();
+        if (v.startsWith('http://') || v.startsWith('https://')) {
+          try {
+            const url = new URL(v);
+            const parts = url.pathname.split('/').filter(Boolean);
+            if (parts.length > 0) return '@' + parts[parts.length - 1].replace(/^@/, '');
+          } catch (e) {}
+        }
+        return v.startsWith('@') ? v : `@${v}`;
+      };
+
       setConfig(prev => ({
         ...prev,
         ...data,
@@ -89,7 +102,10 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         apple_organization_name: data.apple_organization_name || proInfo.nom || '',
         latitude: data.latitude || '',
         longitude: data.longitude || '',
-        relevant_text: data.relevant_text || ''
+        relevant_text: data.relevant_text || '',
+        back_fields_instagram: cleanSocial(data.back_fields_instagram),
+        back_fields_facebook: cleanSocial(data.back_fields_facebook),
+        back_fields_tiktok: cleanSocial(data.back_fields_tiktok),
       }));
     } catch (err) {
       console.error('Error loading customization:', err);

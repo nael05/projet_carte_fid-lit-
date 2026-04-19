@@ -601,8 +601,9 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       type="text" name="back_fields_instagram"
                       value={config.back_fields_instagram || ''}
                       onChange={handleChange}
-                      placeholder="@votrecompte"
+                      placeholder="@votrecompte ou lien complet"
                     />
+                    <small className="field-hint">Ex: @nael.mrl5 ou https://instagram.com/nael.mrl5</small>
                   </div>
                   <div className="form-field">
                     <label><Share2 size={14} /> Facebook</label>
@@ -610,8 +611,9 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       type="text" name="back_fields_facebook"
                       value={config.back_fields_facebook || ''}
                       onChange={handleChange}
-                      placeholder="MaPageFidelyz"
+                      placeholder="MaPage ou lien complet"
                     />
+                    <small className="field-hint">Ex: MaPage ou https://facebook.com/MaPage</small>
                   </div>
                   <div className="form-field">
                     <label>TikTok</label>
@@ -619,8 +621,9 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       type="text" name="back_fields_tiktok"
                       value={config.back_fields_tiktok || ''}
                       onChange={handleChange}
-                      placeholder="votrecompte"
+                      placeholder="@votrecompte ou lien complet"
                     />
+                    <small className="field-hint">Ex: @moncompte ou https://tiktok.com/@moncompte</small>
                   </div>
                 </div>
               </div>

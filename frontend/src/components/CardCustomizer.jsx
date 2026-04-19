@@ -98,8 +98,40 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     }
   };
 
+  const extractSocialHandle = (value, platform) => {
+    const v = value.trim();
+    if (!v) return '';
+    // Si c'est une URL complète, extraire le dernier segment du chemin
+    if (v.startsWith('http://') || v.startsWith('https://')) {
+      try {
+        const url = new URL(v);
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (parts.length > 0) {
+          const raw = parts[parts.length - 1];
+          // Enlever le @ si déjà présent (TikTok: /@handle)
+          return '@' + raw.replace(/^@/, '');
+        }
+      } catch (e) {}
+      return v; // Fallback si URL invalide
+    }
+    // Sinon normaliser le @
+    const handle = v.startsWith('@') ? v : `@${v}`;
+    return handle;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const socialFields = ['back_fields_instagram', 'back_fields_facebook', 'back_fields_tiktok'];
+    if (socialFields.includes(name)) {
+      // Nettoyer uniquement si l'utilisateur a fini de taper (colle un lien entier)
+      // On nettoie seulement si c'est clairement une URL complète
+      const v = value.trim();
+      if (v.startsWith('http://') || v.startsWith('https://')) {
+        const cleaned = extractSocialHandle(v, name);
+        setConfig(prev => ({ ...prev, [name]: cleaned }));
+        return;
+      }
+    }
     setConfig(prev => ({ ...prev, [name]: value }));
   };
 

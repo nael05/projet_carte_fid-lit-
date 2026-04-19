@@ -6,7 +6,7 @@ import {
   AlertCircle, CheckCircle2, Loader2, X, Plus, Search, 
   Lock, Unlock, Trash2, Key, Star, Stamp, LogOut, 
   ShieldAlert, LayoutDashboard, Copy, ExternalLink, Users,
-  Sun, Moon, PieChart, PlusCircle, Filter
+  Sun, Moon, PieChart, PlusCircle, Filter, Edit2, TrendingUp, Activity, Building2, Store
 } from 'lucide-react'
 import './AdminDashboard.css'
 
@@ -21,6 +21,7 @@ function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('tous')
   const [newCompanyCredentials, setNewCompanyCredentials] = useState(null)
+  const [editingCompany, setEditingCompany] = useState(null)
   
   const [formData, setFormData] = useState({
     nom: '',
@@ -157,13 +158,29 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
   }
 
   const handleDelete = async (companyId) => {
-    if (!window.confirm('Suppression définitive?')) return
+    if (!window.confirm('❗️ ATTENTION ❗️\n\nSuppression définitive !\nCette action va détruire cette entreprise, TOUTES ses cartes configurées, et TOUS les clients associés de façon irréversible. \n\nÊtes-vous absolument sûr ?')) return
     try {
       await api.delete(`/admin/delete-company/${companyId}`)
-      setSuccess('Entreprise supprimée')
+      setSuccess('Entreprise supprimée définitivement')
       loadEnterprises()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur')
+      setError(err.response?.data?.error || 'Erreur lors de la suppression')
+    }
+  }
+
+  const handleUpdateCompany = async (e) => {
+    e.preventDefault()
+    setError(''); setSuccess('');
+    setSubmitting(true)
+    try {
+      await api.put(`/admin/update-company/${editingCompany.id}`, editingCompany)
+      setSuccess('Commerce mis à jour avec succès !')
+      setEditingCompany(null)
+      loadEnterprises()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur de mise à jour')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -218,6 +235,62 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
         </div>
       )}
 
+      {/* MODAL EDIT COMPANY */}
+      {editingCompany && (
+        <div className="ux-modal-overlay" onClick={() => setEditingCompany(null)}>
+          <div className="ux-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="ux-modal-header" style={{ marginBottom: '1.5rem', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Modifier {editingCompany.nom}</h2>
+                <p style={{ margin: '4px 0 0', opacity: 0.7, fontSize: '0.9rem' }}>Modifiez les informations du commerce</p>
+              </div>
+              <button onClick={() => setEditingCompany(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            
+            <form onSubmit={handleUpdateCompany} className="ux-form-premium" style={{ textAlign: 'left' }}>
+              <div className="ux-form-group">
+                <label>Nom du commerce</label>
+                <input 
+                  type="text" value={editingCompany.nom} 
+                  onChange={e => setEditingCompany({...editingCompany, nom: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="ux-form-group">
+                <label>Email (Identifiant de connexion)</label>
+                <input 
+                  type="email" value={editingCompany.email} 
+                  onChange={e => setEditingCompany({...editingCompany, email: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="ux-form-row-compact">
+                <div className="ux-form-group">
+                  <label>Gérant</label>
+                  <input 
+                    type="text" value={editingCompany.prenom || ''} 
+                    onChange={e => setEditingCompany({...editingCompany, prenom: e.target.value})}
+                  />
+                </div>
+                <div className="ux-form-group">
+                  <label>Téléphone</label>
+                  <input 
+                    type="tel" value={editingCompany.telephone || ''} 
+                    onChange={e => setEditingCompany({...editingCompany, telephone: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="ux-form-footer" style={{ marginTop: '2rem' }}>
+                <button type="button" onClick={() => setEditingCompany(null)} className="ux-btn-outline" style={{ flex: 1 }}>Annuler</button>
+                <button type="submit" className="ux-btn-primary" disabled={submitting} style={{ flex: 2 }}>
+                  {submitting ? <Loader2 className="spin" size={20} /> : 'Enregistrer les modifications'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* TOP NAVBAR */}
       <nav className="ux-navbar">
         <div className="ux-nav-left">
@@ -261,41 +334,55 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
         {/* VIEW: OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="ux-view-fade">
-            <header className="ux-view-header">
-              <h2>Tableau de bord stratégique</h2>
-              <p>Résumé de l'activité du réseau Fidelyz.</p>
+            <header className="ux-view-header" style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ padding: '10px', background: 'var(--accent-alpha)', borderRadius: '12px', color: 'var(--accent-color)' }}>
+                  <Activity size={28} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0 }}>Réseau Global Fideliz</h2>
+                  <p style={{ margin: '4px 0 0', opacity: 0.7, fontSize: '0.95rem' }}>Aperçu en temps réel de votre écosystème de partenaires.</p>
+                </div>
+              </div>
             </header>
 
-            <div className="ux-stats-grid">
-              <div className="ux-stat-card">
-                <div className="ux-stat-icon blue"><Users size={24} /></div>
+            <div className="ux-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+              <div className="ux-stat-card" style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(59,130,246,0.02) 100%)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                <div className="ux-stat-icon" style={{ background: '#3b82f6', color: '#fff' }}><Building2 size={22} /></div>
                 <div className="ux-stat-data">
-                  <span className="ux-stat-label">Total Entreprises</span>
-                  <span className="ux-stat-value">{stats.total}</span>
+                  <span className="ux-stat-label">Commerces Inscrits</span>
+                  <span className="ux-stat-value" style={{ fontSize: '2.5rem', color: 'var(--text-primary)' }}>{stats.total}</span>
                 </div>
               </div>
-              <div className="ux-stat-card">
-                <div className="ux-stat-icon green"><CheckCircle2 size={24} /></div>
+              <div className="ux-stat-card" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0.02) 100%)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <div className="ux-stat-icon" style={{ background: '#10b981', color: '#fff' }}><CheckCircle2 size={22} /></div>
                 <div className="ux-stat-data">
-                  <span className="ux-stat-label">Actifs</span>
-                  <span className="ux-stat-value">{stats.active}</span>
+                  <span className="ux-stat-label">Abonnements Actifs</span>
+                  <span className="ux-stat-value" style={{ fontSize: '2.5rem', color: 'var(--text-primary)' }}>{stats.active}</span>
                 </div>
               </div>
-              <div className="ux-stat-card">
-                <div className="ux-stat-icon red"><ShieldAlert size={24} /></div>
+              <div className="ux-stat-card" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.02) 100%)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                <div className="ux-stat-icon" style={{ background: '#ef4444', color: '#fff' }}><ShieldAlert size={22} /></div>
                 <div className="ux-stat-data">
-                  <span className="ux-stat-label">Suspendus</span>
-                  <span className="ux-stat-value">{stats.suspended}</span>
+                  <span className="ux-stat-label">Comptes Suspendus</span>
+                  <span className="ux-stat-value" style={{ fontSize: '2.5rem', color: 'var(--text-primary)' }}>{stats.suspended}</span>
                 </div>
               </div>
             </div>
 
-            <div className="ux-welcome-banner">
-              <div className="ux-banner-text">
-                <h3>Voulez-vous lancer un nouveau partenaire ?</h3>
-                <p>La configuration prend moins de 2 minutes.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+              <div className="ux-welcome-banner" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-light)', padding: '2rem', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div className="ux-banner-text">
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', marginBottom: '8px' }}>
+                    <Store size={20} color="var(--accent-color)" />
+                    Ajouter un nouveau partenaire
+                  </h3>
+                  <p style={{ margin: 0, opacity: 0.7, maxWidth: '400px', lineHeight: '1.5' }}>Générez une nouvelle instance isolée pour un commerçant avec ses identifiants et accès en 2 clics.</p>
+                </div>
+                <button className="ux-btn-accent" onClick={() => setActiveTab('create')} style={{ padding: '12px 24px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <PlusCircle size={18} /> Lancer la création
+                </button>
               </div>
-              <button className="ux-btn-accent" onClick={() => setActiveTab('create')}>Lancer la création</button>
             </div>
           </div>
         )}
@@ -381,8 +468,9 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
                         ) : (
                           <button onClick={() => handleReactivate(ent.id)} className="ux-btn-icon green" title="Réactiver"><Unlock size={16} /></button>
                         )}
-                        <button onClick={() => handleDelete(ent.id)} className="ux-btn-icon red" title="Supprimer"><Trash2 size={16} /></button>
-                        <button onClick={() => copyAllInfo(ent)} className="ux-btn-icon blue" title="Tout copier"><Copy size={16} /></button>
+                        <button onClick={() => setEditingCompany({...ent})} className="ux-btn-icon blue" title="Modifier infos"><Edit2 size={16} /></button>
+                        <button onClick={() => handleDelete(ent.id)} className="ux-btn-icon red" title="Supprimer (Attention)"><Trash2 size={16} /></button>
+                        <button onClick={() => copyAllInfo(ent)} className="ux-btn-icon gray" title="Tout copier"><Copy size={16} /></button>
                       </div>
                       <button className="ux-btn-outline small" onClick={() => window.open(`mailto:${ent.email}`)}><ExternalLink size={14} /> Contact</button>
                     </div>

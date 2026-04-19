@@ -43,6 +43,7 @@ router.post('/admin/create-company', verifyToken, isAdmin, apiController.createC
 router.put('/admin/suspend-company/:companyId', verifyToken, isAdmin, apiController.suspendCompany);
 router.put('/admin/reactivate-company/:companyId', verifyToken, isAdmin, apiController.reactivateCompany);
 router.delete('/admin/delete-company/:companyId', verifyToken, isAdmin, apiController.deleteCompany);
+router.put('/admin/update-company/:companyId', verifyToken, isAdmin, apiController.updateCompany);
 
 // ===== Pro Routes =====
 router.post('/pro/login', loginLimiter, apiController.proLogin);

@@ -188,18 +188,6 @@ export const deleteCompany = async (req, res) => {
   const { companyId } = req.params;
 
   try {
-    // Vérifier qu'il n'y a pas de clients actifs
-    const [clientRows] = await pool.query(
-      'SELECT COUNT(*) as count FROM clients WHERE entreprise_id = ?',
-      [companyId]
-    );
-
-    if (clientRows[0].count > 0) {
-      return res.status(400).json({ 
-        error: 'Impossible de supprimer: des clients existent' 
-      });
-    }
-
     const [result] = await pool.query(
       'DELETE FROM entreprises WHERE id = ?',
       [companyId]
@@ -213,6 +201,31 @@ export const deleteCompany = async (req, res) => {
     res.json({ success: true, message: 'Entreprise supprimée' });
   } catch (err) {
     logger.error('Delete company error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const updateCompany = async (req, res) => {
+  const { companyId } = req.params;
+  const { nom, email, prenom, telephone } = req.body;
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE entreprises SET nom = ?, email = ?, prenom = ?, telephone = ? WHERE id = ?',
+      [nom, email, prenom, telephone, companyId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Entreprise non trouvée' });
+    }
+
+    logger.info('Company updated successfully');
+    res.json({ success: true, message: 'Entreprise mise à jour' });
+  } catch (err) {
+    logger.error('Update company error', { error: err.message });
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé par un autre compte' });
+    }
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

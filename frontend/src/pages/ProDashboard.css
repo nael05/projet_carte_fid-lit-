@@ -511,6 +511,22 @@
 }
 .pro-copy-btn:hover { background: var(--accent-hover); }
 
+@media (max-width: 480px) {
+  .pro-link-copy {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .pro-link-copy input {
+    width: 100%;
+    text-align: center;
+  }
+  .pro-copy-btn {
+    padding: 8px 24px;
+    font-size: 12px;
+    width: auto;
+  }
+}
 /* ---- CLIENT MODAL ---- */
 .pro-modal {
   background: var(--bg-surface);

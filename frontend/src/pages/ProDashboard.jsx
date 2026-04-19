@@ -367,25 +367,8 @@ function ProDashboard() {
     <div className="pro-dash">
       {/* ===== TOP BAR ===== */}
       <header className="pro-topbar">
-        <div className="pro-topbar-left">
-          <div className="pro-avatar">
-            {customization?.logo_url ? (
-              <img 
-                src={customization.logo_url.startsWith('http') 
-                  ? customization.logo_url 
-                  : `${import.meta.env.VITE_API_URL || window.location.origin + '/api'}/uploads/${customization.logo_url}`.replace('/api/api/', '/api/')} 
-                alt="Logo" 
-                className="pro-logo-img"
-                onError={(e) => {
-                  e.target.onerror = null; 
-                  e.target.src = ''; // Prevents infinite loop
-                  e.target.parentElement.innerHTML = (proInfo?.nom || 'E')[0];
-                }}
-              />
-            ) : (
-              (proInfo?.nom || localStorage.getItem('companyName') || 'E')[0]
-            )}
-          </div>
+        <div className="pro-topbar-left" style={{ gap: '15px' }}>
+          <img src="/logo-fidelyz.png" alt="Fidelyz Logo" style={{ height: '36px', objectFit: 'contain' }} />
           <div>
             <h1 className="pro-company-name">{proInfo?.nom || localStorage.getItem('companyName')}</h1>
             <span className="pro-badge">Points · {clients.length} client(s)</span>

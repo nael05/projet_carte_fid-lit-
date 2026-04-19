@@ -326,13 +326,6 @@ export class PassGenerator {
         });
       }
 
-      if (customization?.latitude && customization?.longitude) {
-        pass.locations.add({
-          latitude: Number(customization.latitude),
-          longitude: Number(customization.longitude),
-          relevantText: customization.relevant_text || 'Boutique à proximité'
-        });
-      }
 
       return await pass.asBuffer();
     } catch (error) {

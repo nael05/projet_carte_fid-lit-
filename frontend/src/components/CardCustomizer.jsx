@@ -394,9 +394,35 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
           {activeTab === 'proximity' && (
             <div className="proximity-settings">
-              <div className="settings-header">
+              {/* PROMO DU MOMENT (Design Screenshot) */}
+              <div className="promo-setup-card" style={{ marginTop: '2rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
+                  <RotateCw size={24} className="pro-spin-on-hover" style={{ color: '#3b82f6' }} />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', letterSpacing: '0.5px', color: '#fff' }}>PROMO DU MOMENT</h3>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>(NOTIFICATION PUSH)</p>
+                  </div>
+                </div>
+
+                <div className="settings-group" style={{ background: '#111827', padding: '1.2rem', borderRadius: '10px' }}>
+                  <label style={{ fontSize: '0.9rem', marginBottom: '10px', display: 'block', fontWeight: '500' }}>Texte de la promotion</label>
+                  <textarea
+                    name="relevant_text"
+                    value={config.relevant_text}
+                    onChange={handleChange}
+                    placeholder="Ex: -20% sur tout le magasin ce week-end !"
+                    rows={3}
+                    style={{ background: 'transparent', border: '1px solid #374151', borderRadius: '8px', width: '100%', padding: '12px', color: '#fff' }}
+                  />
+                  <p style={{ marginTop: '12px', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    💡 La modification de ce champ déclenche une notification Push immédiate chez vos clients Apple.
+                  </p>
+                </div>
+              </div>
+
+              <div className="settings-header" style={{ marginTop: '2.5rem' }}>
                 <h3>Géolocalisation & Proximité</h3>
-                <p>La carte s'affichera automatiquement sur l'écran verrouillé du client lorsqu'il sera à proximité.</p>
+                <p>La carte s'affichera automatiquement sur l'écran verrouillé lorsqu'il sera à proximité.</p>
               </div>
 
               <div className="settings-grid">
@@ -418,18 +444,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     placeholder="Ex: 2.3522"
                   />
                 </div>
-              </div>
-
-              <div className="settings-group">
-                <label>Message de proximité (Écran verrouillé)</label>
-                <input
-                  type="text" name="relevant_text"
-                  value={config.relevant_text}
-                  onChange={handleChange}
-                  placeholder="Ex: Vous êtes proche de notre boutique !"
-                  maxLength={100}
-                />
-                <span className="upload-hint">S'affichera sous la carte sur l'écran verrouillé.</span>
               </div>
 
               <div className="info-alert" style={{ marginTop: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px', borderRadius: '8px', color: '#60a5fa', fontSize: '0.85rem' }}>
@@ -620,10 +634,10 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
               <div className="card-front">
                 <div className="card-header-premium">
                   <div className="card-logo-area">
-                    {config.logo_url && (
-                      <img src={getMediaUrl(config.logo_url)} alt="Logo" className="card-logo" />
+                    {(config.apple_logo_url || config.logo_url) && (
+                      <img src={getMediaUrl(config.apple_logo_url || config.logo_url)} alt="Logo" className="card-logo" />
                     )}
-                    <span className="card-logo-text">{config.logo_text || (!config.logo_url ? proInfo.nom : '')}</span>
+                    <span className="card-logo-text">{config.logo_text || (!(config.apple_logo_url || config.logo_url) ? proInfo.nom : '')}</span>
                   </div>
                   <div className="card-points-header">
                     <span className="card-field-label">POINTS</span>
@@ -671,6 +685,14 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                   </div>
 
                   <div className="back-scroll-area" style={{ maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+                    
+                    {/* OFFRE EN COURS (PROMO) */}
+                    {config.relevant_text && (
+                      <div className="back-item-premium" style={{ marginBottom: '1.2rem', padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '6px', borderLeft: '3px solid #3b82f6' }}>
+                        <span className="back-item-label" style={{ color: '#3b82f6' }}>OFFRE EN COURS</span>
+                        <p className="back-item-value" style={{ fontWeight: '600' }}>{config.relevant_text}</p>
+                      </div>
+                    )}
                     {/* CONTACT */}
                     {(config.back_fields_phone || config.back_fields_website || config.back_fields_address) && (
                       <div className="back-item-group" style={{ marginBottom: '1.2rem' }}>

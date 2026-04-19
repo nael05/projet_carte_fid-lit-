@@ -218,7 +218,7 @@ function ProDashboard() {
     }
 
     // Passage à l'étape points
-    setPointsToAdd(loyaltyConfig.points_adding_mode === 'auto' ? loyaltyConfig.points_per_purchase.toString() : '');
+    setPointsToAdd(loyaltyConfig.points_adding_mode === 'automatic' ? loyaltyConfig.points_per_purchase.toString() : '');
     setScanStep('points');
     setIsProcessing(false);
   }

@@ -425,22 +425,22 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
                   <RotateCw size={24} className="pro-spin-on-hover" style={{ color: '#3b82f6' }} />
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', letterSpacing: '0.5px', color: '#fff' }}>PROMO DU MOMENT</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', letterSpacing: '0.5px', color: 'var(--text-primary)' }}>PROMO DU MOMENT</h3>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>(NOTIFICATION PUSH)</p>
                   </div>
                 </div>
 
-                <div className="settings-group" style={{ background: '#111827', padding: '1.2rem', borderRadius: '10px' }}>
-                  <label style={{ fontSize: '0.9rem', marginBottom: '10px', display: 'block', fontWeight: '500' }}>Texte de la promotion</label>
+                <div className="settings-group" style={{ background: 'var(--bg-app)', padding: '1.2rem', borderRadius: '10px', border: '1px solid var(--border-medium)' }}>
+                  <label style={{ fontSize: '0.9rem', marginBottom: '10px', display: 'block', fontWeight: '500', color: 'var(--text-secondary)' }}>Texte de la promotion</label>
                   <textarea
                     name="relevant_text"
                     value={config.relevant_text}
                     onChange={handleChange}
                     placeholder="Ex: -20% sur tout le magasin ce week-end !"
                     rows={3}
-                    style={{ background: 'transparent', border: '1px solid #374151', borderRadius: '8px', width: '100%', padding: '12px', color: '#fff' }}
+                    style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: '8px', width: '100%', padding: '12px', color: 'var(--text-primary)' }}
                   />
-                  <p style={{ marginTop: '12px', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <p style={{ marginTop: '12px', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-tertiary)' }}>
                     💡 La modification de ce champ déclenche une notification Push immédiate chez vos clients Apple.
                   </p>
                 </div>
@@ -466,9 +466,9 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
               <div className="locations-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                 {(config.locations || []).map((loc, index) => (
-                  <div key={index} style={{ background: '#1f2937', padding: '1rem', borderRadius: '8px', border: '1px solid #374151' }}>
+                  <div key={index} style={{ background: 'var(--bg-app)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <strong style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Lieu #{index + 1}</strong>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Lieu #{index + 1}</strong>
                       <button onClick={() => removeLocation(index)} style={{ background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>
                         Retirer
                       </button>
@@ -685,12 +685,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
         {platform === 'apple' ? (
           <>
-            <div className="preview-toggle">
-              <button className={previewSide === 'front' ? 'active' : ''} onClick={() => setPreviewSide('front')}>Recto</button>
-              <button className={previewSide === 'back' ? 'active' : ''} onClick={() => setPreviewSide('back')}>Verso</button>
-            </div>
-
-            <div className={`apple-card ${previewSide === 'back' ? 'flipped' : ''}`} style={{
+            <div className="apple-card" style={{
               backgroundColor: config.primary_color,
               color: config.text_color,
               '--stamp-color': config.accent_color,
@@ -741,73 +736,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 </div>
 
 
-              </div>
-
-              {/* APPLE BACK */}
-              <div className="card-back" style={{ backgroundColor: '#111', color: '#fff' }}>
-                <div className="back-content" style={{ padding: '1.2rem' }}>
-                  <div className="back-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem', marginBottom: '1rem' }}>
-                    <h3 style={{ color: '#fff', margin: 0, fontSize: '1.2rem' }}>Informations</h3>
-                    <p style={{ margin: '4px 0 0', opacity: 0.6, fontSize: '0.8rem' }}>{config.apple_organization_name || proInfo.nom}</p>
-                  </div>
-
-                  <div className="back-scroll-area" style={{ maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
-                    
-                    {/* OFFRE EN COURS (PROMO) */}
-                    {config.relevant_text && (
-                      <div className="back-item-premium" style={{ marginBottom: '1.2rem', padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '6px', borderLeft: '3px solid #3b82f6' }}>
-                        <span className="back-item-label" style={{ color: '#3b82f6' }}>OFFRE EN COURS</span>
-                        <p className="back-item-value" style={{ fontWeight: '600' }}>{config.relevant_text}</p>
-                      </div>
-                    )}
-                    {/* CONTACT */}
-                    {(config.back_fields_phone || config.back_fields_website || config.back_fields_address) && (
-                      <div className="back-item-group" style={{ marginBottom: '1.2rem' }}>
-                        {config.back_fields_phone && (
-                          <div className="back-item-premium">
-                            <span className="back-item-label"><Phone size={12} /> TÉLÉPHONE</span>
-                            <p className="back-item-value" style={{ color: '#007aff' }}>{config.back_fields_phone}</p>
-                          </div>
-                        )}
-                        {config.back_fields_website && (
-                          <div className="back-item-premium">
-                            <span className="back-item-label"><Globe size={12} /> SITE WEB</span>
-                            <p className="back-item-value" style={{ color: '#007aff' }}>{config.back_fields_website} <ChevronRight size={10} /></p>
-                          </div>
-                        )}
-                        {config.back_fields_address && (
-                          <div className="back-item-premium">
-                            <span className="back-item-label"><MapPin size={12} /> ADRESSE</span>
-                            <p className="back-item-value">{config.back_fields_address}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* RÉSEAUX SOCIAUX */}
-                    {(config.back_fields_instagram || config.back_fields_facebook || config.back_fields_tiktok) && (
-                      <div className="back-item-group" style={{ marginBottom: '1.2rem' }}>
-                        <span className="back-group-title" style={{ fontSize: '0.7rem', opacity: 0.5, letterSpacing: '1px', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Réseaux Sociaux</span>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                          {config.back_fields_instagram && <div className="back-social-pill"><Share2 size={12} /> {config.back_fields_instagram}</div>}
-                          {config.back_fields_facebook && <div className="back-social-pill"><Share2 size={12} /> Facebook</div>}
-                          {config.back_fields_tiktok && <div className="back-social-pill">TikTok</div>}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TEXTES */}
-                    <div className="back-item-premium">
-                      <span className="back-item-label">DESCRIPTION</span>
-                      <p className="back-item-value" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{config.back_fields_info || "Votre carte de fidélité numérique."}</p>
-                    </div>
-
-                    <div className="back-item-premium" style={{ marginTop: '1rem' }}>
-                      <span className="back-item-label">CONDITIONS</span>
-                      <p className="back-item-value" style={{ fontSize: '0.75rem', opacity: 0.7, lineHeight: '1.4' }}>{config.back_fields_terms || "Cumulez des points pour obtenir des cadeaux."}</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
             <p className="pro-hint" style={{ textAlign: 'center', marginTop: '1rem' }}>

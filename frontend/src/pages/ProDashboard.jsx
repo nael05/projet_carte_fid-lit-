@@ -556,7 +556,7 @@ function ProDashboard() {
                       </div>
 
                       <div className="modal-content-centered">
-                         {loyaltyConfig.points_adding_mode === 'auto' ? (
+                         {loyaltyConfig.points_adding_mode === 'automatic' ? (
                             <div className="auto-points-view">
                                <div className="points-pills large">+{loyaltyConfig.points_per_purchase}</div>
                                <p>Points automatiques pour le passage de ce jour.</p>

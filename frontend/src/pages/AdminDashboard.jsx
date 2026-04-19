@@ -296,7 +296,7 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
       {/* TOP NAVBAR */}
       <nav className="ux-navbar">
         <div className="ux-nav-left">
-          <div className="ux-logo-icon"><ShieldAlert size={22} /></div>
+          <img src="/logo-fidelyz.png" alt="Fidelyz" style={{ height: '36px', objectFit: 'contain' }} />
           <h1>Fidelyz Control</h1>
         </div>
 

@@ -29,11 +29,8 @@ function Home() {
       {/* NAVBAR */}
       <nav className="luxe-navbar">
         <div className="navbar-content">
-          <div className="logo-placeholder">
-            {/* Logo will be here later */}
-            <div className="placeholder-box">
-              <Zap size={20} fill="currentColor" />
-            </div>
+          <div className="logo-placeholder" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo-fidelyz.png" alt="Fidelyz" style={{ height: '36px', objectFit: 'contain' }} />
             <span className="brand-name">Fidelyz</span>
           </div>
           <div className="navbar-actions">

@@ -231,10 +231,15 @@ export class PassGenerator {
       template.setPrivateKey(cleanKey, this.certPassword || undefined);
 
       // 2. Chargement PARALLÈLE des images
+      // Fallback robuste : si apple_logo_url est vide, on utilise logo_url
+      const finalLogoUrl = customization?.apple_logo_url || customization?.logo_url;
+      const finalIconUrl = customization?.apple_icon_url || customization?.icon_url;
+      const finalStripUrl = customization?.apple_strip_image_url || customization?.strip_image_url;
+
       const [logoBuffer, iconBuffer, stripBuffer] = await Promise.all([
-        this.fetchImageBuffer(customization?.apple_logo_url),
-        this.fetchImageBuffer(customization?.apple_icon_url),
-        this.fetchImageBuffer(customization?.apple_strip_image_url)
+        this.fetchImageBuffer(finalLogoUrl),
+        this.fetchImageBuffer(finalIconUrl),
+        this.fetchImageBuffer(finalStripUrl)
       ]);
 
       // Ajout sécurisé des images
@@ -244,7 +249,7 @@ export class PassGenerator {
         await this.safeAddImage(template, "strip", stripBuffer);
       }
 
-      // Fallbacks par défaut (Images 1x1 invisibles si rien n'est trouvé pour éviter les espaces vides)
+      // Fallbacks par défaut (Images visibles si rien n'est trouvé pour éviter les espaces vides)
       if (!iconBuffer) {
         const defaultIcon = await this.fetchImageBuffer('https://dummyimage.com/29x29/000/fff.png&text=Icon');
         if (defaultIcon) await this.safeAddImage(template, "icon", defaultIcon);

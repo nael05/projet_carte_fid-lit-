@@ -170,22 +170,14 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
   const getMediaUrl = (url) => {
     if (!url) return null;
-
-    // If it's already a full external URL, return as is
-    if (url.startsWith('http') && !url.includes('localhost') && !url.includes('loca.lt')) {
-      return url;
-    }
-
-    // Extract everything after /uploads/ or just the path if already relative
-    const relativeMatch = url.match(/uploads\/.+/);
-    const cleanPath = relativeMatch ? relativeMatch[0] : url.replace(/^\//, '');
-
-    // Use API base URL but strip the /api prefix for static media files
-    let baseUrl = api.defaults.baseURL || '/api';
-    // Remove trailing slash AND /api suffix if present
-    const cleanBaseUrl = baseUrl.replace(/\/$/, '').replace(/\/api$/, '');
-
-    return `${cleanBaseUrl}/${cleanPath}`;
+    if (url.startsWith('http')) return url;
+    
+    // Fallback robuste pour les chemins relatifs
+    const cleanPath = url.replace(/^\//, '').replace(/^uploads\//, '');
+    const baseUrl = (import.meta.env.VITE_API_URL || window.location.origin + '/api').replace(/\/$/, '');
+    
+    // On enlève le /api pour pointer directement vers /uploads
+    return `${baseUrl.replace('/api', '')}/uploads/${cleanPath}`;
   };
 
   if (loading) return (
@@ -341,7 +333,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
               <div className="upload-item">
                 <div className="upload-preview">
                   {platform === 'apple'
-                    ? (config.logo_url ? <img src={getMediaUrl(config.logo_url)} alt="Logo" /> : <Layout size={20} />)
+                    ? ((config.apple_logo_url || config.logo_url) ? <img src={getMediaUrl(config.apple_logo_url || config.logo_url)} alt="Logo" /> : <Layout size={20} />)
                     : (config.google_logo_url ? <img src={getMediaUrl(config.google_logo_url)} alt="Logo" /> : <Layout size={20} />)
                   }
                 </div>

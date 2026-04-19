@@ -170,10 +170,19 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
   const getMediaUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith('http')) return url;
     
-    // 1. On nettoie le chemin pour n'avoir que le nom du fichier
-    const cleanPath = url.replace(/^\//, '').replace(/^uploads\//, '');
+    // Maintient les URLs externes qui ne sont pas des uploads locaux
+    if (url.startsWith('http') && !url.includes('uploads/')) {
+      return url;
+    }
+    
+    // 1. On nettoie le chemin pour garder uniquement ce qui est après uploads/
+    let cleanPath = url;
+    if (url.includes('uploads/')) {
+      cleanPath = url.substring(url.indexOf('uploads/') + 8);
+    } else {
+      cleanPath = cleanPath.replace(/^\//, '');
+    }
     
     // 2. On récupère la base URL
     let baseUrl = import.meta.env.VITE_API_URL || window.location.origin + '/api';

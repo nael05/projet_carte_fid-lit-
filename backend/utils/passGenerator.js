@@ -181,8 +181,15 @@ export class PassGenerator {
    */
   safeAddLocation(pass, locData) {
     try {
-      if (pass && pass.locations && typeof pass.locations.add === 'function') {
-        pass.locations.add(locData);
+      if (pass) {
+        if (typeof pass.addLocation === 'function') {
+          pass.addLocation(locData);
+          return true;
+        }
+        
+        const currentLocations = Array.isArray(pass.locations) ? pass.locations : [];
+        currentLocations.push(locData);
+        pass.locations = currentLocations;
         return true;
       }
       return false;

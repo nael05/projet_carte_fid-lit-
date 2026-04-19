@@ -96,21 +96,30 @@ export class PassGenerator {
       // Détection plus robuste des fichiers locaux dans le dossier 'uploads'
       const isLocalUpload = urlOrPath.includes('uploads/');
       if (isLocalUpload) {
+        // Diagnostic : voir d'où on part
+        const currentCwd = process.cwd();
+        
         // Nettoyer le chemin (enlever le slash initial s'il existe et tout ce qui précède 'uploads/')
         const cleanPath = urlOrPath.substring(urlOrPath.indexOf('uploads/'));
-        // Utiliser process.cwd() pour être au niveau racine /backend sur le VPS
-        const fullPath = path.resolve(process.cwd(), cleanPath);
+        
+        // TENTATIVE 1 : Chemin relatif direct (souvent le bon en PM2)
+        let fullPath = path.resolve(currentCwd, cleanPath);
         
         if (fs.existsSync(fullPath)) {
           return fs.readFileSync(fullPath);
-        } else {
-          // Diagnostic : tenter un repli si /backend est déjà inclus
-          const fallbackPath = path.resolve(process.cwd(), 'backend', cleanPath);
-          if (fs.existsSync(fallbackPath)) {
-            return fs.readFileSync(fallbackPath);
-          }
-          logger.warn(`⚠️ Image locale introuvable au chemin résolu : ${fullPath}`);
         }
+
+        // TENTATIVE 2 : Si double backend detecté (on remonte d'un cran)
+        if (currentCwd.endsWith('backend')) {
+          fullPath = path.resolve(currentCwd, '..', cleanPath);
+          if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
+        }
+        
+        // TENTATIVE 3 : Si on est un cran au dessus de backend
+        fullPath = path.resolve(currentCwd, 'backend', cleanPath);
+        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
+
+        logger.warn(`⚠️ [IMAGE-DEBUG] Image introuvable. CWD: ${currentCwd}, CleanPath: ${cleanPath}`);
       }
       
       if (urlOrPath.startsWith('http')) {
@@ -142,23 +151,43 @@ export class PassGenerator {
   async safeAddImage(target, type, buffer) {
     try {
       if (!buffer) return false;
-      
-      // Vérifier la présence de l'objet images et de la méthode add
       if (target && target.images && typeof target.images.add === 'function') {
         await target.images.add(type, buffer);
         return true;
       }
-      
-      // Repli si l'objet images n'existe pas directement sur la cible (certaines versions de pass-js)
-      if (target && typeof target.addImage === 'function') {
-        await target.addImage(type, buffer);
-        return true;
-      }
-
-      logger.warn(`⚠️ Impossible d'ajouter l'image "${type}" : Structure d'objet incompatible`);
       return false;
     } catch (e) {
-      logger.error(`❌ Erreur safeAddImage [${type}]: ${e.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Ajoute un champ à une collection de manière sécurisée
+   */
+  safeAddField(collection, data) {
+    try {
+      if (collection && typeof collection.add === 'function') {
+        collection.add(data);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      logger.error(`❌ Erreur safeAddField: ${e.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Ajoute une localisation de manière sécurisée
+   */
+  safeAddLocation(pass, locData) {
+    try {
+      if (pass && pass.locations && typeof pass.locations.add === 'function') {
+        pass.locations.add(locData);
+        return true;
+      }
+      return false;
+    } catch (e) {
       return false;
     }
   }
@@ -236,36 +265,37 @@ export class PassGenerator {
       });
 
       if (customization?.latitude && customization?.longitude) {
-        pass.locations.add({
+        this.safeAddLocation(pass, {
           latitude: Number(customization.latitude),
           longitude: Number(customization.longitude),
           relevantText: customization.relevant_text || customization.relevantText || 'Boutique à proximité'
         });
       }
+
       // --- LAYOUT PREMIUM (Style KFC) ---
       
       // 1. Points (Header)
-      pass.headerFields.add({
+      this.safeAddField(pass.headerFields, {
         key: 'points_header',
         label: 'POINTS',
         value: `${clientData.balance || 0}`,
         changeMessage: "Solde mis à jour : %@ points"
       });
 
-      // 2. Bonjour [Prénom] & Détails (Secondary Fields - Pour être sous la bannière sur iOS)
-      pass.secondaryFields.add({
+      // 2. Bonjour [Prénom] & Détails (Secondary Fields)
+      this.safeAddField(pass.secondaryFields, {
         key: 'greeting',
         label: 'BONJOUR',
         value: (clientData.firstName || 'Client').toUpperCase()
       });
 
-      pass.secondaryFields.add({
+      this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
         label: 'DÉTAILS DES RÉCOMPENSES',
         value: 'Au dos 👆 ...'
       });
 
-      // 4. Barcode + ID Court
+      // 4. Barcode
       const shortId = clientData.clientId ? String(clientData.clientId).slice(-6).toUpperCase() : 'N/A';
       pass.barcodes = [
         {
@@ -276,14 +306,14 @@ export class PassGenerator {
         }
       ];
 
-      pass.backFields.add({
+      this.safeAddField(pass.backFields, {
         key: 'company_info',
         label: 'ENTREPRISE',
         value: customization?.apple_organization_name || clientData.companyName || 'Boutique',
       });
 
       if (customization?.back_fields_website) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'website',
           label: 'SITE WEB',
           value: customization.back_fields_website
@@ -291,7 +321,7 @@ export class PassGenerator {
       }
 
       if (customization?.back_fields_phone) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'phone',
           label: 'TÉLÉPHONE',
           value: customization.back_fields_phone,
@@ -300,7 +330,7 @@ export class PassGenerator {
       }
 
       if (customization?.back_fields_address) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'address',
           label: 'ADRESSE',
           value: customization.back_fields_address,
@@ -309,7 +339,7 @@ export class PassGenerator {
       }
 
       if (customization?.back_fields_instagram) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'instagram',
           label: 'INSTAGRAM',
           value: customization.back_fields_instagram.startsWith('@') ? customization.back_fields_instagram : `@${customization.back_fields_instagram}`
@@ -317,7 +347,7 @@ export class PassGenerator {
       }
 
       if (customization?.back_fields_facebook) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'facebook',
           label: 'FACEBOOK',
           value: customization.back_fields_facebook
@@ -325,7 +355,7 @@ export class PassGenerator {
       }
 
       if (customization?.back_fields_tiktok) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'tiktok',
           label: 'TIKTOK',
           value: customization.back_fields_tiktok.startsWith('@') ? customization.back_fields_tiktok : `@${customization.back_fields_tiktok}`
@@ -333,7 +363,7 @@ export class PassGenerator {
       }
 
       if (customization?.back_fields_terms) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'terms',
           label: 'CONDITIONS',
           value: customization.back_fields_terms
@@ -342,7 +372,7 @@ export class PassGenerator {
 
       if (clientData.rewardTiers && clientData.rewardTiers.length > 0) {
         const tiersList = clientData.rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'rewards_tiers',
           label: 'PALIERS DE RÉCOMPENSES',
           value: tiersList,
@@ -351,7 +381,7 @@ export class PassGenerator {
       }
 
       if (customization?.back_fields_info) {
-        pass.backFields.add({
+        this.safeAddField(pass.backFields, {
           key: 'extra_info',
           label: 'INFOS COMPLÉMENTAIRES',
           value: customization.back_fields_info

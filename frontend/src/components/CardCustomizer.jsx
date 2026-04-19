@@ -651,7 +651,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       onChange={handleChange}
                       placeholder="@votrecompte ou lien complet"
                     />
-                    <small className="field-hint">Ex: @nael.mrl5 ou https://instagram.com/nael.mrl5</small>
+
                   </div>
                   <div className="form-field">
                     <label><Share2 size={14} /> Facebook</label>
@@ -661,7 +661,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       onChange={handleChange}
                       placeholder="MaPage ou lien complet"
                     />
-                    <small className="field-hint">Ex: MaPage ou https://facebook.com/MaPage</small>
+
                   </div>
                   <div className="form-field">
                     <label>TikTok</label>
@@ -671,7 +671,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       onChange={handleChange}
                       placeholder="@votrecompte ou lien complet"
                     />
-                    <small className="field-hint">Ex: @moncompte ou https://tiktok.com/@moncompte</small>
+
                   </div>
                 </div>
               </div>

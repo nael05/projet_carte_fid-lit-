@@ -285,7 +285,7 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
                   Annuler
                 </button>
                 <button type="submit" disabled={submitting} style={{ flex: 2, padding: '12px', background: 'var(--accent-color, #3b82f6)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'none'}>
-                  {submitting ? <Loader2 className="spin" size={20} /> : 'Enregistrer les modifications'}
+                  {submitting ? <Loader2 className="spin" size={20} /> : 'Enregistrer'}
                 </button>
               </div>
             </form>

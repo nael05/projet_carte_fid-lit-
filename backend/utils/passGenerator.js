@@ -98,12 +98,18 @@ export class PassGenerator {
       if (isLocalUpload) {
         // Nettoyer le chemin (enlever le slash initial s'il existe et tout ce qui précède 'uploads/')
         const cleanPath = urlOrPath.substring(urlOrPath.indexOf('uploads/'));
-        const fullPath = path.resolve(__dirname, '..', cleanPath);
+        // Utiliser process.cwd() pour être au niveau racine /backend sur le VPS
+        const fullPath = path.resolve(process.cwd(), cleanPath);
         
         if (fs.existsSync(fullPath)) {
           return fs.readFileSync(fullPath);
         } else {
-          logger.warn(`⚠️ Image locale introuvable : ${fullPath}`);
+          // Diagnostic : tenter un repli si /backend est déjà inclus
+          const fallbackPath = path.resolve(process.cwd(), 'backend', cleanPath);
+          if (fs.existsSync(fallbackPath)) {
+            return fs.readFileSync(fallbackPath);
+          }
+          logger.warn(`⚠️ Image locale introuvable au chemin résolu : ${fullPath}`);
         }
       }
       
@@ -128,6 +134,33 @@ export class PassGenerator {
     const str = buffer.toString('utf8');
     const match = str.match(/-----BEGIN [\s\S]+?-----END [\s\S]+?-----/);
     return match ? match[0] : str;
+  }
+
+  /**
+   * Ajoute une image de manière sécurisée (évite le crash undefined 'add')
+   */
+  async safeAddImage(target, type, buffer) {
+    try {
+      if (!buffer) return false;
+      
+      // Vérifier la présence de l'objet images et de la méthode add
+      if (target && target.images && typeof target.images.add === 'function') {
+        await target.images.add(type, buffer);
+        return true;
+      }
+      
+      // Repli si l'objet images n'existe pas directement sur la cible (certaines versions de pass-js)
+      if (target && typeof target.addImage === 'function') {
+        await target.addImage(type, buffer);
+        return true;
+      }
+
+      logger.warn(`⚠️ Impossible d'ajouter l'image "${type}" : Structure d'objet incompatible`);
+      return false;
+    } catch (e) {
+      logger.error(`❌ Erreur safeAddImage [${type}]: ${e.message}`);
+      return false;
+    }
   }
 
   /**
@@ -180,22 +213,21 @@ export class PassGenerator {
         this.fetchImageBuffer(customization?.apple_strip_image_url)
       ]);
 
-      if (logoBuffer) {
-        await template.images.add("logo", logoBuffer);
-      } else {
-        const defaultLogo = await this.fetchImageBuffer('https://dummyimage.com/160x50/000/fff.png&text=Logo');
-        if (defaultLogo) await template.images.add("logo", defaultLogo);
-      }
-
-      if (iconBuffer) {
-        await template.images.add("icon", iconBuffer);
-      } else {
-        const defaultIcon = await this.fetchImageBuffer('https://dummyimage.com/29x29/000/fff.png&text=Icon');
-        if (defaultIcon) await template.images.add("icon", defaultIcon);
-      }
-
+      // 2. Ajout sécurisé des images
+      await this.safeAddImage(template, "logo", logoBuffer);
+      await this.safeAddImage(template, "icon", iconBuffer);
       if (stripBuffer) {
-        await template.images.add("strip", stripBuffer);
+        await this.safeAddImage(template, "strip", stripBuffer);
+      }
+
+      // Si l'icône ou le logo manquent, tenter des fallbacks par défaut (Si safeAddImage a echoué ou buffer nul)
+      if (!iconBuffer) {
+        const defaultIcon = await this.fetchImageBuffer('https://dummyimage.com/29x29/000/fff.png&text=Icon');
+        if (defaultIcon) await this.safeAddImage(template, "icon", defaultIcon);
+      }
+      if (!logoBuffer) {
+        const defaultLogo = await this.fetchImageBuffer('https://dummyimage.com/160x50/000/fff.png&text=Logo');
+        if (defaultLogo) await this.safeAddImage(template, "logo", defaultLogo);
       }
 
       const pass = template.createPass({

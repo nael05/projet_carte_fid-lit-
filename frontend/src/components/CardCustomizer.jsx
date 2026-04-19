@@ -168,13 +168,20 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     return (yiq >= 128) ? '#000000' : '#ffffff';
   };
 
-  const getMediaUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http')) return path;
+  const getMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
     
-    // On utilise exactement la même logique que la Topbar du Dashboard
-    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin + '/api';
-    return `${baseUrl}/uploads/${path}`.replace('/api/api/', '/api/');
+    // 1. On nettoie le chemin pour n'avoir que le nom du fichier
+    const cleanPath = url.replace(/^\//, '').replace(/^uploads\//, '');
+    
+    // 2. On récupère la base URL
+    let baseUrl = import.meta.env.VITE_API_URL || window.location.origin + '/api';
+    baseUrl = baseUrl.replace(/\/$/, '');
+    
+    // 3. On force le passage par /api/uploads pour le proxy VPS
+    const finalBase = baseUrl.includes('/api') ? baseUrl : `${baseUrl}/api`;
+    return `${finalBase}/uploads/${cleanPath}`;
   };
 
   if (loading) return (
@@ -626,7 +633,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     {(config.apple_logo_url || config.logo_url) && (
                       <img src={getMediaUrl(config.apple_logo_url || config.logo_url)} alt="Logo" className="card-logo" />
                     )}
-                    <span className="card-logo-text">{config.logo_text || (!(config.apple_logo_url || config.logo_url) ? proInfo.nom : '')}</span>
+                    <span className="card-logo-text">{config.logo_text || proInfo.nom}</span>
                   </div>
                   <div className="card-points-header">
                     <span className="card-field-label">POINTS</span>

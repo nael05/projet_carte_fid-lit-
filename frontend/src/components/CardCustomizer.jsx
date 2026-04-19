@@ -168,17 +168,13 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     return (yiq >= 128) ? '#000000' : '#ffffff';
   };
 
-  const getMediaUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
+  const getMediaUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
     
-    // Fallback robuste pour les chemins relatifs
-    const cleanPath = url.replace(/^\//, '').replace(/^uploads\//, '');
-    const baseUrl = (import.meta.env.VITE_API_URL || window.location.origin + '/api').replace(/\/$/, '');
-    
-    // On GARDE le /api car le proxy VPS ne redirige que ce qui commence par /api vers le backend
-    const finalBase = baseUrl.includes('/api') ? baseUrl : `${baseUrl}/api`;
-    return `${finalBase}/uploads/${cleanPath}`;
+    // On utilise exactement la même logique que la Topbar du Dashboard
+    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin + '/api';
+    return `${baseUrl}/uploads/${path}`.replace('/api/api/', '/api/');
   };
 
   if (loading) return (

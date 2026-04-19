@@ -597,7 +597,7 @@ export const handleScan = async (req, res) => {
     let pointsToAdd = Number(points_to_add);
 
     // Si la valeur est 0, vide ou invalide, et qu'on est en mode auto, on prend la config
-    if ((isNaN(pointsToAdd) || pointsToAdd <= 0) && loyaltyConfig.points_adding_mode === 'auto') {
+    if ((isNaN(pointsToAdd) || pointsToAdd <= 0) && loyaltyConfig.points_adding_mode === 'automatic') {
       pointsToAdd = Number(loyaltyConfig.points_per_purchase) || 10;
     } else if (isNaN(pointsToAdd) || pointsToAdd < 0) {
       pointsToAdd = 0; // Sécurité pour le mode manuel

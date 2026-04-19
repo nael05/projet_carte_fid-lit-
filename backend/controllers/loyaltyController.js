@@ -99,7 +99,7 @@ export const updateLoyaltyConfig = async (req, res) => {
         [
           configId, 
           empresaId, 
-          points_adding_mode || 'auto', 
+          points_adding_mode || 'automatic', 
           points_per_purchase || 10,
           apple_wallet_key || '', 
           google_wallet_key || '',

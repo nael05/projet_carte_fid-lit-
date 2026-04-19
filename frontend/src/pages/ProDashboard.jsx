@@ -39,7 +39,7 @@ function ProDashboard() {
 
   // Loyalty Settings
   const [loyaltyConfig, setLoyaltyConfig] = useState({
-    points_adding_mode: 'auto',
+    points_adding_mode: 'automatic',
     points_per_purchase: 10,
     reward_tiers: []
   })
@@ -313,10 +313,10 @@ function ProDashboard() {
     try {
       setSavingSettings(true)
       await api.put('/pro/loyalty/config', loyaltyConfig)
-      alert('Paramètres enregistrés !')
+      addToast('Paramètres enregistrés !')
       loadLoyaltyConfig()
     } catch (err) {
-      alert(err.response?.data?.error || 'Erreur lors de la sauvegarde')
+      addToast(err.response?.data?.error || 'Erreur lors de la sauvegarde', 'error')
     } finally {
       setSavingSettings(false)
     }
@@ -329,8 +329,9 @@ function ProDashboard() {
       await api.post('/pro/reward-tiers', newTier)
       setNewTier({ points_required: '', title: '' })
       loadLoyaltyConfig()
+      addToast('Palier ajouté avec succès')
     } catch (err) {
-      alert(err.response?.data?.error || "Erreur lors de l'ajout")
+      addToast(err.response?.data?.error || "Erreur lors de l'ajout", 'error')
     } finally {
       setSavingSettings(false)
     }
@@ -342,8 +343,9 @@ function ProDashboard() {
       setSavingSettings(true)
       await api.delete(`/pro/reward-tiers/${id}`)
       loadLoyaltyConfig()
+      addToast('Palier supprimé')
     } catch (err) {
-      alert('Erreur lors de la suppression')
+      addToast('Erreur lors de la suppression', 'error')
     } finally {
       setSavingSettings(false)
     }
@@ -727,12 +729,12 @@ function ProDashboard() {
                           onChange={(e) => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: e.target.value})}
                           style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-light)' }}
                         >
-                          <option value="auto">Automatique (Points Fixes)</option>
+                          <option value="automatic">Automatique (Points Fixes)</option>
                           <option value="manual">Manuel (Saisie à chaque scan)</option>
                         </select>
                       </div>
                       
-                      {loyaltyConfig.points_adding_mode === 'auto' && (
+                      {loyaltyConfig.points_adding_mode === 'automatic' && (
                         <div className="pro-form-group">
                           <label>Points fixes par passage</label>
                           <input 

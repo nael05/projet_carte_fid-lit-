@@ -176,8 +176,9 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     const cleanPath = url.replace(/^\//, '').replace(/^uploads\//, '');
     const baseUrl = (import.meta.env.VITE_API_URL || window.location.origin + '/api').replace(/\/$/, '');
     
-    // On enlève le /api pour pointer directement vers /uploads
-    return `${baseUrl.replace('/api', '')}/uploads/${cleanPath}`;
+    // On GARDE le /api car le proxy VPS ne redirige que ce qui commence par /api vers le backend
+    const finalBase = baseUrl.includes('/api') ? baseUrl : `${baseUrl}/api`;
+    return `${finalBase}/uploads/${cleanPath}`;
   };
 
   if (loading) return (

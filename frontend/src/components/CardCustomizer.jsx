@@ -116,7 +116,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         locations: parsedLocs,
         latitude: '', // Clear legacy fields to overwrite DB with null
         longitude: '',
-        relevant_text: '',
         back_fields_instagram: cleanSocial(data.back_fields_instagram),
         back_fields_facebook: cleanSocial(data.back_fields_facebook),
         back_fields_tiktok: cleanSocial(data.back_fields_tiktok),

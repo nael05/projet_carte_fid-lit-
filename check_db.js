@@ -1,30 +1,24 @@
-import db from './backend/db.js';
-import fs from 'fs';
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+dotenv.config({ path: 'frontend/.env' }); // or backend/.env? Let's try backend
+dotenv.config({ path: 'backend/.env' });
 
-async function dumpSchema() {
+async function check() {
   try {
-    const tables = ['entreprises', 'clients', 'wallet_cards', 'apple_pass_registrations', 'card_customization'];
-    let output = '';
-
-    for (const table of tables) {
-      try {
-        const [rows] = await db.query(`DESCRIBE ${table}`);
-        output += `\n--- Table: ${table} ---\n`;
-        rows.forEach(row => {
-          output += `${row.Field} - ${row.Type} - ${row.Null} - ${row.Key}\n`;
-        });
-      } catch (e) {
-        output += `\n--- Table: ${table} (NOT FOUND) ---\n`;
-      }
-    }
-
-    fs.writeFileSync('./backend/scratch/actual_schema.txt', output);
-    console.log('Schema dumped to ./backend/scratch/actual_schema.txt');
+    const pool = mysql.createPool({
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'projet_carte_fid',
+    });
+    
+    // Just grab all from card_customization limit 1
+    const [rows] = await pool.query('SELECT * FROM card_customization LIMIT 1');
+    console.log(JSON.stringify(rows[0], null, 2));
     process.exit(0);
-  } catch (err) {
-    console.error(err);
+  } catch(e) {
+    console.error(e);
     process.exit(1);
   }
 }
-
-dumpSchema();
+check();

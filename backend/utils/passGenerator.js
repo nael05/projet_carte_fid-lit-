@@ -282,6 +282,10 @@ export class PassGenerator {
         }
       }
 
+      // Toujours initialiser avec un tableau vide pour forcer l'écrasement du cache d'Apple Wallet.
+      // Sans ça, Apple Wallet garde les anciennes localisations ("fantômes") au lieu de les supprimer.
+      pass.locations = [];
+
       if (Array.isArray(locationsArray) && locationsArray.length > 0) {
         locationsArray.slice(0, 10).forEach(loc => {
           if (loc.latitude && loc.longitude) {
@@ -293,6 +297,7 @@ export class PassGenerator {
           }
         });
       } else if (customization?.latitude && customization?.longitude) {
+        // Fallback ultime s'il reste des vieilles coordonnées non migrées (sera nullifié rapidement par le front)
         this.safeAddLocation(pass, {
           latitude: Number(customization.latitude),
           longitude: Number(customization.longitude),

@@ -438,6 +438,20 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       </label>
                     </div>
                   </div>
+
+                  <div className="upload-item">
+                    <div className="upload-preview">
+                      {config.push_icon_url ? <img src={getMediaUrl(config.push_icon_url)} alt="Push Icon" style={{ borderRadius: '8px' }} /> : <Apple size={20} />}
+                    </div>
+                    <div className="upload-controls">
+                      <label>Icône de Notification</label>
+                      <span className="upload-hint">Format Carré (max 87x87px)</span>
+                      <label className="upload-btn">
+                        <input type="file" hidden onChange={e => handleFileUpload(e, 'notification_icon')} disabled={uploadingType === 'notification_icon'} />
+                        {uploadingType === 'notification_icon' ? 'Envoi...' : 'Choisir une icône'}
+                      </label>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <div className="upload-item">

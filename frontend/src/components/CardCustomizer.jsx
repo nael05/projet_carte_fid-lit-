@@ -90,6 +90,19 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         return v.startsWith('@') ? v : `@${v}`;
       };
 
+      let parsedLocs = [];
+      try {
+        parsedLocs = data.locations ? (typeof data.locations === 'string' ? JSON.parse(data.locations) : data.locations) : [];
+      } catch (e) {}
+
+      if (parsedLocs.length === 0 && data.latitude && data.longitude) {
+        parsedLocs.push({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          relevantText: data.relevant_text || ''
+        });
+      }
+
       setConfig(prev => ({
         ...prev,
         ...data,
@@ -100,9 +113,10 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         google_text_color: data.google_text_color || '#ffffff',
         google_card_title: data.google_card_title || 'Carte Fidélité',
         apple_organization_name: data.apple_organization_name || proInfo.nom || '',
-        latitude: data.latitude || '',
-        longitude: data.longitude || '',
-        relevant_text: data.relevant_text || '',
+        locations: parsedLocs,
+        latitude: '', // Clear legacy fields to overwrite DB with null
+        longitude: '',
+        relevant_text: '',
         back_fields_instagram: cleanSocial(data.back_fields_instagram),
         back_fields_facebook: cleanSocial(data.back_fields_facebook),
         back_fields_tiktok: cleanSocial(data.back_fields_tiktok),

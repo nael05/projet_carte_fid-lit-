@@ -240,7 +240,7 @@ export class PassGenerator {
       // 2. Chargement PARALLÈLE des images
       // Fallback robuste : si apple_logo_url est vide, on utilise logo_url
       const finalLogoUrl = customization?.apple_logo_url || customization?.logo_url;
-      const finalIconUrl = customization?.push_icon_url || customization?.apple_icon_url || customization?.icon_url;
+      const finalIconUrl = customization?.apple_icon_url || customization?.icon_url;
       const finalStripUrl = customization?.apple_strip_image_url || customization?.strip_image_url;
 
       const [logoBuffer, iconBuffer, stripBuffer] = await Promise.all([

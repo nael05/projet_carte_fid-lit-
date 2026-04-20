@@ -194,7 +194,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         else if (type === 'icon') fieldName = 'icon_url';
         else if (type === 'strip') fieldName = 'strip_image_url';
         else if (type === 'hero') fieldName = 'google_hero_image_url';
-        else if (type === 'notification_icon') fieldName = 'push_icon_url';
+        else if (type === 'notification_icon') fieldName = 'apple_icon_url';
         else if (type === 'dashboard_logo') fieldName = 'dashboard_logo_url';
 
         setConfig(prev => ({ ...prev, [fieldName]: response.data.url }));
@@ -441,7 +441,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
                   <div className="upload-item">
                     <div className="upload-preview">
-                      {config.push_icon_url ? <img src={getMediaUrl(config.push_icon_url)} alt="Push Icon" style={{ borderRadius: '8px' }} /> : <Apple size={20} />}
+                      {config.apple_icon_url ? <img src={getMediaUrl(config.apple_icon_url)} alt="Push Icon" style={{ borderRadius: '8px' }} /> : <Apple size={20} />}
                     </div>
                     <div className="upload-controls">
                       <label>Icône de Notification</label>

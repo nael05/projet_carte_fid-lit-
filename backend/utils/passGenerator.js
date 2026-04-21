@@ -96,29 +96,18 @@ export class PassGenerator {
       // Détection plus robuste des fichiers locaux dans le dossier 'uploads'
       const isLocalUpload = urlOrPath.includes('uploads/');
       if (isLocalUpload) {
-        // Diagnostic : voir d'où on part
-        const currentCwd = process.cwd();
-
-        // Nettoyer le chemin (enlever le slash initial s'il existe et tout ce qui précède 'uploads/')
+        // Enlever tout ce qui précède 'uploads/' pour avoir un chemin propre
         const cleanPath = urlOrPath.substring(urlOrPath.indexOf('uploads/'));
+        
+        // Résolution du chemin ABSOLU par rapport à ce script (backend/utils/passGenerator.js)
+        // uploads est dans backend/uploads soit ../uploads par rapport à ce script
+        const fullPath = path.resolve(__dirname, '..', cleanPath);
 
-        // TENTATIVE 1 : Chemin relatif direct (souvent le bon en PM2)
-        let fullPath = path.resolve(currentCwd, cleanPath);
-        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
-
-        // TENTATIVE 2 : Remonter d'un cran (cas backend/backend)
-        fullPath = path.resolve(currentCwd, '..', cleanPath);
-        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
-
-        // TENTATIVE 3 : Descendre d'un cran (cas racine projet)
-        fullPath = path.resolve(currentCwd, 'backend', cleanPath);
-        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
-
-        // TENTATIVE 4 : Chemin absolu VPS (Hardcoded fallback)
-        fullPath = path.join('/var/www/projet_carte_fid-lit-/backend', cleanPath);
-        if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath);
-
-        logger.debug(`⚠️ Image introuvable. Tentatives échouées pour: ${cleanPath}`);
+        if (fs.existsSync(fullPath)) {
+          return fs.readFileSync(fullPath);
+        }
+        
+        logger.error(`⚠️ Image Apple Wallet introuvable au chemin absolu: ${fullPath}`);
       }
 
       if (urlOrPath.startsWith('http')) {

@@ -14,9 +14,12 @@ dotenv.config();
 class GoogleWalletGenerator {
   constructor() {
     const rawPath = process.env.GOOGLE_WALLET_KEY_PATH || 'certs/google-wallet-key.json';
+    
+    // Résolution robuste du chemin absolu pour le fichier de clés Google
     this.keyFilePath = path.isAbsolute(rawPath) 
       ? rawPath 
       : path.resolve(__dirname, '..', rawPath);
+
     this.issuerId = process.env.GOOGLE_WALLET_ISSUER_ID;
     this.client = null;
     this.credentials = null;
@@ -33,6 +36,8 @@ class GoogleWalletGenerator {
           scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
         });
         this.client = google.walletobjects({ version: 'v1', auth });
+      } else {
+        logger.warn(`⚠️ Fichier de clés Google Wallet introuvable: ${this.keyFilePath}`);
       }
     } catch (err) {
       logger.error('Erreur d\'initialisation Google Wallet:', err);
@@ -263,6 +268,11 @@ class GoogleWalletGenerator {
   }
 
   _generateSaveLink(loyaltyObject) {
+    if (!this.credentials || !this.credentials.client_email || !this.credentials.private_key) {
+      logger.error('❌ Impossible de générer le lien de sauvegarde Google Wallet: identifiants manquants.');
+      return null;
+    }
+
     const claims = {
       iss: this.credentials.client_email,
       aud: 'google',

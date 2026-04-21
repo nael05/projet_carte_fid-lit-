@@ -97,6 +97,7 @@ class GoogleWalletGenerator {
         } catch (patchErr) {
           const errMsg = patchErr.message || '';
           logger.warn(`⚠️ Échec de la mise à jour complète Google Wallet (Status APPROVED?): ${errMsg}`);
+          logger.warn(`⚠️ Détail complet erreur PATCH classe: ${JSON.stringify(patchErr, Object.getOwnPropertyNames(patchErr), 2)}`);
           
           // Fallback ultra-minimaliste si bloqué en mode APPROVED
           // On ne change QUE la couleur et les logos, on renonce au nom du programme s'il bloque

@@ -281,7 +281,7 @@ export class PassGenerator {
             this.safeAddLocation(pass, {
               latitude: Number(loc.latitude),
               longitude: Number(loc.longitude),
-              relevantText: loc.relevantText || customization.relevant_text || 'Boutique à proximité'
+              relevantText: loc.relevantText || customization.relevant_text || 'Boutique'
             });
           }
         });
@@ -290,7 +290,7 @@ export class PassGenerator {
         this.safeAddLocation(pass, {
           latitude: Number(customization.latitude),
           longitude: Number(customization.longitude),
-          relevantText: customization.relevant_text || customization.relevantText || 'Boutique à proximité'
+          relevantText: customization.relevant_text || customization.relevantText || 'Boutique'
         });
       }
 

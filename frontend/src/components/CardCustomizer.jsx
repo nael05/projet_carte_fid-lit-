@@ -85,7 +85,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
             const url = new URL(v);
             const parts = url.pathname.split('/').filter(Boolean);
             if (parts.length > 0) return '@' + parts[parts.length - 1].replace(/^@/, '');
-          } catch (e) {}
+          } catch (e) { }
         }
         return v.startsWith('@') ? v : `@${v}`;
       };
@@ -93,7 +93,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
       let parsedLocs = [];
       try {
         parsedLocs = data.locations ? (typeof data.locations === 'string' ? JSON.parse(data.locations) : data.locations) : [];
-      } catch (e) {}
+      } catch (e) { }
 
       if (parsedLocs.length === 0 && data.latitude && data.longitude) {
         parsedLocs.push({
@@ -140,7 +140,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
           // Enlever le @ si déjà présent (TikTok: /@handle)
           return '@' + raw.replace(/^@/, '');
         }
-      } catch (e) {}
+      } catch (e) { }
       return v; // Fallback si URL invalide
     }
     // Sinon normaliser le @
@@ -791,7 +791,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                   </div>
                   <div className="card-info-col text-right">
                     <span className="card-field-label">DÉTAILS DES RÉCOMPENSES</span>
-                    <span className="card-field-value">Au dos 👆 ...</span>
+                    <span className="card-field-value">Au dos</span>
                   </div>
                 </div>
 

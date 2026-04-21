@@ -98,7 +98,7 @@ export class PassGenerator {
       if (isLocalUpload) {
         // Enlever tout ce qui précède 'uploads/' pour avoir un chemin propre
         const cleanPath = urlOrPath.substring(urlOrPath.indexOf('uploads/'));
-        
+
         // Résolution du chemin ABSOLU par rapport à ce script (backend/utils/passGenerator.js)
         // uploads est dans backend/uploads soit ../uploads par rapport à ce script
         const fullPath = path.resolve(__dirname, '..', cleanPath);
@@ -106,7 +106,7 @@ export class PassGenerator {
         if (fs.existsSync(fullPath)) {
           return fs.readFileSync(fullPath);
         }
-        
+
         logger.error(`⚠️ Image Apple Wallet introuvable au chemin absolu: ${fullPath}`);
       }
 
@@ -314,7 +314,7 @@ export class PassGenerator {
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
         label: 'DÉTAILS DES RÉCOMPENSES',
-        value: 'Au dos 👆 '
+        value: 'Au dos'
       });
 
       // 4. Barcode
@@ -363,10 +363,10 @@ export class PassGenerator {
       const formatSocialField = (input, platform) => {
         let cleanValue = input.trim();
         if (!cleanValue) return null;
-        
+
         let url = '';
         let displayHandle = '';
-        
+
         if (cleanValue.startsWith('http://') || cleanValue.startsWith('https://')) {
           url = cleanValue;
           try {
@@ -383,7 +383,7 @@ export class PassGenerator {
           else if (platform === 'tiktok') url = `https://tiktok.com/@${handle}`;
           else if (platform === 'facebook') url = `https://facebook.com/${handle}`;
         }
-    
+
         // On met l'URL dans value (iOS la détectera via PKDataDetectorTypeLink)
         // et le handle propre dans attributedValue pour les versions supportant le HTML
         return { url, displayHandle };

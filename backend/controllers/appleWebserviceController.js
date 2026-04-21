@@ -365,9 +365,8 @@ export const getUpdatedPass = async (req, res) => {
 
     // 5️⃣ Envoyer le fichier
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
-    // Utiliser la date réelle de mise à jour de la carte en BD
-    const lastModified = data.last_updated ? new Date(data.last_updated) : new Date();
-    res.setHeader('Last-Modified', lastModified.toUTCString());
+    // CACHE-BUSTER: On envoie systématiquement la date actuelle pour forcer Apple à considérer le pass comme frais
+    res.setHeader('Last-Modified', new Date().toUTCString());
     res.setHeader('Content-Length', passBuffer.length);
     res.send(passBuffer);
 

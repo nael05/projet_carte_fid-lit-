@@ -86,39 +86,39 @@ class GoogleWalletGenerator {
         
         // Préparer le body pour le patch: supprimer ID et reviewStatus s'ils traînent
         try {
-          // On n'enlève QUE l'id et le reviewStatus qui sont interdits dans un PATCH
-          const { id: _, reviewStatus: __, ...patchBody } = loyaltyClass;
-          
+          // reviewStatus: 'UNDER_REVIEW' est obligatoire pour patcher une classe en état APPROVED
+          const { id: _, ...patchBody } = loyaltyClass;
+          patchBody.reviewStatus = 'UNDER_REVIEW';
+
           logger.info(`🔄 Mise à jour du style Google Wallet (${classId})...`);
           logger.debug(`PatchBody envoyé: ${JSON.stringify(patchBody)}`);
-          
+
           await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: patchBody });
           logger.info(`✅ Design Google Wallet mis à jour avec succès!`);
         } catch (patchErr) {
           const errMsg = patchErr.message || '';
-          logger.warn(`⚠️ Échec de la mise à jour complète Google Wallet (Status APPROVED?): ${errMsg}`);
+          logger.warn(`⚠️ Échec de la mise à jour complète Google Wallet: ${errMsg}`);
           logger.warn(`⚠️ Détail complet erreur PATCH classe: ${JSON.stringify(patchErr, Object.getOwnPropertyNames(patchErr), 2)}`);
-          
-          // Fallback ultra-minimaliste si bloqué en mode APPROVED
-          // On ne change QUE la couleur et les logos, on renonce au nom du programme s'il bloque
+
+          // Fallback visuel : couleur + logo uniquement avec reviewStatus requis
           try {
              const minimalBody = {
                hexBackgroundColor: loyaltyClass.hexBackgroundColor,
-               programLogo: loyaltyClass.programLogo
+               programLogo: loyaltyClass.programLogo,
+               reviewStatus: 'UNDER_REVIEW'
              };
-             // Inclure l'image hero si présente
              if (loyaltyClass.heroImage) minimalBody.heroImage = loyaltyClass.heroImage;
-             
+
              logger.info(`🔄 Tentative de mise à jour ultra-minimale (Couleurs/Logos uniquement)...`);
              await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: minimalBody });
              logger.info(`✅ Mise à jour minimale réussie.`);
           } catch (minErr) {
              logger.warn(`⚠️ Échec mise à jour logo/couleur: ${minErr.message}`);
-             // Dernier recours : couleur uniquement, sans aucune image
+             // Dernier recours : couleur uniquement
              try {
                await this.client.loyaltyclass.patch({
                  resourceId: classId,
-                 requestBody: { hexBackgroundColor: loyaltyClass.hexBackgroundColor }
+                 requestBody: { hexBackgroundColor: loyaltyClass.hexBackgroundColor, reviewStatus: 'UNDER_REVIEW' }
                });
                logger.info('✅ Couleur de fond mise à jour (fallback sans images).');
              } catch (colorErr) {

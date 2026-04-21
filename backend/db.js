@@ -12,4 +12,8 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
+// Évite le MaxListenersExceededWarning lors de requêtes concurrentes élevées
+pool.pool.setMaxListeners(50);
+pool.pool.on('connection', (connection) => connection.setMaxListeners(50));
+
 export default pool;

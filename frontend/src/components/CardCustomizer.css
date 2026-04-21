@@ -436,8 +436,8 @@
 .card-info-grid {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end; /* Aligne le Prénom et le texte "Au dos" sur la même ligne */
-  padding: 20px 0 10px; /* Plus d'espace au dessus */
+  align-items: flex-end;
+  padding: 20px 0 10px;
   width: 100%;
 }
 
@@ -449,6 +449,7 @@
 .card-info-col.text-right {
   align-items: flex-end;
   text-align: right;
+  margin-right: -10px; /* Aligné presque au bord droit pour un look premium Apple */
 }
 
 .card-field-label {

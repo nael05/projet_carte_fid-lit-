@@ -50,7 +50,7 @@ class GoogleWalletGenerator {
     // RETOUR À L'ID D'ORIGINE POUR LA STABILITÉ
     const classId = `${this.issuerId}.${empresaId}_loyalty_class`;
     
-    const logoUrl = config.google_logo_url;
+    const logoUrl = config.google_logo_url || config.logo_url;
     const heroImageUrl = config.google_hero_image_url;
     const bgColor = config.google_primary_color || '#1f2937';
 
@@ -112,7 +112,17 @@ class GoogleWalletGenerator {
              await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: minimalBody });
              logger.info(`✅ Mise à jour minimale réussie.`);
           } catch (minErr) {
-             logger.error(`❌ Échec total de mise à jour du style: ${minErr.message}`);
+             logger.warn(`⚠️ Échec mise à jour logo/couleur: ${minErr.message}`);
+             // Dernier recours : couleur uniquement, sans aucune image
+             try {
+               await this.client.loyaltyclass.patch({
+                 resourceId: classId,
+                 requestBody: { hexBackgroundColor: loyaltyClass.hexBackgroundColor }
+               });
+               logger.info('✅ Couleur de fond mise à jour (fallback sans images).');
+             } catch (colorErr) {
+               logger.error(`❌ Échec total de mise à jour du style: ${colorErr.message}`);
+             }
           }
         }
       } catch (err) {

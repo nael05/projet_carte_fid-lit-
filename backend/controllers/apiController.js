@@ -1078,8 +1078,8 @@ export const updateCardCustomization = async (req, res) => {
     }
 
     // 📱 Synchronisation en temps réel (Apple & Google) via WalletSyncService
-    // On utilise req.user.id pour être certain que c'est l'UUID de l'entreprise
-    walletSyncService.syncCompanyWallets(req.user.id).catch(err =>
+    // On utilise empresaId (ID de l'entreprise cible) pour déclencher le Push aux bons clients
+    walletSyncService.syncCompanyWallets(empresaId).catch(err =>
       logger.error('Global synchronization failed after customization update', err)
     );
 

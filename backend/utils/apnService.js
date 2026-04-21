@@ -18,6 +18,8 @@ export class APNService {
   constructor() {
     // Utiliser un chemin absolu basé sur le dossier 'utils' pour remonter à la racine du backend
     const rawPath = (process.env.APPLE_APN_KEY_PATH || '').trim();
+    
+    // Résolution STRICTEMENT ABSOLUE via __dirname (plus fiable sous PM2)
     this.apnKeyPath = rawPath 
       ? (path.isAbsolute(rawPath) ? rawPath : path.resolve(__dirname, '..', rawPath))
       : null;
@@ -40,16 +42,10 @@ export class APNService {
         return;
       }
 
-      // Vérification physique du fichier
+      // Vérification physique du fichier avec chemin absolu
       if (!fs.existsSync(this.apnKeyPath)) {
-        // Tenter un repli relatif au CWD (souvent nécessaire en prod avec PM2)
-        const fallbackPath = path.resolve(process.cwd(), process.env.APPLE_APN_KEY_PATH || '');
-        if (fs.existsSync(fallbackPath)) {
-          this.apnKeyPath = fallbackPath;
-        } else {
-          logger.error(`❌ Fichier de clé Apple (.p8) introuvable au chemin: ${this.apnKeyPath}`);
-          return;
-        }
+        logger.error(`❌ Fichier de clé Apple (.p8) introuvable au chemin ABSOLU: ${this.apnKeyPath}`);
+        return;
       }
 
       this.provider = new apn.Provider({

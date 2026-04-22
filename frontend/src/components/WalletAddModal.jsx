@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Smartphone, X as XIcon, CheckCircle2, AlertCircle, Info, Loader2, Plus } from 'lucide-react';
 import '../styles/WalletAddModal.css';
-import { requestFCMToken } from '../utils/fcmHelper';
 
 const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -11,20 +10,23 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
 
   if (!isOpen) return null;
 
-  const handleAddToWallet = async (platform) => {
+  const handleAddToWallet = async () => {
     try {
       setLoading(true);
       setError(null);
       setSuccess(false);
 
-      const token = localStorage.getItem('clientToken');
       const response = await fetch('/api/app/wallet/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${localStorage.getItem('clientToken')}`
         },
-        body: JSON.stringify({ clientId, clientName, type_wallet: platform })
+        body: JSON.stringify({
+          clientId,
+          clientName,
+          type_wallet: platform // On passe le type choisi
+        })
       });
 
       if (!response.ok) {
@@ -32,6 +34,7 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
         throw new Error(errorData.error || `Erreur ${response.status}: ${response.statusText}`);
       }
 
+      // Traiter selon la plateforme
       if (platform === 'apple') {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -43,24 +46,11 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
+        // Google Wallet redirection
         const data = await response.json();
         if (data.saveUrl) {
           window.open(data.saveUrl, '_blank');
         }
-
-        // Enregistrement FCM en arrière-plan (sans bloquer ni afficher d'erreur si refusé)
-        requestFCMToken().then(fcmToken => {
-          if (fcmToken) {
-            fetch('/api/app/wallet/register-fcm-token', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ clientId, fcmToken })
-            }).catch(() => {});
-          }
-        }).catch(() => {});
       }
 
       setSuccess(true);
@@ -149,7 +139,7 @@ const WalletAddModal = ({ isOpen, onClose, clientId, clientName, onSuccess }) =>
                 <ul>
                   <li>Accès rapide sans connexion internet</li>
                   <li>Notifications de points en temps réel</li>
-                  <li>Notifications à proximité du magasin</li>
+                  <li>Géolocalisation (bientôt disponible)</li>
                 </ul>
               </div>
             </div>

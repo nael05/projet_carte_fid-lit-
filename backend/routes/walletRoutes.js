@@ -195,31 +195,4 @@ router.get('/app/wallet/test-download', async (req, res) => {
   }
 });
 
-/**
- * POST /api/app/wallet/register-fcm-token
- * Enregistre ou met à jour le token FCM d'un client Android pour les notifications Google Wallet
- * Auth: JWT Token (client)
- *
- * Body: { clientId, fcmToken }
- */
-router.post('/app/wallet/register-fcm-token', verifyToken, async (req, res) => {
-  try {
-    const { clientId, fcmToken } = req.body;
-    if (!clientId || !fcmToken) {
-      return res.status(400).json({ error: 'clientId et fcmToken requis' });
-    }
-
-    await db.query(
-      'UPDATE wallet_cards SET fcm_token = ? WHERE client_id = ? AND pass_serial_number LIKE "GOOGLE_%"',
-      [fcmToken, clientId]
-    );
-
-    logger.info(`📱 [FCM] Token enregistré pour client ${clientId}`);
-    res.json({ success: true });
-  } catch (error) {
-    logger.error(`Erreur enregistrement FCM token: ${error.message}`);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 export default router;

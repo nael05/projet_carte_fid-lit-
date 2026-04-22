@@ -1,2 +1,0 @@
-ALTER TABLE wallet_cards
-  ADD COLUMN fcm_token VARCHAR(500) NULL DEFAULT NULL;

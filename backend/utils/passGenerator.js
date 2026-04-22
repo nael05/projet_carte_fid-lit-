@@ -293,20 +293,32 @@ export class PassGenerator {
       if (Array.isArray(locationsArray) && locationsArray.length > 0) {
         locationsArray.slice(0, 10).forEach(loc => {
           if (loc.latitude && loc.longitude) {
+            const cleanText = (loc.relevantText || `Bienvenue chez ${clientData.companyName || 'nous'}`)
+              .replace(/Bientot/gi, '')
+              .replace(/Soon/gi, '')
+              .trim();
+              
             this.safeAddLocation(pass, {
               latitude: Number(loc.latitude),
               longitude: Number(loc.longitude),
-              relevantText: (loc.relevantText || `Bienvenue chez ${clientData.companyName || 'nous'}`).trim()
+              relevantText: cleanText.substring(0, 255)
             });
+            logger.info(`📍 [APPLE LOC ADD] Lat: ${loc.latitude}, Lng: ${loc.longitude}, Text: "${cleanText}"`);
           }
         });
       } else if (customization?.latitude && customization?.longitude) {
         // Fallback ultime s'il reste des vieilles coordonnées non migrées (sera nullifié rapidement par le front)
+        const cleanFallbackText = (customization.relevant_text || customization.relevantText || `Bienvenue chez ${clientData.companyName || 'nous'}`)
+          .replace(/Bientot/gi, '')
+          .replace(/Soon/gi, '')
+          .trim();
+          
         this.safeAddLocation(pass, {
           latitude: Number(customization.latitude),
           longitude: Number(customization.longitude),
-          relevantText: (customization.relevant_text || customization.relevantText || `Bienvenue chez ${clientData.companyName || 'nous'}`).trim()
+          relevantText: cleanFallbackText.substring(0, 255)
         });
+        logger.info(`📍 [APPLE FALLBACK ADD] Lat: ${customization.latitude}, Lng: ${customization.longitude}, Text: "${cleanFallbackText}"`);
       }
 
       // --- LAYOUT PREMIUM (Style Fidelyz) ---

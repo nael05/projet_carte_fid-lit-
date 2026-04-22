@@ -445,6 +445,7 @@ export const downloadClientPass = async (req, res) => {
     }
 
     // SI APPLE WALLET -> Générer .pkpass
+    logger.info(`🔍 [APPLE DOWNLOAD DEBUG] Client: ${client.prenom} ${client.nom}, Locations JSON: ${JSON.stringify(client.locations)}`);
     const serialNumber = client.id.replace(/-/g, '').substring(0, 20).toUpperCase();
     
     // Récupérer le token existant s'il y en a un pour ne pas casser la synchro APNs

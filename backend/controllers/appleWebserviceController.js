@@ -249,6 +249,7 @@ export const getUpdatedPass = async (req, res) => {
     }
 
     const data = clientRows[0];
+    logger.info(`🔍 [APPLE SYNC DEBUG] Client: ${data.prenom} ${data.nom}, Locations JSON: ${JSON.stringify(data.locations)}`);
     
     // LOGIQUE DE SECOURS (FALLBACK) : Si Apple est vide, on prend le générique
     const finalDesign = {

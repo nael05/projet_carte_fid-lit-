@@ -107,27 +107,35 @@ class GoogleWalletGenerator {
           logger.warn(`⚠️ Échec de la mise à jour complète Google Wallet: ${errMsg}`);
           logger.warn(`⚠️ Détail complet erreur PATCH classe: ${JSON.stringify(patchErr, Object.getOwnPropertyNames(patchErr), 2)}`);
 
-          // Fallback visuel : couleur + logo uniquement avec reviewStatus requis
+          // Fallback : titre + sous-titre + couleur + logo (sans heroImage)
           try {
              const minimalBody = {
+               issuerName: loyaltyClass.issuerName,
+               programName: loyaltyClass.programName,
                hexBackgroundColor: loyaltyClass.hexBackgroundColor,
+               textModulesData: loyaltyClass.textModulesData,
                programLogo: loyaltyClass.programLogo,
                reviewStatus: 'UNDER_REVIEW'
              };
-             if (loyaltyClass.heroImage) minimalBody.heroImage = loyaltyClass.heroImage;
 
-             logger.info(`🔄 Tentative de mise à jour ultra-minimale (Couleurs/Logos uniquement)...`);
+             logger.info(`🔄 Tentative de mise à jour sans hero image...`);
              await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: minimalBody });
-             logger.info(`✅ Mise à jour minimale réussie.`);
+             logger.info(`✅ Mise à jour sans hero image réussie.`);
           } catch (minErr) {
-             logger.warn(`⚠️ Échec mise à jour logo/couleur: ${minErr.message}`);
-             // Dernier recours : couleur uniquement
+             logger.warn(`⚠️ Échec mise à jour sans hero: ${minErr.message}`);
+             // Dernier recours : titre + sous-titre + couleur (sans images)
              try {
                await this.client.loyaltyclass.patch({
                  resourceId: classId,
-                 requestBody: { hexBackgroundColor: loyaltyClass.hexBackgroundColor, reviewStatus: 'UNDER_REVIEW' }
+                 requestBody: {
+                   issuerName: loyaltyClass.issuerName,
+                   programName: loyaltyClass.programName,
+                   hexBackgroundColor: loyaltyClass.hexBackgroundColor,
+                   textModulesData: loyaltyClass.textModulesData,
+                   reviewStatus: 'UNDER_REVIEW'
+                 }
                });
-               logger.info('✅ Couleur de fond mise à jour (fallback sans images).');
+               logger.info('✅ Titre + couleur mis à jour (fallback sans images).');
              } catch (colorErr) {
                logger.error(`❌ Échec total de mise à jour du style: ${colorErr.message}`);
              }
@@ -150,24 +158,25 @@ class GoogleWalletGenerator {
     } catch (err) {
       // FALLBACK BLINDÉ: Si Google rejette les images (tunnel local)
       if (err.message && (err.message.toLowerCase().includes('image cannot be loaded') || err.message.includes('400'))) {
-        logger.warn('⚠️ Échec probable de validation d\'image Google ou erreur 400. Tentative de fallback minimal.');
-        const fallbackClass = { ...loyaltyClass };
-        delete fallbackClass.heroImage;
-        delete fallbackClass.id;
-        fallbackClass.programLogo = {
-          sourceUri: { uri: 'https://www.gstatic.com/images/branding/product/2x/wallet_48dp.png' }
+        logger.warn('⚠️ Échec probable de validation d\'image Google ou erreur 400. Tentative de fallback sans images.');
+        const fallbackClass = {
+          issuerName: loyaltyClass.issuerName,
+          programName: loyaltyClass.programName,
+          hexBackgroundColor: loyaltyClass.hexBackgroundColor,
+          textModulesData: loyaltyClass.textModulesData,
+          programLogo: { sourceUri: { uri: 'https://www.gstatic.com/images/branding/product/2x/wallet_48dp.png' } },
+          reviewStatus: 'UNDER_REVIEW'
         };
 
         try {
           try {
-             await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: fallbackClass });
+            await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: fallbackClass });
           } catch (pErr) {
-             if (pErr.code === 404) {
-               // Fallback pour insertion si 404
-                await this.client.loyaltyclass.insert({ requestBody: { ...fallbackClass, id: classId, reviewStatus: 'UNDER_REVIEW' } });
-             } else { 
-               logger.warn('Échec mise à jour fallback, poursuite avec classe existante.');
-             }
+            if (pErr.code === 404) {
+              await this.client.loyaltyclass.insert({ requestBody: { ...fallbackClass, id: classId } });
+            } else {
+              logger.warn('Échec mise à jour fallback, poursuite avec classe existante.');
+            }
           }
           return classId;
         } catch (finalErr) {
@@ -275,6 +284,7 @@ class GoogleWalletGenerator {
 
       const requestBody = {
         loyaltyPoints: {
+          label: 'Points',
           balance: { string: newBalance.toString() }
         },
         textModulesData

@@ -393,15 +393,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 />
               </div>
 
-              <div className="settings-group">
-                <label>Sous-titre (Description courte)</label>
-                <input
-                  type="text" name="google_card_subtitle"
-                  value={config.google_card_subtitle}
-                  onChange={handleChange}
-                  placeholder="Ex: Scannez lors de votre passage"
-                />
-              </div>
+
 
               <div className="color-grid">
                 <div className="settings-group">
@@ -593,6 +585,22 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
               {/* ====== GOOGLE WALLET VERSO ====== */}
               {platform === 'google' && (
                 <>
+                  <div className="form-section">
+                    <div className="section-header">
+                      <Info size={18} />
+                      <h3>Informations Générales</h3>
+                    </div>
+                    <div className="form-field full-width">
+                      <label>Informations (Google Wallet)</label>
+                      <input
+                        type="text"
+                        name="google_card_subtitle"
+                        value={config.google_card_subtitle || ''}
+                        onChange={handleChange}
+                        placeholder="Ex: horaires infos pratique..."
+                      />
+                    </div>
+                  </div>
                   <div className="form-section">
                     <div className="section-header">
                       <PhoneCall size={18} />

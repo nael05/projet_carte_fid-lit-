@@ -296,11 +296,9 @@ export class PassGenerator {
       if (Array.isArray(locationsArray) && locationsArray.length > 0) {
         locationsArray.slice(0, 10).forEach(loc => {
           if (loc.latitude && loc.longitude) {
-            const cleanText = (loc.relevantText || `Bienvenue chez ${clientData.companyName || 'nous'}`)
-              .replace(/Bientot/gi, '')
-              .replace(/Soon/gi, '')
-              .trim();
-              
+            const rawText = (loc.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
+            const cleanText = rawText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
+
             this.safeAddLocation(pass, {
               latitude: Number(loc.latitude),
               longitude: Number(loc.longitude),
@@ -311,10 +309,8 @@ export class PassGenerator {
         });
       } else if (customization?.latitude && customization?.longitude) {
         // Fallback ultime s'il reste des vieilles coordonnées non migrées (sera nullifié rapidement par le front)
-        const cleanFallbackText = (customization.relevant_text || customization.relevantText || `Bienvenue chez ${clientData.companyName || 'nous'}`)
-          .replace(/Bientot/gi, '')
-          .replace(/Soon/gi, '')
-          .trim();
+        const rawFallbackText = (customization.relevant_text || customization.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
+        const cleanFallbackText = rawFallbackText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
           
         this.safeAddLocation(pass, {
           latitude: Number(customization.latitude),

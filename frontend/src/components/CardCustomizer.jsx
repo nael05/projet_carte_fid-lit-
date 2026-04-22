@@ -914,7 +914,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 {/* QR Code Section */}
                 <div className="google-qr-container">
                   <div className="google-qr-box">
-                    <QRCodeCanvas value={proInfo.id || 'preview'} size={90} level="H" marginSize={0} />
+                    <QRCodeCanvas value={proInfo.id || 'preview'} size={150} level="H" marginSize={0} />
                   </div>
                   <span className="google-client-id-text" style={{ color: getContrastColor(config.google_primary_color), opacity: 0.6 }}>
                     {proInfo.id ? proInfo.id.substring(0, 30) + '...' : 'ID client'}

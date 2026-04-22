@@ -449,7 +449,7 @@
 .card-info-col.text-right {
   align-items: flex-end;
   text-align: right;
-  margin-right: -10px; /* Aligné presque au bord droit pour un look premium Apple */
+  margin-right: -15px; /* Aligné au plus proche du bord droit pour un rendu premium */
 }
 
 .card-field-label {

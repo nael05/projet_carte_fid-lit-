@@ -318,14 +318,12 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
           >
             <ImageIcon size={16} /> Images
           </button>
-          {platform === 'apple' && (
-            <button
-              className={`customizer-tab ${activeTab === 'infos' ? 'active' : ''}`}
-              onClick={() => setActiveTab('infos')}
-            >
-              <Info size={16} /> Verso
-            </button>
-          )}
+          <button
+            className={`customizer-tab ${activeTab === 'infos' ? 'active' : ''}`}
+            onClick={() => setActiveTab('infos')}
+          >
+            <Info size={16} /> Verso
+          </button>
           <button
             className={`customizer-tab ${activeTab === 'proximity' ? 'active' : ''}`}
             onClick={() => setActiveTab('proximity')}
@@ -588,6 +586,77 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
           {activeTab === 'infos' && (
             <div className="customizer-settings-content">
+
+              {/* ====== GOOGLE WALLET VERSO ====== */}
+              {platform === 'google' && (
+                <>
+                  <div className="form-section">
+                    <div className="section-header">
+                      <PhoneCall size={18} />
+                      <h3>Contact</h3>
+                    </div>
+                    <div className="form-grid">
+                      <div className="form-field">
+                        <label><Phone size={14} /> Téléphone</label>
+                        <input type="text" name="back_fields_phone" value={config.back_fields_phone || ''} onChange={handleChange} placeholder="01 23 45 67 89" />
+                      </div>
+                      <div className="form-field">
+                        <label><Globe size={14} /> Site Internet</label>
+                        <input type="text" name="back_fields_website" value={config.back_fields_website || ''} onChange={handleChange} placeholder="www.votre-site.fr" />
+                      </div>
+                      <div className="form-field full-width">
+                        <label><MapPin size={14} /> Adresse</label>
+                        <input type="text" name="back_fields_address" value={config.back_fields_address || ''} onChange={handleChange} placeholder="12 avenue des Champs, Paris" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <div className="section-header">
+                      <Share2 size={18} />
+                      <h3>Réseaux Sociaux</h3>
+                    </div>
+                    <div className="form-grid">
+                      <div className="form-field">
+                        <label><Share2 size={14} /> Instagram</label>
+                        <input type="text" name="back_fields_instagram" value={config.back_fields_instagram || ''} onChange={handleChange} placeholder="@votrecompte ou lien complet" />
+                      </div>
+                      <div className="form-field">
+                        <label><Share2 size={14} /> Facebook</label>
+                        <input type="text" name="back_fields_facebook" value={config.back_fields_facebook || ''} onChange={handleChange} placeholder="MaPage ou lien complet" />
+                      </div>
+                      <div className="form-field">
+                        <label>TikTok</label>
+                        <input type="text" name="back_fields_tiktok" value={config.back_fields_tiktok || ''} onChange={handleChange} placeholder="@votrecompte ou lien complet" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <div className="section-header">
+                      <RotateCw size={18} />
+                      <h3>Offre en cours</h3>
+                    </div>
+                    <div className="form-grid">
+                      <div className="form-field full-width">
+                        <label>Message promotionnel</label>
+                        <textarea
+                          name="relevant_text"
+                          value={config.relevant_text || ''}
+                          onChange={handleChange}
+                          rows={3}
+                          placeholder="Ex: -20% sur tout le magasin ce week-end !"
+                        />
+                        <small className="field-hint">Lié au champ «&nbsp;GPS&nbsp;&amp;&nbsp;Notifs&nbsp;». Déclenche une notification push Apple à la sauvegarde.</small>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ====== APPLE WALLET VERSO ====== */}
+              {platform === 'apple' && <>
+
               {/* GROUPE: CONFIGURATION DE BASE */}
               <div className="form-section">
                 <div className="section-header">
@@ -732,6 +801,10 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                   </div>
                 </div>
               </div>
+
+              </>}
+              {/* fin platform === 'apple' */}
+
             </div>
           )}
 

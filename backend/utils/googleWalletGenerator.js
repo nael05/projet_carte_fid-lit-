@@ -206,6 +206,13 @@ class GoogleWalletGenerator {
       }
     };
 
+    // Liens cliquables (contact, réseaux sociaux) et offre en cours depuis la config
+    if (config) {
+      const { linksModuleData, offerModule } = this._buildLinksAndOfferModules(config);
+      if (offerModule) textModulesData.push(offerModule);
+      if (linksModuleData) loyaltyObject.linksModuleData = linksModuleData;
+    }
+
     // On désactive l'image hero sur les objets pour éviter les erreurs de timeout/chargement Google
     // qui bloquent la redirection sur les tunnels locaux.
 
@@ -245,10 +252,10 @@ class GoogleWalletGenerator {
     }
   }
 
-  async updateLoyaltyObject(clientId, empresaId, newBalance, rewardTiers = []) {
+  async updateLoyaltyObject(clientId, empresaId, newBalance, rewardTiers = [], config = null) {
     if (!this.client) return;
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
-    
+
     try {
       const textModulesData = [];
       if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
@@ -264,8 +271,14 @@ class GoogleWalletGenerator {
         loyaltyPoints: {
           balance: { string: newBalance.toString() }
         },
-        textModulesData: textModulesData
+        textModulesData
       };
+
+      if (config) {
+        const { linksModuleData, offerModule } = this._buildLinksAndOfferModules(config);
+        if (offerModule) textModulesData.push(offerModule);
+        if (linksModuleData) requestBody.linksModuleData = linksModuleData;
+      }
 
       await this.client.loyaltyobject.patch({
         resourceId: objectId,
@@ -296,6 +309,51 @@ class GoogleWalletGenerator {
 
     const token = jwt.sign(claims, this.credentials.private_key, { algorithm: 'RS256' });
     return `https://pay.google.com/gp/v/save/${token}`;
+  }
+
+  _buildSocialUrl(input, platform) {
+    if (!input || typeof input !== 'string') return null;
+    const clean = input.trim();
+    if (!clean) return null;
+    if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
+    const handle = clean.startsWith('@') ? clean.substring(1) : clean;
+    if (platform === 'instagram') return `https://instagram.com/${handle}`;
+    if (platform === 'facebook') return `https://facebook.com/${handle}`;
+    if (platform === 'tiktok') return `https://tiktok.com/@${handle}`;
+    return null;
+  }
+
+  _buildLinksAndOfferModules(config) {
+    const uris = [];
+
+    if (config.back_fields_phone) {
+      const phone = config.back_fields_phone.replace(/\s/g, '');
+      uris.push({ uri: `tel:${phone}`, description: 'Téléphone', id: 'link_phone' });
+    }
+    if (config.back_fields_website) {
+      let url = config.back_fields_website.trim();
+      if (!url.startsWith('http')) url = `https://${url}`;
+      uris.push({ uri: url, description: 'Site Web', id: 'link_website' });
+    }
+    if (config.back_fields_address) {
+      const mapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(config.back_fields_address)}`;
+      uris.push({ uri: mapsUrl, description: 'Adresse', id: 'link_address' });
+    }
+    const instagram = this._buildSocialUrl(config.back_fields_instagram, 'instagram');
+    if (instagram) uris.push({ uri: instagram, description: 'Instagram', id: 'link_instagram' });
+    const facebook = this._buildSocialUrl(config.back_fields_facebook, 'facebook');
+    if (facebook) uris.push({ uri: facebook, description: 'Facebook', id: 'link_facebook' });
+    const tiktok = this._buildSocialUrl(config.back_fields_tiktok, 'tiktok');
+    if (tiktok) uris.push({ uri: tiktok, description: 'TikTok', id: 'link_tiktok' });
+
+    const linksModuleData = uris.length > 0 ? { uris } : null;
+    const offerModule = config.relevant_text ? {
+      header: 'Offre en cours',
+      body: config.relevant_text,
+      id: 'current_offer_module'
+    } : null;
+
+    return { linksModuleData, offerModule };
   }
 
   _getAbsoluteUrl(relativeUrl) {

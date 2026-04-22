@@ -38,6 +38,12 @@ class WalletSyncService {
         [companyId]
       );
 
+      const [custRows] = await db.query(
+        'SELECT * FROM card_customization WHERE company_id = ? AND loyalty_type = ?',
+        [companyId, client.loyalty_type || 'points']
+      );
+      const clientCustomization = custRows[0] || null;
+
       // 3. Mettre à jour la base de données de synchronisation (wallet_cards)
       // On force last_updated = NOW(3) pour avoir une précision à la milliseconde pour Apple
       await db.query(
@@ -72,7 +78,7 @@ class WalletSyncService {
           // SYNCHRO GOOGLE WALLET
           if (serial && serial.startsWith('GOOGLE_')) {
             logger.info(`   🤖 [SYNC] Mise à jour Google Wallet`);
-            return googleWalletGenerator.updateLoyaltyObject(clientId, companyId, newBalance, tiers);
+            return googleWalletGenerator.updateLoyaltyObject(clientId, companyId, newBalance, tiers, clientCustomization);
           }
         });
 
@@ -167,7 +173,7 @@ class WalletSyncService {
         await Promise.all(chunks.map(async (chunk, index) => {
           try {
             await Promise.all(chunk.map(wallet => 
-              googleWalletGenerator.updateLoyaltyObject(wallet.client_id, companyId, wallet.points, rewardTiers)
+              googleWalletGenerator.updateLoyaltyObject(wallet.client_id, companyId, wallet.points, rewardTiers, customRows[0] || null)
                 .catch(err => logger.error(`      ❌ Erreur sync Google client ${wallet.client_id}:`, err.message))
             ));
             logger.debug(`   🤖 [SYNC V8.6] Paquet ${index + 1}/${chunks.length} terminé`);

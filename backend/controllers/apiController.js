@@ -984,7 +984,7 @@ export const updateCardCustomization = async (req, res) => {
     }
 
     const [existing] = await pool.query(
-      'SELECT id FROM card_customization WHERE company_id = ? AND loyalty_type = ?',
+      'SELECT id, relevant_text AS prev_relevant_text FROM card_customization WHERE company_id = ? AND loyalty_type = ?',
       [empresaId, loyaltyType]
     );
 
@@ -1077,8 +1077,26 @@ export const updateCardCustomization = async (req, res) => {
       );
     }
 
+    // Push visible si l'offre en cours vient d'être créée ou modifiée
+    const prevOffer = existing[0]?.prev_relevant_text || '';
+    if (relevant_text && relevant_text.trim() !== prevOffer) {
+      const [pushRegs] = await pool.query(
+        `SELECT DISTINCT r.push_token
+         FROM apple_pass_registrations r
+         JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
+         WHERE w.company_id = ?`,
+        [empresaId]
+      );
+      if (pushRegs.length > 0) {
+        apnService.sendBulkAlertNotifications(
+          pushRegs.map(r => r.push_token),
+          'Nouvelle offre !',
+          relevant_text.trim()
+        ).catch(err => logger.error('Offer push failed', err.message));
+      }
+    }
+
     // 📱 Synchronisation en temps réel (Apple & Google) via WalletSyncService
-    // On utilise empresaId (ID de l'entreprise cible) pour déclencher le Push aux bons clients
     walletSyncService.syncCompanyWallets(empresaId).catch(err =>
       logger.error('Global synchronization failed after customization update', err)
     );

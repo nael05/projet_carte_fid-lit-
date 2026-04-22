@@ -334,14 +334,6 @@ export class PassGenerator {
         value: customization?.apple_organization_name || clientData.companyName || 'Boutique',
       });
 
-      // CACHE-BUSTER: Ce champ change à chaque génération pour forcer Apple à rafraîchir les images.
-      // Règle absolue : PAS de changeMessage ici pour rester 100% silencieux.
-      this.safeAddField(pass.backFields, {
-        key: 'cache_buster',
-        label: 'MISE À JOUR',
-        value: new Date().getTime().toString()
-      });
-
       if (customization?.back_fields_website) {
         this.safeAddField(pass.backFields, {
           key: 'website',

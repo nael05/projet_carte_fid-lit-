@@ -272,6 +272,19 @@ class GoogleWalletGenerator {
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
 
     try {
+      // GET the existing object to preserve all fields (classId, barcode, accountId, etc.)
+      let existingObject;
+      try {
+        const response = await this.client.loyaltyobject.get({ resourceId: objectId });
+        existingObject = response.data;
+      } catch (getErr) {
+        if (getErr.code === 404) {
+          logger.warn(`⚠️ Google Wallet object ${objectId} not found, cannot update. Was the pass created?`);
+          return;
+        }
+        throw getErr;
+      }
+
       const textModulesData = [];
       if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
         const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
@@ -282,7 +295,9 @@ class GoogleWalletGenerator {
         });
       }
 
-      const requestBody = {
+      // Merge updates into the existing object then do a full PUT (same as createLoyaltyObject does)
+      const updatedObject = {
+        ...existingObject,
         loyaltyPoints: {
           label: 'Points',
           balance: { string: newBalance.toString() }
@@ -292,12 +307,13 @@ class GoogleWalletGenerator {
 
       if (config) {
         const { linksModuleData } = this._buildLinksAndOfferModules(config);
-        if (linksModuleData) requestBody.linksModuleData = linksModuleData;
+        if (linksModuleData) updatedObject.linksModuleData = linksModuleData;
+        else delete updatedObject.linksModuleData;
       }
 
-      await this.client.loyaltyobject.patch({
+      await this.client.loyaltyobject.update({
         resourceId: objectId,
-        requestBody
+        requestBody: updatedObject
       });
       logger.info(`✅ Google Wallet object updated for ${objectId}: ${newBalance} points + ${rewardTiers.length} tiers`);
     } catch (err) {

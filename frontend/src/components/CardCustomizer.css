@@ -624,6 +624,25 @@
   justify-content: center;
 }
 
+.google-logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.google-hero-preview {
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+}
+
+.google-hero-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .google-org-name-top {
   font-size: 18px;
   font-weight: 500;
@@ -679,8 +698,7 @@
   padding: 12px;
   border-radius: 12px;
   border: 1px solid #e8eaed;
-  width: 180px;
-  aspect-ratio: 1;
+  width: fit-content;
 }
 
 .google-qr-mock-real {

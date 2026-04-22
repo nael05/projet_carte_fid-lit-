@@ -881,18 +881,29 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         ) : (
           <>
             <div className="google-card" style={{ backgroundColor: config.google_primary_color || '#ffffff' }}>
-              {/* Header: Icon + Org Name */}
+              {/* Header: Logo + Org Name */}
               <div className="google-card-new-header">
-                <div className="google-wallet-icon">
-                  <svg viewBox="0 0 48 48" width="24" height="24">
-                    <path fill="#4285F4" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4z" />
-                    <path fill="#34A853" d="M40 12H8c-2.2 0-4 1.8-4 4v4h40v-4c0-2.2-1.8-4-4-4z" />
-                    <path fill="#FBBC05" d="M40 12H8c-2.2 0-4 1.8-4 4v8h40v-8c0-2.2-1.8-4-4-4z" />
-                    <path fill="#EA4335" d="M40 12H8c-2.2 0-4 1.8-4 4v12h40v-12c0-2.2-1.8-4-4-4z" />
-                  </svg>
-                </div>
+                {config.google_logo_url ? (
+                  <img src={getMediaUrl(config.google_logo_url)} alt="Logo" className="google-logo-img" />
+                ) : (
+                  <div className="google-wallet-icon">
+                    <svg viewBox="0 0 48 48" width="24" height="24">
+                      <path fill="#4285F4" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4z" />
+                      <path fill="#34A853" d="M40 12H8c-2.2 0-4 1.8-4 4v4h40v-4c0-2.2-1.8-4-4-4z" />
+                      <path fill="#FBBC05" d="M40 12H8c-2.2 0-4 1.8-4 4v8h40v-8c0-2.2-1.8-4-4-4z" />
+                      <path fill="#EA4335" d="M40 12H8c-2.2 0-4 1.8-4 4v12h40v-12c0-2.2-1.8-4-4-4z" />
+                    </svg>
+                  </div>
+                )}
                 <span className="google-org-name-top" style={{ color: getContrastColor(config.google_primary_color) }}>{proInfo.nom}</span>
               </div>
+
+              {/* Hero Image */}
+              {config.google_hero_image_url && (
+                <div className="google-hero-preview">
+                  <img src={getMediaUrl(config.google_hero_image_url)} alt="Banner" />
+                </div>
+              )}
 
               <div className="google-card-content">
                 {/* Large Title */}
@@ -909,10 +920,10 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 {/* QR Code Section */}
                 <div className="google-qr-container">
                   <div className="google-qr-box">
-                    <div className="google-qr-mock-real"></div>
+                    <QRCodeCanvas value={proInfo.id || 'preview'} size={90} level="H" marginSize={0} />
                   </div>
                   <span className="google-client-id-text" style={{ color: getContrastColor(config.google_primary_color), opacity: 0.6 }}>
-                    {proInfo.id.substring(0, 30)}...
+                    {proInfo.id ? proInfo.id.substring(0, 30) + '...' : 'ID client'}
                   </span>
                 </div>
               </div>

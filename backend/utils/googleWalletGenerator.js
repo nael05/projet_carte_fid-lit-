@@ -326,30 +326,30 @@ class GoogleWalletGenerator {
   _buildLinksAndOfferModules(config) {
     const uris = [];
 
-    if (config.back_fields_phone) {
-      const phone = config.back_fields_phone.replace(/\s/g, '');
+    if (config.google_back_phone) {
+      const phone = config.google_back_phone.replace(/\s/g, '');
       uris.push({ uri: `tel:${phone}`, description: 'Téléphone', id: 'link_phone' });
     }
-    if (config.back_fields_website) {
-      let url = config.back_fields_website.trim();
+    if (config.google_back_website) {
+      let url = config.google_back_website.trim();
       if (!url.startsWith('http')) url = `https://${url}`;
       uris.push({ uri: url, description: 'Site Web', id: 'link_website' });
     }
-    if (config.back_fields_address) {
-      const mapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(config.back_fields_address)}`;
+    if (config.google_back_address) {
+      const mapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(config.google_back_address)}`;
       uris.push({ uri: mapsUrl, description: 'Adresse', id: 'link_address' });
     }
-    const instagram = this._buildSocialUrl(config.back_fields_instagram, 'instagram');
+    const instagram = this._buildSocialUrl(config.google_back_instagram, 'instagram');
     if (instagram) uris.push({ uri: instagram, description: 'Instagram', id: 'link_instagram' });
-    const facebook = this._buildSocialUrl(config.back_fields_facebook, 'facebook');
+    const facebook = this._buildSocialUrl(config.google_back_facebook, 'facebook');
     if (facebook) uris.push({ uri: facebook, description: 'Facebook', id: 'link_facebook' });
-    const tiktok = this._buildSocialUrl(config.back_fields_tiktok, 'tiktok');
+    const tiktok = this._buildSocialUrl(config.google_back_tiktok, 'tiktok');
     if (tiktok) uris.push({ uri: tiktok, description: 'TikTok', id: 'link_tiktok' });
 
     const linksModuleData = uris.length > 0 ? { uris } : null;
-    const offerModule = config.relevant_text ? {
+    const offerModule = config.google_offer_text ? {
       header: 'Offre en cours',
-      body: config.relevant_text,
+      body: config.google_offer_text,
       id: 'current_offer_module'
     } : null;
 

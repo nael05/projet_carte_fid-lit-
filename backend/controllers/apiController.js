@@ -975,6 +975,13 @@ export const updateCardCustomization = async (req, res) => {
     google_hero_image_url,
     google_card_title,
     google_card_subtitle,
+    google_back_phone,
+    google_back_website,
+    google_back_address,
+    google_back_instagram,
+    google_back_facebook,
+    google_back_tiktok,
+    google_offer_text,
     locations
   } = req.body;
 
@@ -1000,8 +1007,11 @@ export const updateCardCustomization = async (req, res) => {
           apple_background_color, apple_text_color, apple_label_color, apple_logo_url, apple_icon_url, apple_strip_image_url,
           latitude, longitude, relevant_text,
           google_primary_color, google_text_color, google_logo_url,
-          google_hero_image_url, google_card_title, google_card_subtitle, locations)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          google_hero_image_url, google_card_title, google_card_subtitle,
+          google_back_phone, google_back_website, google_back_address,
+          google_back_instagram, google_back_facebook, google_back_tiktok, google_offer_text,
+          locations)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customizationId, empresaId, loyaltyType,
           primary_color || '#1f2937', text_color || '#ffffff', accent_color || '#3b82f6', secondary_color || '#374151',
@@ -1015,6 +1025,8 @@ export const updateCardCustomization = async (req, res) => {
           latitude || null, longitude || null, relevant_text || null,
           google_primary_color || '#1f2937', google_text_color || '#ffffff', google_logo_url || null,
           google_hero_image_url || null, google_card_title || '', google_card_subtitle || '',
+          google_back_phone || null, google_back_website || null, google_back_address || null,
+          google_back_instagram || null, google_back_facebook || null, google_back_tiktok || null, google_offer_text || null,
           locations ? JSON.stringify(locations) : null
         ]
       );
@@ -1031,8 +1043,10 @@ export const updateCardCustomization = async (req, res) => {
          apple_logo_url = ?, apple_icon_url = ?, apple_strip_image_url = ?,
          latitude = ?, longitude = ?, relevant_text = ?,
          google_primary_color = ?, google_text_color = ?, google_logo_url = ?,
-         google_hero_image_url = ?, google_card_title = ?, google_card_subtitle = ?, locations = ?,
-         updated_at = NOW()
+         google_hero_image_url = ?, google_card_title = ?, google_card_subtitle = ?,
+         google_back_phone = ?, google_back_website = ?, google_back_address = ?,
+         google_back_instagram = ?, google_back_facebook = ?, google_back_tiktok = ?, google_offer_text = ?,
+         locations = ?, updated_at = NOW()
          WHERE company_id = ? AND loyalty_type = ?`,
         [
           primary_color || '#1f2937',
@@ -1070,6 +1084,13 @@ export const updateCardCustomization = async (req, res) => {
           google_hero_image_url || null,
           google_card_title || '',
           google_card_subtitle || '',
+          google_back_phone || null,
+          google_back_website || null,
+          google_back_address || null,
+          google_back_instagram || null,
+          google_back_facebook || null,
+          google_back_tiktok || null,
+          google_offer_text || null,
           locations ? JSON.stringify(locations) : null,
           empresaId,
           loyaltyType

@@ -375,7 +375,14 @@ export const downloadClientPass = async (req, res) => {
                cc.back_fields_address,
                cc.back_fields_instagram,
                cc.back_fields_facebook,
-               cc.back_fields_tiktok
+               cc.back_fields_tiktok,
+               cc.google_back_phone,
+               cc.google_back_website,
+               cc.google_back_address,
+               cc.google_back_instagram,
+               cc.google_back_facebook,
+               cc.google_back_tiktok,
+               cc.google_offer_text
         FROM clients c
         LEFT JOIN entreprises e ON c.entreprise_id = e.id
         LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id

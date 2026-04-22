@@ -48,6 +48,13 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     google_hero_image_url: '',
     google_card_title: '',
     google_card_subtitle: '',
+    google_back_phone: '',
+    google_back_website: '',
+    google_back_address: '',
+    google_back_instagram: '',
+    google_back_facebook: '',
+    google_back_tiktok: '',
+    google_offer_text: '',
     push_icon_url: '',
     dashboard_logo_url: ''
   });
@@ -119,6 +126,9 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         back_fields_instagram: cleanSocial(data.back_fields_instagram),
         back_fields_facebook: cleanSocial(data.back_fields_facebook),
         back_fields_tiktok: cleanSocial(data.back_fields_tiktok),
+        google_back_instagram: cleanSocial(data.google_back_instagram),
+        google_back_facebook: cleanSocial(data.google_back_facebook),
+        google_back_tiktok: cleanSocial(data.google_back_tiktok),
       }));
     } catch (err) {
       console.error('Error loading customization:', err);
@@ -150,7 +160,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const socialFields = ['back_fields_instagram', 'back_fields_facebook', 'back_fields_tiktok'];
+    const socialFields = ['back_fields_instagram', 'back_fields_facebook', 'back_fields_tiktok', 'google_back_instagram', 'google_back_facebook', 'google_back_tiktok'];
     if (socialFields.includes(name)) {
       // Nettoyer uniquement si l'utilisateur a fini de taper (colle un lien entier)
       // On nettoie seulement si c'est clairement une URL complète
@@ -598,15 +608,15 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     <div className="form-grid">
                       <div className="form-field">
                         <label><Phone size={14} /> Téléphone</label>
-                        <input type="text" name="back_fields_phone" value={config.back_fields_phone || ''} onChange={handleChange} placeholder="01 23 45 67 89" />
+                        <input type="text" name="google_back_phone" value={config.google_back_phone || ''} onChange={handleChange} placeholder="01 23 45 67 89" />
                       </div>
                       <div className="form-field">
                         <label><Globe size={14} /> Site Internet</label>
-                        <input type="text" name="back_fields_website" value={config.back_fields_website || ''} onChange={handleChange} placeholder="www.votre-site.fr" />
+                        <input type="text" name="google_back_website" value={config.google_back_website || ''} onChange={handleChange} placeholder="www.votre-site.fr" />
                       </div>
                       <div className="form-field full-width">
                         <label><MapPin size={14} /> Adresse</label>
-                        <input type="text" name="back_fields_address" value={config.back_fields_address || ''} onChange={handleChange} placeholder="12 avenue des Champs, Paris" />
+                        <input type="text" name="google_back_address" value={config.google_back_address || ''} onChange={handleChange} placeholder="12 avenue des Champs, Paris" />
                       </div>
                     </div>
                   </div>
@@ -619,15 +629,15 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     <div className="form-grid">
                       <div className="form-field">
                         <label><Share2 size={14} /> Instagram</label>
-                        <input type="text" name="back_fields_instagram" value={config.back_fields_instagram || ''} onChange={handleChange} placeholder="@votrecompte ou lien complet" />
+                        <input type="text" name="google_back_instagram" value={config.google_back_instagram || ''} onChange={handleChange} placeholder="@votrecompte ou lien complet" />
                       </div>
                       <div className="form-field">
                         <label><Share2 size={14} /> Facebook</label>
-                        <input type="text" name="back_fields_facebook" value={config.back_fields_facebook || ''} onChange={handleChange} placeholder="MaPage ou lien complet" />
+                        <input type="text" name="google_back_facebook" value={config.google_back_facebook || ''} onChange={handleChange} placeholder="MaPage ou lien complet" />
                       </div>
                       <div className="form-field">
                         <label>TikTok</label>
-                        <input type="text" name="back_fields_tiktok" value={config.back_fields_tiktok || ''} onChange={handleChange} placeholder="@votrecompte ou lien complet" />
+                        <input type="text" name="google_back_tiktok" value={config.google_back_tiktok || ''} onChange={handleChange} placeholder="@votrecompte ou lien complet" />
                       </div>
                     </div>
                   </div>
@@ -641,13 +651,13 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       <div className="form-field full-width">
                         <label>Message promotionnel</label>
                         <textarea
-                          name="relevant_text"
-                          value={config.relevant_text || ''}
+                          name="google_offer_text"
+                          value={config.google_offer_text || ''}
                           onChange={handleChange}
                           rows={3}
                           placeholder="Ex: -20% sur tout le magasin ce week-end !"
                         />
-                        <small className="field-hint">Lié au champ «&nbsp;GPS&nbsp;&amp;&nbsp;Notifs&nbsp;». Déclenche une notification push Apple à la sauvegarde.</small>
+                        <small className="field-hint">Affiché sur la carte Google Wallet du client.</small>
                       </div>
                     </div>
                   </div>

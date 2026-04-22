@@ -232,7 +232,7 @@ export const getUpdatedPass = async (req, res) => {
               cc.back_fields_info, cc.back_fields_terms, cc.back_fields_website,
               cc.back_fields_phone, cc.back_fields_address, cc.back_fields_instagram,
               cc.back_fields_facebook, cc.back_fields_tiktok,
-              cc.latitude, cc.longitude, cc.relevant_text
+              cc.latitude, cc.longitude, cc.relevant_text, cc.locations
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
@@ -345,7 +345,8 @@ export const getUpdatedPass = async (req, res) => {
         back_fields_tiktok: data.back_fields_tiktok,
         latitude: data.latitude,
         longitude: data.longitude,
-        relevant_text: data.relevant_text
+        relevant_text: data.relevant_text,
+        locations: data.locations
       },
       serialNumber,
       data.authentication_token,

@@ -54,7 +54,8 @@ export const createWalletPass = async (req, res) => {
               cc.google_card_subtitle,
               cc.latitude,
               cc.longitude,
-              cc.relevant_text
+              cc.relevant_text,
+              cc.locations
        FROM clients c
        LEFT JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
@@ -167,6 +168,7 @@ export const createWalletPass = async (req, res) => {
       latitude: client.latitude,
       longitude: client.longitude,
       relevant_text: client.relevant_text,
+      locations: client.locations,
     };
     // 5️⃣ Générer le pass Apple Wallet
     
@@ -381,7 +383,8 @@ export const downloadClientPass = async (req, res) => {
                cc.google_back_address,
                cc.google_back_instagram,
                cc.google_back_facebook,
-               cc.google_back_tiktok
+               cc.google_back_tiktok,
+               cc.locations
         FROM clients c
         LEFT JOIN entreprises e ON c.entreprise_id = e.id
         LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
@@ -484,6 +487,7 @@ export const downloadClientPass = async (req, res) => {
       back_fields_instagram: client.back_fields_instagram,
       back_fields_facebook: client.back_fields_facebook,
       back_fields_tiktok: client.back_fields_tiktok,
+      locations: client.locations,
     };
 
     // Détermination de l'URL du webservice (Indispensable pour la synchro)

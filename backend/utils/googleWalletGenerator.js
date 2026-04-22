@@ -291,7 +291,11 @@ class GoogleWalletGenerator {
 
   _generateSaveLink(loyaltyObject) {
     if (!this.credentials || !this.credentials.client_email || !this.credentials.private_key) {
-      logger.error('❌ Impossible de générer le lien de sauvegarde Google Wallet: identifiants manquants.');
+      if (this.credentials) {
+        logger.error('❌ Impossible de générer le lien de sauvegarde Google Wallet: identifiants manquants (client_email ou private_key).');
+      } else {
+        logger.error('❌ Impossible de générer le lien de sauvegarde Google Wallet: credentials est null (fichier de clés manquant).');
+      }
       return null;
     }
 

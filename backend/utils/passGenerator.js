@@ -65,13 +65,18 @@ export class PassGenerator {
    * Valide que tous les certificats et configs sont disponibles
    */
   validateConfiguration() {
-    if (!this._loadConfig()) {
+    if (!this.certPath || !this.keyPath) {
       logger.warn('⚠️ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant).');
       return false;
     }
 
     if (!fs.existsSync(this.certPath)) {
       logger.warn(`⚠️ CERTIFICAT APPLE MANQUANT: ${this.certPath}.`);
+      return false;
+    }
+
+    if (!fs.existsSync(this.keyPath)) {
+      logger.warn(`⚠️ CLÉ APPLE MANQUANTE: ${this.keyPath}.`);
       return false;
     }
 
@@ -197,8 +202,18 @@ export class PassGenerator {
         return null;
       }
 
+      if (!this.certPath || !this.keyPath) {
+        logger.warn('⚠️ Chemins des certificats Apple non configurés (APPLE_CERT_PATH).');
+        return null;
+      }
+
       if (!fs.existsSync(this.certPath)) {
         logger.warn(`⚠️ Certificat Apple absent du disque: ${this.certPath}`);
+        return null;
+      }
+
+      if (!fs.existsSync(this.keyPath)) {
+        logger.warn(`⚠️ Clé Apple absente du disque: ${this.keyPath}`);
         return null;
       }
 

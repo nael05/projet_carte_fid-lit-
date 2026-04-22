@@ -95,9 +95,9 @@ function Join() {
       return false
     }
 
-    const phoneRegex = /^[\d\s\-\+\(\)]{8,}$/
+    const phoneRegex = /^[0-9]{10}$/
     if (!phoneRegex.test(formData.phone)) {
-      setError('Numéro de téléphone invalide')
+      setError('Numéro de téléphone invalide (10 chiffres requis, sans espaces)')
       return false
     }
 
@@ -256,7 +256,10 @@ function Join() {
               className="luxe-input"
               type="tel"
               name="phone"
-              placeholder="06 12 34 56 78"
+              placeholder="0612345678"
+              pattern="[0-9]{10}"
+              maxLength={10}
+              inputMode="numeric"
               value={formData.phone}
               onChange={handleInputChange}
               disabled={formSubmitting}

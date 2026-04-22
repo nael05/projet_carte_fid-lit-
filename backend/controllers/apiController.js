@@ -879,6 +879,14 @@ export const registerClientAndGeneratePass = async (req, res) => {
       return res.status(404).json({ error: 'Entreprise non trouvée ou inactive' });
     }
 
+    const [dupRows] = await pool.query(
+      'SELECT id FROM clients WHERE telephone = ? AND entreprise_id = ?',
+      [telephone, entrepriseId]
+    );
+    if (dupRows.length > 0) {
+      return res.status(409).json({ error: 'Numéro déjà inscrit ici.' });
+    }
+
     const clientId = randomUUID();
     const marketingOptinValue = marketing_optin === true || marketing_optin === 'true' ? 1 : 0;
     await pool.query(

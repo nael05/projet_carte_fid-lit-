@@ -881,6 +881,14 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         ) : (
           <>
             <div className="google-card" style={{ backgroundColor: config.google_primary_color || '#ffffff' }}>
+
+              {/* Hero Image — tout en haut */}
+              {config.google_hero_image_url && (
+                <div className="google-hero-preview">
+                  <img src={getMediaUrl(config.google_hero_image_url)} alt="Banner" />
+                </div>
+              )}
+
               {/* Header: Logo + Org Name */}
               <div className="google-card-new-header">
                 {config.google_logo_url ? (
@@ -897,13 +905,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 )}
                 <span className="google-org-name-top" style={{ color: getContrastColor(config.google_primary_color) }}>{proInfo.nom}</span>
               </div>
-
-              {/* Hero Image */}
-              {config.google_hero_image_url && (
-                <div className="google-hero-preview">
-                  <img src={getMediaUrl(config.google_hero_image_url)} alt="Banner" />
-                </div>
-              )}
 
               <div className="google-card-content">
                 {/* Large Title */}

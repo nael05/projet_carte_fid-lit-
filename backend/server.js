@@ -53,23 +53,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 const ipRangeRegex = /^http:\/\/(192\.168|10)\.\d+\.\d+:(300[0-9]|5[0-9]{3})$/;
 
 app.use(cors({
-  origin: (origin, callback) => {
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const isTunnel = origin && (
-      origin.endsWith('.loca.lt') || 
-      origin.endsWith('.ngrok-free.app') || 
-      origin.endsWith('.ngrok.io') || 
-      origin.includes('localhost') || 
-      origin.includes('127.0.0.1')
-    );
-    
-    if (!origin || isDevelopment || isTunnel || allowedOrigins.includes(origin) || ipRangeRegex.test(origin)) {
-      callback(null, true);
-    } else {
-      logger.warn(`🚫 CORS bloqué pour l'origine: ${origin}`);
-      callback(null, true); // Temporairement laxiste pour debugger
-    }
-  },
+  origin: true, // Répercuter l'origine de la requête pour éviter les erreurs CORS bloquantes
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Id'],
@@ -77,8 +61,8 @@ app.use(cors({
 }));
 
 // ===== BODY PARSER =====
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ===== STATIC FILES =====
 logger.info(`📁 Uploads directory: ${uploadsDir}`);

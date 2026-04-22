@@ -58,6 +58,22 @@ class GoogleWalletGenerator {
     const localLogoPath = logoUrl ? path.resolve(__dirname, '..', logoUrl.replace(/^api\/uploads\//, 'uploads/')) : null;
     const hasLocalLogo = localLogoPath && fs.existsSync(localLogoPath);
 
+    let locationsArray = [];
+    if (config.locations) {
+      try {
+        locationsArray = typeof config.locations === 'string'
+          ? JSON.parse(config.locations)
+          : config.locations;
+      } catch (e) {}
+    }
+
+    const googleLocations = Array.isArray(locationsArray)
+      ? locationsArray
+          .filter(loc => loc.latitude && loc.longitude)
+          .slice(0, 20)
+          .map(loc => ({ latitude: Number(loc.latitude), longitude: Number(loc.longitude) }))
+      : [];
+
     const loyaltyClass = {
       id: classId,
       issuerName: (empresaName || 'Fidelyz').substring(0, 50),
@@ -76,6 +92,11 @@ class GoogleWalletGenerator {
         }
       ]
     };
+
+    if (googleLocations.length > 0) {
+      loyaltyClass.locations = googleLocations;
+      logger.info(`📍 [GOOGLE LOC] ${googleLocations.length} localisation(s) configurée(s) pour la classe ${classId}`);
+    }
 
     const localHeroPath = heroImageUrl ? path.resolve(__dirname, '..', heroImageUrl.replace(/^api\/uploads\//, 'uploads/')) : null;
     const hasLocalHero = localHeroPath && fs.existsSync(localHeroPath);
@@ -117,6 +138,7 @@ class GoogleWalletGenerator {
                programLogo: loyaltyClass.programLogo,
                reviewStatus: 'UNDER_REVIEW'
              };
+             if (googleLocations.length > 0) minimalBody.locations = googleLocations;
 
              logger.info(`🔄 Tentative de mise à jour sans hero image...`);
              await this.client.loyaltyclass.patch({ resourceId: classId, requestBody: minimalBody });

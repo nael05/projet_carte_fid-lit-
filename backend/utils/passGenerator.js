@@ -65,6 +65,7 @@ export class PassGenerator {
    * Valide que tous les certificats et configs sont disponibles
    */
   validateConfiguration() {
+    this._loadConfig();
     if (!this.certPath || !this.keyPath) {
       logger.warn('⚠️ Configuration Apple Wallet incomplète (APPLE_CERT_PATH manquant).');
       return false;

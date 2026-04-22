@@ -70,6 +70,11 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir)); // Frontend compatibility
 
 // ===== ROUTES =====
+app.get('/api/wallet', (req, res) => {
+  logger.info('🔍 [APPLE CONNECT] L\'iPhone a testé la racine du WebService');
+  res.json({ status: 'active', service: 'Apple Wallet WebService' });
+});
+
 app.use('/api', apiRoutes);
 
 // ===== HEALTH CHECK avec DB =====
@@ -84,11 +89,6 @@ app.get('/health', async (req, res) => {
 });
 
 // ===== HEALTH CHECK & DIAGNOSTICS =====
-app.get('/api/wallet', (req, res) => {
-  logger.info('🔍 [APPLE CONNECT] L\'iPhone a testé la racine du WebService');
-  res.json({ status: 'active', service: 'Apple Wallet WebService' });
-});
-
 app.get('/api/wallet/health', (req, res) => {
   try {
     // Test PassGenerator configuration

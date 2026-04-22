@@ -305,7 +305,7 @@ export class PassGenerator {
         this.safeAddLocation(pass, {
           latitude: Number(customization.latitude),
           longitude: Number(customization.longitude),
-          relevantText: customization.relevant_text || customization.relevantText || 'Boutique'
+          relevantText: (customization.relevant_text || customization.relevantText || `Bienvenue chez ${clientData.companyName || 'nous'}`).trim()
         });
       }
 

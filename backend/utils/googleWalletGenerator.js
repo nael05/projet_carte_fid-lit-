@@ -196,7 +196,7 @@ class GoogleWalletGenerator {
 
     const textModulesData = [];
     if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
-       const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
+       const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
        textModulesData.push({
           header: 'Vos Paliers de Récompenses',
           body: tiersList,
@@ -287,7 +287,7 @@ class GoogleWalletGenerator {
 
       const textModulesData = [];
       if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
-        const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\\n');
+        const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
         textModulesData.push({
           header: 'Vos Paliers de Récompenses',
           body: tiersList,

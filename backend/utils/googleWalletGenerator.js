@@ -40,7 +40,7 @@ class GoogleWalletGenerator {
         logger.warn(`⚠️ Fichier de clés Google Wallet introuvable: ${this.keyFilePath}`);
       }
     } catch (err) {
-      logger.error('Erreur d\'initialisation Google Wallet:', err);
+      logger.error(`Erreur d'initialisation Google Wallet (Path: ${this.keyFilePath}):`, err);
     }
   }
 
@@ -54,11 +54,15 @@ class GoogleWalletGenerator {
     const heroImageUrl = config.google_hero_image_url;
     const bgColor = config.google_primary_color || '#1f2937';
 
+    // Détection des fichiers locaux avant d'envoyer l'URL à Google pour éviter les erreurs 400
+    const localLogoPath = logoUrl ? path.resolve(__dirname, '..', logoUrl.replace(/^api\/uploads\//, 'uploads/')) : null;
+    const hasLocalLogo = localLogoPath && fs.existsSync(localLogoPath);
+
     const loyaltyClass = {
       id: classId,
       issuerName: (empresaName || 'Fidelyz').substring(0, 50),
       programName: (config.google_card_title || config.card_title || 'Programme Fidélité').substring(0, 50),
-      programLogo: logoUrl ? {
+      programLogo: hasLocalLogo ? {
         sourceUri: { uri: this._getAbsoluteUrl(logoUrl) }
       } : {
         sourceUri: { uri: 'https://www.gstatic.com/images/branding/product/2x/wallet_48dp.png' }
@@ -73,7 +77,10 @@ class GoogleWalletGenerator {
       ]
     };
 
-    if (heroImageUrl) {
+    const localHeroPath = heroImageUrl ? path.resolve(__dirname, '..', heroImageUrl.replace(/^api\/uploads\//, 'uploads/')) : null;
+    const hasLocalHero = localHeroPath && fs.existsSync(localHeroPath);
+
+    if (hasLocalHero) {
       loyaltyClass.heroImage = {
         sourceUri: { uri: this._getAbsoluteUrl(heroImageUrl) }
       };

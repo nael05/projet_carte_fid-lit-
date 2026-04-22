@@ -55,6 +55,8 @@ export const createWalletPass = async (req, res) => {
               cc.latitude,
               cc.longitude,
               cc.relevant_text,
+              cc.apple_review_url,
+              cc.google_review_url,
               cc.locations
        FROM clients c
        LEFT JOIN entreprises e ON c.entreprise_id = e.id
@@ -168,6 +170,7 @@ export const createWalletPass = async (req, res) => {
       latitude: client.latitude,
       longitude: client.longitude,
       relevant_text: client.relevant_text,
+      apple_review_url: client.apple_review_url,
       locations: client.locations,
     };
     // 5️⃣ Générer le pass Apple Wallet
@@ -384,6 +387,8 @@ export const downloadClientPass = async (req, res) => {
                cc.google_back_instagram,
                cc.google_back_facebook,
                cc.google_back_tiktok,
+               cc.apple_review_url,
+               cc.google_review_url,
                cc.locations
         FROM clients c
         LEFT JOIN entreprises e ON c.entreprise_id = e.id
@@ -488,6 +493,7 @@ export const downloadClientPass = async (req, res) => {
       back_fields_instagram: client.back_fields_instagram,
       back_fields_facebook: client.back_fields_facebook,
       back_fields_tiktok: client.back_fields_tiktok,
+      apple_review_url: client.apple_review_url,
       locations: client.locations,
     };
 

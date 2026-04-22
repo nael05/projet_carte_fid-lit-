@@ -953,6 +953,8 @@ export const getCardCustomization = async (req, res) => {
         google_hero_image_url: null,
         google_card_title: '',
         google_card_subtitle: '',
+        apple_review_url: '',
+        google_review_url: '',
         locations: []
       });
     }
@@ -1018,6 +1020,8 @@ export const updateCardCustomization = async (req, res) => {
     google_back_instagram,
     google_back_facebook,
     google_back_tiktok,
+    apple_review_url,
+    google_review_url,
     locations
   } = req.body;
 
@@ -1046,8 +1050,9 @@ export const updateCardCustomization = async (req, res) => {
           google_hero_image_url, google_card_title, google_card_subtitle,
           google_back_phone, google_back_website, google_back_address,
           google_back_instagram, google_back_facebook, google_back_tiktok,
+          apple_review_url, google_review_url,
           locations)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customizationId, empresaId, loyaltyType,
           primary_color || '#1f2937', text_color || '#ffffff', accent_color || '#3b82f6', secondary_color || '#374151',
@@ -1063,6 +1068,7 @@ export const updateCardCustomization = async (req, res) => {
           google_hero_image_url || null, google_card_title || '', google_card_subtitle || '',
           google_back_phone || null, google_back_website || null, google_back_address || null,
           google_back_instagram || null, google_back_facebook || null, google_back_tiktok || null,
+          apple_review_url || null, google_review_url || null,
           locations ? JSON.stringify(locations) : null
         ]
       );
@@ -1082,6 +1088,7 @@ export const updateCardCustomization = async (req, res) => {
          google_hero_image_url = ?, google_card_title = ?, google_card_subtitle = ?,
          google_back_phone = ?, google_back_website = ?, google_back_address = ?,
          google_back_instagram = ?, google_back_facebook = ?, google_back_tiktok = ?,
+         apple_review_url = ?, google_review_url = ?,
          locations = ?, updated_at = NOW()
          WHERE company_id = ? AND loyalty_type = ?`,
         [
@@ -1126,6 +1133,8 @@ export const updateCardCustomization = async (req, res) => {
           google_back_instagram || null,
           google_back_facebook || null,
           google_back_tiktok || null,
+          apple_review_url || null,
+          google_review_url || null,
           locations ? JSON.stringify(locations) : null,
           empresaId,
           loyaltyType

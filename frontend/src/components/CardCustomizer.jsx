@@ -3,7 +3,7 @@ import api from '../api';
 import {
   Palette, ImageIcon, Info, Layout, CheckCircle2, AlertCircle, Loader2, Upload, RotateCw,
   Globe, FileText, ChevronRight, Smartphone, Apple, User, PhoneCall, Share2,
-  ShieldCheck, Phone, MapPin
+  ShieldCheck, Phone, MapPin, Star
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import './CardCustomizer.css';
@@ -54,6 +54,8 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     google_back_instagram: '',
     google_back_facebook: '',
     google_back_tiktok: '',
+    apple_review_url: '',
+    google_review_url: '',
     push_icon_url: '',
     dashboard_logo_url: ''
   });
@@ -643,6 +645,24 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     </div>
                   </div>
 
+                  <div className="form-section">
+                    <div className="section-header">
+                      <Star size={18} />
+                      <h3>Avis Clients</h3>
+                    </div>
+                    <div className="form-grid">
+                      <div className="form-field full-width">
+                        <label><Star size={14} /> Laissez-nous un avis Google</label>
+                        <input
+                          type="text"
+                          name="google_review_url"
+                          value={config.google_review_url || ''}
+                          onChange={handleChange}
+                          placeholder="https://g.page/r/votre-lien-avis"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                 </>
               )}
@@ -753,6 +773,26 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                       placeholder="@votrecompte ou lien complet"
                     />
 
+                  </div>
+                </div>
+              </div>
+
+              {/* GROUPE: AVIS CLIENTS */}
+              <div className="form-section">
+                <div className="section-header">
+                  <Star size={18} />
+                  <h3>Avis Clients</h3>
+                </div>
+                <div className="form-grid">
+                  <div className="form-field full-width">
+                    <label><Star size={14} /> Laissez-nous un avis Google</label>
+                    <input
+                      type="text"
+                      name="apple_review_url"
+                      value={config.apple_review_url || ''}
+                      onChange={handleChange}
+                      placeholder="https://g.page/r/votre-lien-avis"
+                    />
                   </div>
                 </div>
               </div>

@@ -368,6 +368,15 @@ export class PassGenerator {
         });
       }
 
+      if (customization?.apple_review_url) {
+        this.safeAddField(pass.backFields, {
+          key: 'review_google',
+          label: 'LAISSEZ-NOUS UN AVIS GOOGLE',
+          value: customization.apple_review_url,
+          dataDetectorTypes: ['PKDataDetectorTypeLink']
+        });
+      }
+
       if (customization?.back_fields_phone) {
         this.safeAddField(pass.backFields, {
           key: 'phone',

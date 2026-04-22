@@ -391,6 +391,12 @@ class GoogleWalletGenerator {
     const tiktok = this._buildSocialUrl(config.google_back_tiktok, 'tiktok');
     if (tiktok) uris.push({ uri: tiktok, description: 'TikTok', id: 'link_tiktok' });
 
+    if (config.google_review_url) {
+      let reviewUrl = config.google_review_url.trim();
+      if (!reviewUrl.startsWith('http')) reviewUrl = `https://${reviewUrl}`;
+      uris.push({ uri: reviewUrl, description: 'Laissez-nous un avis Google', id: 'link_review_google' });
+    }
+
     const linksModuleData = uris.length > 0 ? { uris } : null;
     return { linksModuleData };
   }

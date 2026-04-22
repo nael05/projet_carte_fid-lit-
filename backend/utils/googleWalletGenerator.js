@@ -208,8 +208,7 @@ class GoogleWalletGenerator {
 
     // Liens cliquables (contact, réseaux sociaux) et offre en cours depuis la config
     if (config) {
-      const { linksModuleData, offerModule } = this._buildLinksAndOfferModules(config);
-      if (offerModule) textModulesData.push(offerModule);
+      const { linksModuleData } = this._buildLinksAndOfferModules(config);
       if (linksModuleData) loyaltyObject.linksModuleData = linksModuleData;
     }
 
@@ -275,8 +274,7 @@ class GoogleWalletGenerator {
       };
 
       if (config) {
-        const { linksModuleData, offerModule } = this._buildLinksAndOfferModules(config);
-        if (offerModule) textModulesData.push(offerModule);
+        const { linksModuleData } = this._buildLinksAndOfferModules(config);
         if (linksModuleData) requestBody.linksModuleData = linksModuleData;
       }
 
@@ -347,13 +345,7 @@ class GoogleWalletGenerator {
     if (tiktok) uris.push({ uri: tiktok, description: 'TikTok', id: 'link_tiktok' });
 
     const linksModuleData = uris.length > 0 ? { uris } : null;
-    const offerModule = config.google_offer_text ? {
-      header: 'Offre en cours',
-      body: config.google_offer_text,
-      id: 'current_offer_module'
-    } : null;
-
-    return { linksModuleData, offerModule };
+    return { linksModuleData };
   }
 
   _getAbsoluteUrl(relativeUrl) {

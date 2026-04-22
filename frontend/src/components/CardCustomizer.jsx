@@ -54,7 +54,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     google_back_instagram: '',
     google_back_facebook: '',
     google_back_tiktok: '',
-    google_offer_text: '',
     push_icon_url: '',
     dashboard_logo_url: ''
   });
@@ -642,25 +641,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     </div>
                   </div>
 
-                  <div className="form-section">
-                    <div className="section-header">
-                      <RotateCw size={18} />
-                      <h3>Offre en cours</h3>
-                    </div>
-                    <div className="form-grid">
-                      <div className="form-field full-width">
-                        <label>Message promotionnel</label>
-                        <textarea
-                          name="google_offer_text"
-                          value={config.google_offer_text || ''}
-                          onChange={handleChange}
-                          rows={3}
-                          placeholder="Ex: -20% sur tout le magasin ce week-end !"
-                        />
-                        <small className="field-hint">Affiché sur la carte Google Wallet du client.</small>
-                      </div>
-                    </div>
-                  </div>
+
                 </>
               )}
 

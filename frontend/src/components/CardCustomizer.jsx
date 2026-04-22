@@ -411,13 +411,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     <code>{config.google_primary_color}</code>
                   </div>
                 </div>
-                <div className="settings-group">
-                  <label>Couleur du Texte</label>
-                  <div className="color-input-wrapper">
-                    <input type="color" name="google_text_color" value={config.google_text_color} onChange={handleChange} />
-                    <code>{config.google_text_color}</code>
-                  </div>
-                </div>
               </div>
             </>
           )}

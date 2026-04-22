@@ -1,7 +1,7 @@
 import pool from '../db.js';
 import apnService from './apnService.js';
+import fcmService from './fcmService.js';
 import logger from './logger.js';
-import { randomUUID } from 'crypto';
 
 /**
  * Service de notification pour les mises à jour de fidélité
@@ -44,24 +44,32 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
         ? `${Math.abs(pointsChange)} points utilisés.${nextTierMessage}`
         : `${pointsChange} points ajoutés ! Nouveau solde : ${newPoints} pts.${nextTierMessage}`;
 
-    // 4. Récupérer les tokens push et lancer la synchro en simultané
-    const [registrations] = await pool.query(
-      `SELECT r.push_token 
-       FROM apple_pass_registrations r
-       JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
-       WHERE w.client_id = ?`,
-      [clientId]
-    );
+    // 4. Récupérer les tokens Apple (APNs) et Google (FCM) en parallèle
+    const [[registrations], [fcmRows]] = await Promise.all([
+      pool.query(
+        `SELECT r.push_token
+         FROM apple_pass_registrations r
+         JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
+         WHERE w.client_id = ?`,
+        [clientId]
+      ),
+      pool.query(
+        'SELECT fcm_token FROM wallet_cards WHERE client_id = ? AND fcm_token IS NOT NULL',
+        [clientId]
+      )
+    ]);
 
-    // 5. Lancer tout en parallèle (Apple et Google) - SANS ATTENDRE (Un-await pour dashboard instantané)
+    // 5. Lancer tout en parallèle - SANS ATTENDRE (pour dashboard instantané)
     const walletSyncModule = await import('./walletSyncService.js');
     const walletSyncService = walletSyncModule.default;
-    const pushTokens = registrations.map(r => r.push_token);
+    const apnsTokens = registrations.map(r => r.push_token);
+    const fcmTokens = fcmRows.map(r => r.fcm_token).filter(Boolean);
 
     // On lance en arrière-plan pour ne pas faire attendre le commerçant sur son dashboard
     Promise.all([
       walletSyncService.syncClientWallet(clientId, empresaId),
-      registrations.length > 0 ? apnService.sendBulkAlertNotifications(pushTokens, title, body) : Promise.resolve()
+      apnsTokens.length > 0 ? apnService.sendBulkAlertNotifications(apnsTokens, title, body) : Promise.resolve(),
+      fcmTokens.length > 0 ? fcmService.sendBulkNotification(fcmTokens, title, body) : Promise.resolve()
     ]).catch(err => logger.error('Notification parallel error', err));
 
     logger.info(`✅ Flux de notification lancé en tâche de fond pour ${clientId}`);

@@ -274,6 +274,8 @@ export class PassGenerator {
         serialNumber: String(serialNumber),
         description: customization?.apple_pass_description || 'Carte de fidélité numérique'
       });
+      
+      logger.info(`📋 [APPLE PASS INFO] Org: "${customization?.apple_organization_name || clientData.companyName}", Desc: "${customization?.apple_pass_description || 'Carte de fidélité numérique'}"`);
 
       let locationsArray = [];
       if (customization?.locations) {

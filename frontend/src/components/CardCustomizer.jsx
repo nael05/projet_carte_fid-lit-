@@ -659,15 +659,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                     />
                     <small className="field-hint">Nom affiché tout en haut de la carte.</small>
                   </div>
-                  <div className="form-field">
-                    <label>Sous-titre accrocheur</label>
-                    <input
-                      type="text" name="card_subtitle"
-                      value={config.card_subtitle || ''}
-                      onChange={handleChange}
-                      placeholder="Ex: Passion & Fidélité"
-                    />
-                  </div>
+
                   <div className="form-field full-width">
                     <label>Description (VoiceOver)</label>
                     <input

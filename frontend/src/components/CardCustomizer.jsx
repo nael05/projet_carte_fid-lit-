@@ -206,7 +206,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     setStatus({ type: '', message: '' });
 
     try {
-      const response = await api.post(`/pro/upload-logo?imageType=${type}`, formData, {
+      const response = await api.post(`/pro/upload-logo?imageType=${type}&platform=${platform}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

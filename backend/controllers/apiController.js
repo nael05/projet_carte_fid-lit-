@@ -1131,7 +1131,7 @@ export const updateCardCustomization = async (req, res) => {
 };
 
 export const uploadLogo = async (req, res) => {
-  const { imageType } = req.query; // 'logo', 'icon', 'strip'
+  const { imageType, platform } = req.query; // 'logo', 'icon', 'strip', 'hero' + 'apple'/'google'
 
   try {
     if (!req.file) {
@@ -1142,18 +1142,31 @@ export const uploadLogo = async (req, res) => {
     const finalFilename = req.file.filename + '-resized.png';
     const finalPath = path.join(req.file.destination, finalFilename);
 
-    // Define sizes based on type
-    let resizeOpts = { width: 160, height: 50, fit: 'inside' };
-    if (imageType === 'icon') {
-      resizeOpts = { width: 29, height: 29, fit: 'cover' };
-    } else if (imageType === 'strip') {
-      resizeOpts = { width: 375, height: 123, fit: 'cover' };
-    } else if (imageType === 'hero') {
-      resizeOpts = { width: 1032, height: 336, fit: 'cover' };
+    // Define sizes based on type and platform
+    let resizeOpts = { width: 160, height: 50, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } };
+
+    if (platform === 'google') {
+      if (imageType === 'logo') {
+        // Google recommande 660x660 carré pour le logo
+        resizeOpts = { width: 660, height: 660, fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } };
+      } else if (imageType === 'hero') {
+        // Hero image 1032x336 (3:1)
+        resizeOpts = { width: 1032, height: 336, fit: 'cover' };
+      }
+    } else {
+      // Logic Apple (ou par défaut)
+      if (imageType === 'icon' || imageType === 'notification_icon') {
+        resizeOpts = { width: 58, height: 58, fit: 'cover' }; // @2x size for clarity
+      } else if (imageType === 'strip') {
+        // Bannière Apple: 375x123 (on utilise fit: cover pour "rogner" si nécessaire)
+        resizeOpts = { width: 375, height: 123, fit: 'cover' };
+      }
     }
 
+    // Processing avec Sharp
     await sharp(tempPath)
-      .resize({ ...resizeOpts, withoutEnlargement: true })
+      .rotate() // Gère l'orientation automatique (photos smartphone)
+      .resize(resizeOpts) // On a retiré withoutEnlargement pour forcer la taille minimale
       .png()
       .toFile(finalPath);
 

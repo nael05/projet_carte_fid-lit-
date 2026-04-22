@@ -922,18 +922,12 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                 </div>
               </div>
 
-              {/* Hero Image — en bas, au-dessus du footer */}
+              {/* Hero Image — tout en bas de la carte */}
               {config.google_hero_image_url && (
                 <div className="google-hero-preview">
                   <img src={getMediaUrl(config.google_hero_image_url)} alt="Banner" />
                 </div>
               )}
-
-              <div className="google-footer-actions">
-                <div className="google-add-btn-minimal">
-                  <img src="https://www.gstatic.com/wallet/apple-wallet-icons/en_US/add_to_google_wallet_wallet_button.png" alt="Add to Google Wallet" style={{ height: '36px' }} />
-                </div>
-              </div>
             </div>
             <p className="pro-hint" style={{ textAlign: 'center', marginTop: '1rem' }}>
               <Smartphone size={12} style={{ marginRight: 4 }} />

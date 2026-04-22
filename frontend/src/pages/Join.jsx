@@ -274,16 +274,16 @@ function Join() {
                 disabled={formSubmitting}
                 style={{ marginTop: '3px', accentColor: 'var(--accent)', width: '16px', height: '16px', flexShrink: 0 }}
               />
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                 J'accepte les{' '}
                 <button
                   type="button"
                   onClick={() => setShowRgpdModal(true)}
-                  style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: '13px' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: '12px', fontWeight: '600' }}
                 >
-                  Conditions d'utilisation et la Politique de confidentialité
+                  CGU & Politique de confidentialité
                 </button>
-                {' '}<span style={{ color: 'var(--text-danger, #ef4444)', fontWeight: '600' }}>*</span>
+                {' '}<span style={{ color: '#ef4444', fontWeight: '600' }}>*</span>
               </span>
             </label>
 

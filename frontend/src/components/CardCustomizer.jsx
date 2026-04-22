@@ -224,7 +224,8 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
       }
     } catch (err) {
       console.error('Upload error:', err);
-      setStatus({ type: 'error', message: "Erreur lors de l'upload de l'image." });
+      const msg = err?.response?.data?.error || "Erreur lors de l'upload de l'image.";
+      setStatus({ type: 'error', message: msg });
     } finally {
       setUploadingType(null);
     }

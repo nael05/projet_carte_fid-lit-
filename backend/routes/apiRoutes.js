@@ -25,9 +25,9 @@ const storage = multer.diskStorage({
     cb(null, req.user?.id + '-' + Date.now() + ext)
   }
 });
-const upload = multer({ 
+const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB max (sharp resize ensuite)
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Seules les images sont autorisées'));
@@ -90,7 +90,15 @@ router.get('/pro/loyalty/stats', verifyToken, isPro, loyaltyController.getLoyalt
 // ===== Card Customization Routes =====
 router.get('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.getCardCustomization);
 router.put('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.updateCardCustomization);
-router.post('/pro/upload-logo', verifyToken, isPro, upload.single('logo'), apiController.uploadLogo);
+router.post('/pro/upload-logo', verifyToken, isPro, (req, res, next) => {
+  upload.single('logo')(req, res, (err) => {
+    if (err?.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'Image trop grande (max 20 Mo)' });
+    }
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, apiController.uploadLogo);
 
 // ===== PUSH NOTIFICATION ROUTES =====
 router.post('/pro/push/send', verifyToken, isPro, pushController.sendNotification);

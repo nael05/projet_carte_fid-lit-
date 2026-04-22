@@ -16,6 +16,23 @@ import walletSyncService from '../utils/walletSyncService.js';
 import emailService from '../utils/emailService.js';
 import crypto from 'crypto';
 
+// ===== HELPERS RGPD =====
+const maskPhone = (phone) => {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 2) return '**';
+  return digits.slice(0, 2) + ' ** ** ** **';
+};
+
+const maskEmail = (email) => {
+  if (!email) return null;
+  const [local, domain] = email.split('@');
+  if (!domain) return '***@***.***';
+  const domainParts = domain.split('.');
+  const tld = domainParts.pop();
+  return `${local[0]}***@***.${tld}`;
+};
+
 // ===== MASTER ADMIN CONTROLLERS =====
 
 export const adminLogin = async (req, res) => {
@@ -514,17 +531,28 @@ export const getClients = async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT c.id, c.nom, c.prenom, c.telephone, c.email, c.type_wallet,
+              c.marketing_optin,
               c.points as points,
-              (SELECT COUNT(*) FROM apple_pass_registrations r 
-               JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number 
+              (SELECT COUNT(*) FROM apple_pass_registrations r
+               JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
                WHERE w.client_id = c.id) as device_count
        FROM clients c
-       WHERE c.entreprise_id = ? 
+       WHERE c.entreprise_id = ?
        ORDER BY c.created_at DESC`,
       [empresaId]
     );
-    logger.info(`📋 Fetching ${rows.length} clients for enterprise ${empresaId}. First client email: ${rows[0]?.email}`);
-    res.json(rows);
+
+    const maskedRows = rows.map(client => {
+      if (client.marketing_optin) return client;
+      return {
+        ...client,
+        telephone: maskPhone(client.telephone),
+        email: maskEmail(client.email),
+      };
+    });
+
+    logger.info(`📋 Fetching ${rows.length} clients for enterprise ${empresaId}.`);
+    res.json(maskedRows);
   } catch (err) {
     logger.error('Get clients error for enterprise: ' + empresaId, {
       error: err.message,
@@ -831,7 +859,7 @@ export const getCompanyInfo = async (req, res) => {
 
 export const registerClientAndGeneratePass = async (req, res) => {
   const { entrepriseId } = req.params;
-  const { nom, prenom, telephone, email, type_wallet } = req.body;
+  const { nom, prenom, telephone, email, type_wallet, marketing_optin } = req.body;
 
   if (!nom || !prenom || !telephone || !type_wallet) {
     return res.status(400).json({ error: 'Tous les champs sont requis' });
@@ -852,12 +880,13 @@ export const registerClientAndGeneratePass = async (req, res) => {
     }
 
     const clientId = randomUUID();
+    const marketingOptinValue = marketing_optin === true || marketing_optin === 'true' ? 1 : 0;
     await pool.query(
-      'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, email, points, type_wallet) VALUES (?, ?, ?, ?, ?, ?, 0, ?)',
-      [clientId, entrepriseId, nom, prenom, telephone, email, type_wallet]
+      'INSERT INTO clients (id, entreprise_id, nom, prenom, telephone, email, points, type_wallet, marketing_optin) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)',
+      [clientId, entrepriseId, nom, prenom, telephone, email, type_wallet, marketingOptinValue]
     );
 
-    logger.info(`✅ Client créé avec succès: ${clientId} (${prenom} ${nom})`);
+    logger.info(`✅ Client créé avec succès: ${clientId} (${prenom} ${nom}), marketing_optin=${marketingOptinValue}`);
 
     // Retour explicite du clientId
     return res.status(201).json({

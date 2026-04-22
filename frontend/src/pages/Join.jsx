@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api'
-import { Loader2, AlertTriangle, AlertCircle, CheckCircle2, ArrowLeft, Check, Smartphone } from 'lucide-react'
+import { Loader2, AlertTriangle, AlertCircle, CheckCircle2, ArrowLeft, Check, Smartphone, X, Shield } from 'lucide-react'
 import './Join.css'
 
 function Join() {
@@ -21,6 +21,9 @@ function Join() {
     phone: ''
   })
   const [selectedWallet, setSelectedWallet] = useState('apple')
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [showRgpdModal, setShowRgpdModal] = useState(false)
 
   useEffect(() => {
     // Force dark mode by default for Premium Experience
@@ -98,6 +101,11 @@ function Join() {
       return false
     }
 
+    if (!termsAccepted) {
+      setError('Vous devez accepter les Conditions d\'utilisation pour continuer.')
+      return false
+    }
+
     return true
   }
 
@@ -117,7 +125,8 @@ function Join() {
         prenom: formData.firstName,
         email: formData.email,
         telephone: formData.phone,
-        type_wallet: selectedWallet
+        type_wallet: selectedWallet,
+        marketing_optin: marketingOptIn
       })
 
       console.log('Registration answer raw:', registrationResponse.data);
@@ -255,6 +264,43 @@ function Join() {
             />
           </div>
 
+          {/* ===== RGPD CONSENT ===== */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', background: 'var(--bg-subtle)', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={e => setTermsAccepted(e.target.checked)}
+                disabled={formSubmitting}
+                style={{ marginTop: '3px', accentColor: 'var(--accent)', width: '16px', height: '16px', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                J'accepte les{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowRgpdModal(true)}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: '13px' }}
+                >
+                  Conditions d'utilisation et la Politique de confidentialité
+                </button>
+                {' '}<span style={{ color: 'var(--text-danger, #ef4444)', fontWeight: '600' }}>*</span>
+              </span>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={e => setMarketingOptIn(e.target.checked)}
+                disabled={formSubmitting}
+                style={{ marginTop: '3px', accentColor: 'var(--accent)', width: '16px', height: '16px', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                J'accepte de recevoir des offres promotionnelles (SMS/Email) de la part du commerçant.
+              </span>
+            </label>
+          </div>
+
           <div className="luxe-form-group">
             <label style={{ fontSize: '11px', opacity: 0.6 }}>INSTALLER SUR :</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '4px' }}>
@@ -338,6 +384,86 @@ function Join() {
           <p>© 2026 Fidelyz • Plateforme de Fidélité Pro</p>
         </div>
       </div>
+
+      {/* ===== MODALE RGPD ===== */}
+      {showRgpdModal && (
+        <div
+          onClick={() => setShowRgpdModal(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-card, #1e2530)', borderRadius: '20px', maxWidth: '560px',
+              width: '100%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.5)', border: '1px solid var(--border-light)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Shield size={20} style={{ color: 'var(--accent)' }} />
+                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>Politique de confidentialité & CGU</h2>
+              </div>
+              <button onClick={() => setShowRgpdModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ overflowY: 'auto', padding: '24px', fontSize: '13px', lineHeight: '1.7', color: 'var(--text-secondary)' }}>
+              <h3 style={{ color: 'var(--text-primary)', marginTop: 0 }}>1. Collecte des données personnelles</h3>
+              <p>Dans le cadre de l'inscription à ce programme de fidélité, nous collectons les informations suivantes : prénom, nom, adresse e-mail et numéro de téléphone. Ces données sont nécessaires à la création et à la gestion de votre carte de fidélité.</p>
+
+              <h3 style={{ color: 'var(--text-primary)' }}>2. Finalité du traitement</h3>
+              <p>Vos données personnelles sont utilisées exclusivement pour :</p>
+              <ul>
+                <li>Créer et gérer votre carte de fidélité numérique (Apple Wallet / Google Wallet)</li>
+                <li>Calculer et afficher votre solde de points de fidélité</li>
+                <li>Vous permettre d'utiliser vos avantages chez le commerçant</li>
+              </ul>
+
+              <h3 style={{ color: 'var(--text-primary)' }}>3. Consentement marketing (optionnel)</h3>
+              <p>Si vous cochez la case correspondante, votre e-mail et téléphone pourront être utilisés par le commerçant pour vous envoyer des offres promotionnelles. Ce consentement est strictement facultatif et n'affecte pas votre accès au programme de fidélité. Vous pouvez le retirer à tout moment en contactant le commerçant.</p>
+
+              <h3 style={{ color: 'var(--text-primary)' }}>4. Conservation des données</h3>
+              <p>Vos données sont conservées pendant toute la durée de votre participation au programme de fidélité, puis supprimées dans un délai de 3 ans après votre dernière interaction.</p>
+
+              <h3 style={{ color: 'var(--text-primary)' }}>5. Vos droits (RGPD)</h3>
+              <p>Conformément au Règlement Général sur la Protection des Données (RGPD — UE 2016/679), vous disposez des droits suivants : accès, rectification, effacement, opposition, portabilité et limitation du traitement. Pour exercer ces droits, contactez directement le commerçant dont vous rejoignez le programme.</p>
+
+              <h3 style={{ color: 'var(--text-primary)' }}>6. Responsable du traitement</h3>
+              <p>Le responsable du traitement est le commerçant dont vous rejoignez le programme de fidélité. La plateforme Fidelyz agit en qualité de sous-traitant au sens du RGPD.</p>
+            </div>
+
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => { setTermsAccepted(true); setShowRgpdModal(false); }}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '12px', border: 'none',
+                  background: 'var(--accent, #6366f1)', color: '#fff', fontWeight: '700',
+                  cursor: 'pointer', fontSize: '14px'
+                }}
+              >
+                J'accepte
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRgpdModal(false)}
+                style={{
+                  padding: '12px 20px', borderRadius: '12px',
+                  border: '1px solid var(--border-light)', background: 'transparent',
+                  color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '14px'
+                }}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
 
 

@@ -642,7 +642,18 @@ function ProDashboard() {
                       <div className="pro-client-info" onClick={() => setSelectedClientCard(client)}>
                         <div className="pro-client-avatar">{client.prenom?.[0] || '?'}</div>
                         <div className="pro-client-details">
-                          <span className="pro-client-name">{client.prenom} {client.nom}</span>
+                          <span className="pro-client-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {client.prenom} {client.nom}
+                            {!client.marketing_optin && (
+                              <span title="Ce client n'a pas consenti aux communications marketing" style={{
+                                fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '6px',
+                                background: 'rgba(239,68,68,0.15)', color: '#ef4444', lineHeight: '1.4',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Opt-in refusé
+                              </span>
+                            )}
+                          </span>
                           <span className="pro-client-phone"><Phone size={12} /> {client.telephone}</span>
                           {client.email && <span className="pro-client-email"><Mail size={12} /> {client.email}</span>}
                         </div>

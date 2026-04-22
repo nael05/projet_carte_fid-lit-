@@ -81,6 +81,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // ===== STATIC FILES =====
+logger.info(`📁 Uploads directory: ${uploadsDir}`);
 app.use('/uploads', express.static(uploadsDir));
 app.use('/api/uploads', express.static(uploadsDir)); // Frontend compatibility
 

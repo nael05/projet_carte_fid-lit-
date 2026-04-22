@@ -293,53 +293,41 @@ class GoogleWalletGenerator {
     if (!this.client) return;
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
 
-    try {
-      // GET the existing object to preserve all fields (classId, barcode, accountId, etc.)
-      let existingObject;
-      try {
-        const response = await this.client.loyaltyobject.get({ resourceId: objectId });
-        existingObject = response.data;
-      } catch (getErr) {
-        if (getErr.code === 404) {
-          logger.warn(`⚠️ Google Wallet object ${objectId} not found, cannot update. Was the pass created?`);
-          return;
-        }
-        throw getErr;
-      }
-
-      const textModulesData = [];
-      if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
-        const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
-        textModulesData.push({
-          header: 'Vos Paliers de Récompenses',
-          body: tiersList,
-          id: 'rewards_module'
-        });
-      }
-
-      // Merge updates into the existing object then do a full PUT (same as createLoyaltyObject does)
-      const updatedObject = {
-        ...existingObject,
-        loyaltyPoints: {
-          label: 'Points',
-          balance: { string: newBalance.toString() }
-        },
-        textModulesData
-      };
-
-      if (config) {
-        const { linksModuleData } = this._buildLinksAndOfferModules(config);
-        if (linksModuleData) updatedObject.linksModuleData = linksModuleData;
-        else delete updatedObject.linksModuleData;
-      }
-
-      await this.client.loyaltyobject.update({
-        resourceId: objectId,
-        requestBody: updatedObject
+    const textModulesData = [];
+    if (Array.isArray(rewardTiers) && rewardTiers.length > 0) {
+      const tiersList = rewardTiers.map(t => `- ${t.points_required} pts : ${t.title}`).join('\n');
+      textModulesData.push({
+        header: 'Vos Paliers de Récompenses',
+        body: tiersList,
+        id: 'rewards_module'
       });
-      logger.info(`✅ Google Wallet object updated for ${objectId}: ${newBalance} points + ${rewardTiers.length} tiers`);
+    }
+
+    const patchBody = {
+      loyaltyPoints: {
+        label: 'Points',
+        balance: { string: newBalance.toString() }
+      },
+      textModulesData
+    };
+
+    if (config) {
+      const { linksModuleData } = this._buildLinksAndOfferModules(config);
+      if (linksModuleData) patchBody.linksModuleData = linksModuleData;
+    }
+
+    try {
+      await this.client.loyaltyobject.patch({
+        resourceId: objectId,
+        requestBody: patchBody
+      });
+      logger.info(`✅ [GOOGLE] PATCH ${objectId}: ${newBalance} pts + ${rewardTiers.length} paliers`);
     } catch (err) {
-      logger.error(`❌ Failed to update Google Wallet object for ${objectId}:`, { error: err.message });
+      if (err.code === 404) {
+        logger.warn(`⚠️ [GOOGLE] Object ${objectId} introuvable - pass non encore créé pour ce client?`);
+        return;
+      }
+      logger.error(`❌ [GOOGLE] Erreur PATCH ${objectId}: ${err.message}`);
       throw err;
     }
   }

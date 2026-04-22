@@ -1143,7 +1143,8 @@ export const uploadLogo = async (req, res) => {
     const finalPath = path.join(req.file.destination, finalFilename);
 
     // Define sizes based on type and platform
-    let resizeOpts = { width: 160, height: 50, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } };
+    // Logan Apple: Hauteur max 50px, largeur proportinelle (max 160px) sans padding
+    let resizeOpts = { height: 50, width: 160, fit: 'inside' };
 
     if (platform === 'google') {
       if (imageType === 'logo') {

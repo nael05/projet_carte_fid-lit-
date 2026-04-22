@@ -10,6 +10,7 @@ import * as apiController from '../controllers/apiController.js';
 import * as loyaltyController from '../controllers/loyaltyController.js';
 import * as migrationController from '../controllers/migrationController.js';
 import * as pushController from '../controllers/pushController.js';
+import * as siteSettingsController from '../controllers/siteSettingsController.js';
 import walletRoutes from './walletRoutes.js';
 import { verifyToken, isAdmin, isPro } from '../middlewares/auth.js';
 import { loginLimiter, apiLimiter } from '../middlewares/rateLimiter.js';
@@ -109,6 +110,10 @@ router.get('/pro/push/history', verifyToken, isPro, pushController.getHistory);
 // Frontend: /api/app/wallet /*
 // Apple Web Service: /api/wallet/v1/*
 router.use('/', walletRoutes);
+
+// ===== Site Settings Routes =====
+router.get('/settings/mentions-legales', siteSettingsController.getMentionsLegales);
+router.put('/admin/settings/mentions-legales', verifyToken, isAdmin, siteSettingsController.updateMentionsLegales);
 
 // ===== Public Client Routes =====
 router.get('/public/enterprises', apiController.getPublicEnterprises);

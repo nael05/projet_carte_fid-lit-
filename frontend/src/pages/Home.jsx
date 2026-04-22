@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  LayoutGrid, Users, CreditCard, Search, CheckCircle2, 
-  Loader2, AlertTriangle, X, Shield, Zap, Smartphone, 
-  ArrowRight, Star, Globe, ChevronRight 
+import {
+  LayoutGrid, Users, CreditCard, Search, CheckCircle2,
+  Loader2, AlertTriangle, X, Shield, Zap, Smartphone,
+  ArrowRight, Star, Globe, ChevronRight
 } from 'lucide-react'
 import api from '../api'
+import Footer from '../components/Footer'
 import './Home.css'
 
 function Home() {
@@ -137,19 +138,7 @@ function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="luxe-footer">
-        <div className="footer-line"></div>
-        <div className="footer-content">
-          <div className="footer-brand">
-            <span className="brand-name">Fidelyz</span>
-            <p>La référence du Wallet Loyalty</p>
-          </div>
-          <div className="footer-copy">
-            &copy; 2026 Fidelyz S.A.S. • Tous droits réservés.
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -11,6 +11,7 @@ import ProDashboard from './pages/ProDashboard'
 import Join from './pages/Join'
 import ForgotPassword from './pages/ForgotPassword'
 import PublicResetPassword from './pages/PublicResetPassword'
+import MentionsLegales from './pages/MentionsLegales'
 
 function App() {
   return (
@@ -33,6 +34,9 @@ function App() {
           <Route path="/password-recovery" element={<PublicResetPassword />} />
           <Route path="/pro/secure-password" element={<ProResetPassword />} />
           <Route path="/pro/dashboard" element={<PrivateProRoute element={<ProDashboard />} />} />
+
+          {/* Mentions légales */}
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
 
           {/* Default redirect */}
           <Route path="*" element={<Navigate to="/" />} />

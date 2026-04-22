@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api'
-import { 
-  AlertCircle, CheckCircle2, Loader2, X, Plus, Search, 
-  Lock, Unlock, Trash2, Key, Star, Stamp, LogOut, 
+import {
+  AlertCircle, CheckCircle2, Loader2, X, Plus, Search,
+  Lock, Unlock, Trash2, Key, Star, Stamp, LogOut,
   ShieldAlert, LayoutDashboard, Copy, ExternalLink, Users,
-  Sun, Moon, PieChart, PlusCircle, Filter, Edit2, TrendingUp, Activity, Building2, Store, AlertTriangle
+  Sun, Moon, PieChart, PlusCircle, Filter, Edit2, TrendingUp, Activity, Building2, Store, AlertTriangle,
+  FileText, Save
 } from 'lucide-react'
 import './AdminDashboard.css'
 
@@ -31,6 +32,9 @@ function AdminDashboard() {
     telephone: '',
     loyalty_type: 'points'
   })
+
+  const [legalContent, setLegalContent] = useState('')
+  const [legalSaving, setLegalSaving] = useState(false)
 
   const navigate = useNavigate()
   const { logout, token } = useAuth()
@@ -72,7 +76,32 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
       return
     }
     loadEnterprises()
+    loadLegalContent()
   }, [token])
+
+  const loadLegalContent = async () => {
+    try {
+      const res = await api.get('/settings/mentions-legales')
+      setLegalContent(res.data.content || '')
+    } catch {
+      // silently ignore — table might not exist yet
+    }
+  }
+
+  const saveLegalContent = async () => {
+    setLegalSaving(true)
+    setError('')
+    setSuccess('')
+    try {
+      await api.put('/admin/settings/mentions-legales', { content: legalContent })
+      setSuccess('Mentions légales mises à jour avec succès.')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la sauvegarde.')
+    } finally {
+      setLegalSaving(false)
+    }
+  }
 
   const loadEnterprises = async () => {
     try {
@@ -338,6 +367,9 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
           <button className={`ux-tab-btn ${activeTab === 'create' ? 'active' : ''}`} onClick={() => setActiveTab('create')}>
             <PlusCircle size={18} /> Nouveau
           </button>
+          <button className={`ux-tab-btn ${activeTab === 'legal' ? 'active' : ''}`} onClick={() => setActiveTab('legal')}>
+            <FileText size={18} /> Légal
+          </button>
         </div>
 
         <div className="ux-nav-right">
@@ -355,6 +387,7 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
         <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}><PieChart size={20} /></button>
         <button className={activeTab === 'list' ? 'active' : ''} onClick={() => setActiveTab('list')}><LayoutDashboard size={20} /></button>
         <button className={activeTab === 'create' ? 'active' : ''} onClick={() => setActiveTab('create')}><PlusCircle size={20} /></button>
+        <button className={activeTab === 'legal' ? 'active' : ''} onClick={() => setActiveTab('legal')}><FileText size={20} /></button>
       </div>
 
       <main className="ux-content">
@@ -564,6 +597,68 @@ PASS TEMP : ${ent.temporary_password || 'Déjà changé'}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* VIEW: LEGAL */}
+        {activeTab === 'legal' && (
+          <div className="ux-view-fade">
+            <header className="ux-view-header">
+              <h2>Mentions Légales</h2>
+              <p>Éditez le contenu affiché sur la page publique <code>/mentions-legales</code>. Le contenu supporte les balises HTML.</p>
+            </header>
+
+            <div className="ux-form-container">
+              <div className="ux-form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <FileText size={16} /> Contenu HTML des mentions légales
+                </label>
+                <textarea
+                  value={legalContent}
+                  onChange={e => setLegalContent(e.target.value)}
+                  rows={28}
+                  spellCheck={false}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-subtle)',
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    fontFamily: 'monospace',
+                    lineHeight: '1.6',
+                    resize: 'vertical',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  placeholder="<h1>Mentions Légales</h1>&#10;<p>Contenu…</p>"
+                />
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '8px' }}>
+                  Utilisez les balises HTML standard : &lt;h1&gt;, &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt;, &lt;a&gt;, etc.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+                <a
+                  href="/mentions-legales"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ux-btn-secondary"
+                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  Prévisualiser
+                </a>
+                <button
+                  onClick={saveLegalContent}
+                  disabled={legalSaving}
+                  className="ux-btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {legalSaving ? <Loader2 size={18} className="spin" /> : <Save size={18} />}
+                  {legalSaving ? 'Sauvegarde…' : 'Sauvegarder'}
+                </button>
+              </div>
             </div>
           </div>
         )}

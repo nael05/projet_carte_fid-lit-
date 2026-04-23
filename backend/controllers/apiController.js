@@ -908,14 +908,19 @@ export const adjustPoints = async (req, res) => {
       [newPoints, clientId, empresaId]
     );
 
-    // 🔄 Sync via le service de notification
+    const adj = Number(adjustment);
+    await pool.query(
+      "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, ?, ?, ?)",
+      [randomUUID(), clientId, empresaId,
+       adj >= 0 ? 'add_points' : 'remove_points',
+       adj,
+       adj >= 0 ? `${adj} point(s) ajouté(s) manuellement` : `${Math.abs(adj)} point(s) retiré(s)`
+      ]
+    );
 
-    // Envoi de la notification Push (Visuelle + Silencieuse)
-    // Non-bloquant pour une réactivité instantanée du Dashboard
     sendLoyaltyUpdateNotification(clientId, empresaId, adjustment, false).catch(e =>
       logger.warn('Push adjust notification failed', e.message)
     );
-
 
     res.json({ success: true, newPoints });
   } catch (err) {

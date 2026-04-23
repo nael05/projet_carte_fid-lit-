@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, Search, Calendar, Filter, Trash2,
+  ArrowLeft, Search, Trash2,
   ChevronLeft, ChevronRight, AlertTriangle, Loader2,
-  Plus, Minus, Gift, History
+  Plus, Minus, Gift, History, SlidersHorizontal, X
 } from 'lucide-react'
 import api from '../api'
 import './HistoryModal.css'
@@ -14,27 +14,38 @@ const TYPES = {
   add_stamps:    { label: 'Tampons ajoutés', iconClass: 'hist-icon-add',    Icon: Plus  },
 }
 
-function formatDay(iso) {
-  return new Date(iso).toLocaleDateString('fr-FR', {
+// Robuste face aux Date objects MySQL ou strings ISO
+function toIsoDay(val) {
+  if (!val) return ''
+  const d = val instanceof Date ? val : new Date(val)
+  // Utilise la date locale du serveur retournée en ISO
+  return d.toISOString().slice(0, 10)
+}
+
+function formatDay(isoDay) {
+  const [y, m, d] = isoDay.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   })
 }
 
-function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+function formatTime(val) {
+  if (!val) return ''
+  const d = val instanceof Date ? val : new Date(val)
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function groupByDay(txs) {
   const map = {}
   for (const tx of txs) {
-    const day = tx.created_at.slice(0, 10)
+    const day = toIsoDay(tx.created_at)
     if (!map[day]) map[day] = []
     map[day].push(tx)
   }
   return Object.entries(map).sort(([a], [b]) => b.localeCompare(a))
 }
 
-const EMPTY_FILTERS = { dateFrom: '', dateTo: '', clientName: '', type: '' }
+const EMPTY = { dateFrom: '', dateTo: '', clientName: '', type: '' }
 
 export default function HistoryModal({ onClose }) {
   const [transactions, setTransactions]   = useState([])
@@ -43,9 +54,10 @@ export default function HistoryModal({ onClose }) {
   const [loading, setLoading]             = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting]           = useState(false)
+  const [showFilters, setShowFilters]     = useState(false)
 
-  const [draft, setDraft]       = useState(EMPTY_FILTERS)
-  const [applied, setApplied]   = useState(EMPTY_FILTERS)
+  const [draft, setDraft]     = useState(EMPTY)
+  const [applied, setApplied] = useState(EMPTY)
 
   const fetchHistory = useCallback(async (filters, p) => {
     setLoading(true)
@@ -63,8 +75,10 @@ export default function HistoryModal({ onClose }) {
 
   useEffect(() => { fetchHistory(applied, page) }, [applied, page, fetchHistory])
 
-  const handleApply = () => { setPage(1); setApplied(draft) }
-  const handleClear = () => { setDraft(EMPTY_FILTERS); setPage(1); setApplied(EMPTY_FILTERS) }
+  const handleApply = () => { setPage(1); setApplied(draft); setShowFilters(false) }
+  const handleClear = () => {
+    setDraft(EMPTY); setPage(1); setApplied(EMPTY); setShowFilters(false)
+  }
 
   const handleDelete = async () => {
     setDeleting(true)
@@ -75,9 +89,9 @@ export default function HistoryModal({ onClose }) {
     finally { setDeleting(false) }
   }
 
-  const totalPages = Math.ceil(total / 100)
-  const grouped    = groupByDay(transactions)
-  const hasFilters = Object.values(applied).some(v => v !== '')
+  const totalPages  = Math.ceil(total / 100)
+  const grouped     = groupByDay(transactions)
+  const activeCount = Object.values(applied).filter(v => v !== '').length
 
   return (
     <>
@@ -85,95 +99,90 @@ export default function HistoryModal({ onClose }) {
 
         {/* ── TOP BAR ── */}
         <header className="hist-topbar">
-          <button className="hist-back-btn" onClick={onClose} aria-label="Retour">
+          <button className="hist-back-btn" onClick={onClose}>
             <ArrowLeft size={18} />
           </button>
           <div className="hist-topbar-title">
-            <h2>Historique des points &amp; cadeaux</h2>
-            <span>
-              {loading ? 'Chargement…' : `${total} transaction${total !== 1 ? 's' : ''} · 6 derniers mois`}
-            </span>
+            <h2>Historique</h2>
           </div>
+          <button
+            className={`hist-filter-toggle ${activeCount > 0 ? 'hist-filter-toggle--active' : ''}`}
+            onClick={() => setShowFilters(s => !s)}
+          >
+            <SlidersHorizontal size={15} />
+            {activeCount > 0 && <span className="hist-filter-badge">{activeCount}</span>}
+          </button>
           <button className="hist-delete-top-btn" onClick={() => setConfirmDelete(true)}>
-            <Trash2 size={14} />
-            <span>Supprimer</span>
+            <Trash2 size={15} />
           </button>
         </header>
 
-        {/* ── FILTERS ── */}
-        <div className="hist-filters">
-          <div className="hist-filters-row">
-            <div className="hist-filter-pill">
-              <Calendar size={13} />
-              <input
-                type="date"
-                value={draft.dateFrom}
-                onChange={e => setDraft(f => ({ ...f, dateFrom: e.target.value }))}
-                title="Date de début"
-              />
+        {/* ── FILTER PANEL (accordéon) ── */}
+        {showFilters && (
+          <div className="hist-filter-panel">
+            <div className="hist-filter-grid">
+              <label className="hist-field">
+                <span>Du</span>
+                <input type="date" value={draft.dateFrom}
+                  onChange={e => setDraft(f => ({ ...f, dateFrom: e.target.value }))} />
+              </label>
+              <label className="hist-field">
+                <span>Au</span>
+                <input type="date" value={draft.dateTo}
+                  onChange={e => setDraft(f => ({ ...f, dateTo: e.target.value }))} />
+              </label>
+              <label className="hist-field hist-field--wide">
+                <span>Client</span>
+                <input type="text" placeholder="Nom du client…" value={draft.clientName}
+                  onChange={e => setDraft(f => ({ ...f, clientName: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleApply()} />
+              </label>
+              <label className="hist-field">
+                <span>Type</span>
+                <select value={draft.type}
+                  onChange={e => setDraft(f => ({ ...f, type: e.target.value }))}>
+                  <option value="">Tout</option>
+                  <option value="add_points">Points ajoutés</option>
+                  <option value="redeem_reward">Cadeau utilisé</option>
+                  <option value="remove_points">Points retirés</option>
+                </select>
+              </label>
             </div>
-            <div className="hist-filter-pill">
-              <Calendar size={13} />
-              <input
-                type="date"
-                value={draft.dateTo}
-                onChange={e => setDraft(f => ({ ...f, dateTo: e.target.value }))}
-                title="Date de fin"
-              />
-            </div>
-            <div className="hist-filter-pill hist-filter-client">
-              <Search size={13} />
-              <input
-                type="text"
-                placeholder="Nom du client…"
-                value={draft.clientName}
-                onChange={e => setDraft(f => ({ ...f, clientName: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleApply()}
-              />
-            </div>
-            <div className="hist-filter-pill">
-              <Filter size={13} />
-              <select
-                value={draft.type}
-                onChange={e => setDraft(f => ({ ...f, type: e.target.value }))}
-              >
-                <option value="">Tous les types</option>
-                <option value="add_points">Points ajoutés</option>
-                <option value="redeem_reward">Cadeau utilisé</option>
-                <option value="remove_points">Points retirés</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="hist-filters-actions">
-            <button className="hist-btn-apply" onClick={handleApply}>
-              <Search size={13} /> Filtrer
-            </button>
-            {hasFilters && (
+            <div className="hist-filter-footer">
               <button className="hist-btn-clear" onClick={handleClear}>
-                Réinitialiser
+                <X size={13} /> Effacer
               </button>
-            )}
-            {!loading && (
-              <span className="hist-result-count">
-                {total} résultat{total !== 1 ? 's' : ''}
-              </span>
-            )}
+              <button className="hist-btn-apply" onClick={handleApply}>
+                <Search size={13} /> Appliquer
+              </button>
+            </div>
           </div>
+        )}
+
+        {/* ── STATS BAR ── */}
+        <div className="hist-stats-bar">
+          <span className="hist-stats-count">
+            {loading ? '…' : `${total} transaction${total !== 1 ? 's' : ''}`}
+          </span>
+          <span className="hist-stats-period">6 derniers mois</span>
+          {activeCount > 0 && (
+            <button className="hist-stats-clear" onClick={handleClear}>
+              Effacer les filtres
+            </button>
+          )}
         </div>
 
         {/* ── BODY ── */}
         <div className="hist-body">
           {loading ? (
             <div className="hist-loading">
-              <Loader2 size={28} className="hist-spin" />
-              Chargement de l'historique…
+              <Loader2 size={26} className="hist-spin" />
             </div>
           ) : transactions.length === 0 ? (
             <div className="hist-empty">
-              <div className="hist-empty-icon"><History size={26} /></div>
-              <p>{hasFilters ? 'Aucun résultat' : 'Aucune transaction'}</p>
-              <span>{hasFilters ? 'Modifiez vos filtres.' : 'Les transactions apparaîtront ici.'}</span>
+              <div className="hist-empty-icon"><History size={24} /></div>
+              <p>{activeCount > 0 ? 'Aucun résultat' : 'Aucune transaction'}</p>
+              <span>{activeCount > 0 ? 'Modifiez vos filtres.' : 'Les transactions apparaîtront ici.'}</span>
             </div>
           ) : (
             <>
@@ -195,16 +204,11 @@ export default function HistoryModal({ onClose }) {
                       return (
                         <div key={tx.id} className="hist-row">
                           <div className={`hist-row-icon ${meta.iconClass}`}>
-                            <Icon size={16} />
+                            <Icon size={15} />
                           </div>
                           <div className="hist-row-info">
-                            <div className="hist-row-top">
-                              <span className="hist-type-label">{meta.label}</span>
-                            </div>
+                            <span className="hist-type-label">{meta.label}</span>
                             <span className="hist-client-name">{client}</span>
-                            {tx.description && (
-                              <span className="hist-desc">{tx.description}</span>
-                            )}
                           </div>
                           <div className="hist-row-right">
                             {tx.points_change !== 0 && (
@@ -223,20 +227,14 @@ export default function HistoryModal({ onClose }) {
 
               {totalPages > 1 && (
                 <div className="hist-pagination">
-                  <button
-                    className="hist-page-btn"
-                    onClick={() => setPage(p => p - 1)}
-                    disabled={page === 1}
-                  >
-                    <ChevronLeft size={16} />
+                  <button className="hist-page-btn"
+                    onClick={() => setPage(p => p - 1)} disabled={page === 1}>
+                    <ChevronLeft size={15} />
                   </button>
-                  <span className="hist-page-info">Page {page} / {totalPages}</span>
-                  <button
-                    className="hist-page-btn"
-                    onClick={() => setPage(p => p + 1)}
-                    disabled={page === totalPages}
-                  >
-                    <ChevronRight size={16} />
+                  <span className="hist-page-info">{page} / {totalPages}</span>
+                  <button className="hist-page-btn"
+                    onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>
+                    <ChevronRight size={15} />
                   </button>
                 </div>
               )}
@@ -250,30 +248,17 @@ export default function HistoryModal({ onClose }) {
         <div className="hist-confirm-overlay">
           <div className="hist-confirm-card">
             <div className="hist-confirm-icon-wrap">
-              <AlertTriangle size={28} />
+              <AlertTriangle size={26} />
             </div>
             <h3>Supprimer l'historique ?</h3>
-            <p>
-              Cette action est irréversible. Toutes les transactions enregistrées
-              seront définitivement effacées.
-            </p>
+            <p>Action irréversible. Toutes les transactions seront définitivement effacées.</p>
             <div className="hist-confirm-actions">
-              <button
-                className="hist-btn-cancel"
-                onClick={() => setConfirmDelete(false)}
-                disabled={deleting}
-              >
+              <button className="hist-btn-cancel"
+                onClick={() => setConfirmDelete(false)} disabled={deleting}>
                 Annuler
               </button>
-              <button
-                className="hist-btn-confirm-delete"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting
-                  ? <Loader2 size={14} className="hist-spin" />
-                  : <Trash2 size={14} />
-                }
+              <button className="hist-btn-confirm-delete" onClick={handleDelete} disabled={deleting}>
+                {deleting ? <Loader2 size={14} className="hist-spin" /> : <Trash2 size={14} />}
                 Supprimer
               </button>
             </div>

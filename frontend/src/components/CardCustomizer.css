@@ -158,6 +158,10 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.settings-group:focus-within {
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
 .settings-group input:focus,
 .settings-group textarea:focus {
   outline: none;
@@ -793,6 +797,11 @@
   border-color: var(--border-medium);
 }
 
+.form-section:focus-within {
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), var(--shadow-md);
+}
+
 .section-header {
   display: flex;
   align-items: center;
@@ -945,6 +954,11 @@
 }
 .dark-mode .prox-section {
   background: linear-gradient(145deg, var(--bg-surface), var(--bg-elevated));
+}
+
+.prox-section:focus-within {
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), var(--shadow-md);
 }
 
 .prox-section-label {

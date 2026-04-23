@@ -68,115 +68,182 @@ class EmailService {
         sender: this.sender,
         to: [{ email }],
         subject: `Bienvenue sur Fidelyz – Vos accès commerçant`,
-        htmlContent: `
-          <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #f8f9fb; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+        htmlContent: `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 16px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e4e9;">
 
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #6366F1 0%, #818cf8 100%); padding: 36px 32px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: -0.5px;">Fidelyz</h1>
-              <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 15px;">Votre plateforme de fidélité digitale</p>
-            </div>
+      <!-- Header -->
+      <tr>
+        <td style="background:#6366F1;padding:32px 40px;text-align:center;">
+          <p style="margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">Fidelyz</p>
+          <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.75);font-weight:400;">Plateforme de fidélité digitale</p>
+        </td>
+      </tr>
 
-            <!-- Intro -->
-            <div style="padding: 32px 32px 0;">
-              <h2 style="color: #1f2937; margin: 0 0 12px; font-size: 20px;">Bienvenue${prenomDisplay} ! 🎉</h2>
-              <p style="color: #4b5563; line-height: 1.6; margin: 0 0 8px;">
-                Votre espace commerçant <strong>${nom}</strong> vient d'être créé sur Fidelyz.<br>
-                Vous trouverez ci-dessous toutes les informations nécessaires pour démarrer.
-              </p>
-            </div>
+      <!-- Intro -->
+      <tr>
+        <td style="padding:36px 40px 0;">
+          <p style="margin:0 0 6px;font-size:20px;font-weight:700;color:#111827;">Bienvenue${prenomDisplay},</p>
+          <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.7;">
+            Votre espace commerçant <strong style="color:#111827;">${nom}</strong> vient d'être créé sur Fidelyz.<br>
+            Retrouvez ci-dessous vos informations de connexion et les premières étapes pour démarrer.
+          </p>
+        </td>
+      </tr>
 
-            <!-- Credentials box -->
-            <div style="margin: 24px 32px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
-              <div style="background: #f3f4f6; padding: 12px 20px; border-bottom: 1px solid #e5e7eb;">
-                <p style="margin: 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Vos identifiants de connexion</p>
-              </div>
-              <div style="padding: 20px;">
-                <table style="width: 100%; border-collapse: collapse;">
+      <!-- Credentials -->
+      <tr>
+        <td style="padding:24px 40px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e2e4e9;border-radius:8px;overflow:hidden;">
+            <tr>
+              <td style="padding:12px 20px;border-bottom:1px solid #e2e4e9;">
+                <p style="margin:0;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;">Identifiants de connexion</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px; width: 140px;">Entreprise</td>
-                    <td style="padding: 8px 0; color: #1f2937; font-weight: 600; font-size: 14px;">${nom}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:130px;">Entreprise</td>
+                    <td style="padding:6px 0;font-size:13px;font-weight:600;color:#111827;">${nom}</td>
                   </tr>
                   ${telephone ? `<tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Téléphone</td>
-                    <td style="padding: 8px 0; color: #1f2937; font-size: 14px;">${telephone}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Telephone</td>
+                    <td style="padding:6px 0;font-size:13px;color:#374151;">${telephone}</td>
                   </tr>` : ''}
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Email (login)</td>
-                    <td style="padding: 8px 0; color: #1f2937; font-weight: 600; font-size: 14px;">${email}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Email</td>
+                    <td style="padding:6px 0;font-size:13px;font-weight:600;color:#111827;">${email}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Mode fidélité</td>
-                    <td style="padding: 8px 0; color: #1f2937; font-size: 14px;">${loyaltyLabel}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#9ca3af;">Fidelite</td>
+                    <td style="padding:6px 0;font-size:13px;color:#374151;">${loyaltyLabel}</td>
                   </tr>
                 </table>
-                <!-- Password highlight -->
-                <div style="margin-top: 16px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px 20px;">
-                  <p style="margin: 0 0 6px; font-size: 12px; color: #92400e; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">⚠️ Mot de passe temporaire</p>
-                  <p style="margin: 0; font-size: 22px; font-weight: 700; color: #1f2937; letter-spacing: 2px; font-family: 'Courier New', monospace;">${tempPassword}</p>
-                  <p style="margin: 8px 0 0; font-size: 12px; color: #92400e;">Vous devrez le changer dès votre première connexion.</p>
-                </div>
-              </div>
-            </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
-            <!-- Steps -->
-            <div style="margin: 0 32px 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
-              <div style="background: #f3f4f6; padding: 12px 20px; border-bottom: 1px solid #e5e7eb;">
-                <p style="margin: 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Comment démarrer</p>
-              </div>
-              <div style="padding: 20px;">
-                <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
-                  <div style="min-width: 28px; height: 28px; background: #6366F1; color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 14px; text-align: center; line-height: 28px;">1</div>
-                  <div>
-                    <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 14px;">Connectez-vous à votre espace</p>
-                    <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">Rendez-vous sur <a href="${loginUrl}" style="color: #6366F1;">${loginUrl}</a> et entrez votre email ainsi que le mot de passe temporaire ci-dessus.</p>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
-                  <div style="min-width: 28px; height: 28px; background: #6366F1; color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 14px; text-align: center; line-height: 28px;">2</div>
-                  <div>
-                    <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 14px;">Choisissez un nouveau mot de passe</p>
-                    <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">Une fenêtre s'affiche automatiquement pour sécuriser votre compte. Choisissez un mot de passe personnel et mémorisable.</p>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
-                  <div style="min-width: 28px; height: 28px; background: #6366F1; color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 14px; text-align: center; line-height: 28px;">3</div>
-                  <div>
-                    <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 14px;">Personnalisez votre carte de fidélité</p>
-                    <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">Dans l'onglet <strong>Carte</strong>, ajoutez votre logo, choisissez vos couleurs et configurez le nom affiché sur la carte.</p>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
-                  <div style="min-width: 28px; height: 28px; background: #6366F1; color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 14px; text-align: center; line-height: 28px;">4</div>
-                  <div>
-                    <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 14px;">Configurez vos récompenses</p>
-                    <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">Dans l'onglet <strong>Fidélité</strong>, définissez le nombre de ${loyaltyLabel.toLowerCase()} nécessaires et les cadeaux à offrir à vos clients.</p>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: flex-start;">
-                  <div style="min-width: 28px; height: 28px; background: #6366F1; color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 14px; text-align: center; line-height: 28px;">5</div>
-                  <div>
-                    <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 14px;">Recrutez vos premiers clients</p>
-                    <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">Partagez votre QR code ou lien d'inscription (onglet <strong>Recruter</strong>) pour que vos clients ajoutent la carte à leur Apple Wallet ou Google Wallet.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <!-- Password -->
+      <tr>
+        <td style="padding:16px 40px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef9ec;border:1px solid #f0c858;border-radius:8px;">
+            <tr>
+              <td style="padding:18px 24px;">
+                <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.8px;">Mot de passe temporaire</p>
+                <p style="margin:0 0 8px;font-size:24px;font-weight:700;color:#111827;letter-spacing:3px;font-family:'Courier New',Courier,monospace;">${tempPassword}</p>
+                <p style="margin:0;font-size:12px;color:#92400e;">A modifier obligatoirement lors de votre premiere connexion.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
-            <!-- CTA -->
-            <div style="text-align: center; padding: 0 32px 32px;">
-              <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366F1 0%, #818cf8 100%); color: #ffffff; padding: 14px 36px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; letter-spacing: 0.3px;">
-                Accéder à mon espace →
-              </a>
-            </div>
+      <!-- Steps -->
+      <tr>
+        <td style="padding:24px 40px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e2e4e9;border-radius:8px;overflow:hidden;">
+            <tr>
+              <td style="padding:12px 20px;border-bottom:1px solid #e2e4e9;">
+                <p style="margin:0;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;">Premiers pas</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 20px;">
 
-            <!-- Footer -->
-            <div style="background: #f3f4f6; padding: 16px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; font-size: 12px; color: #9ca3af;">Cet email a été envoyé automatiquement par Fidelyz. Ne pas répondre à cet email.</p>
-            </div>
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+                  <tr>
+                    <td style="width:32px;vertical-align:top;padding-top:1px;">
+                      <div style="width:24px;height:24px;background:#6366F1;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">1</div>
+                    </td>
+                    <td style="padding-left:12px;">
+                      <p style="margin:0 0 3px;font-size:13px;font-weight:600;color:#111827;">Connectez-vous a votre espace</p>
+                      <p style="margin:0;font-size:13px;color:#6b7280;">Rendez-vous sur <a href="${loginUrl}" style="color:#6366F1;text-decoration:none;">${loginUrl}</a> avec votre email et le mot de passe temporaire.</p>
+                    </td>
+                  </tr>
+                </table>
 
-          </div>
-        `
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+                  <tr>
+                    <td style="width:32px;vertical-align:top;padding-top:1px;">
+                      <div style="width:24px;height:24px;background:#6366F1;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">2</div>
+                    </td>
+                    <td style="padding-left:12px;">
+                      <p style="margin:0 0 3px;font-size:13px;font-weight:600;color:#111827;">Definissez un mot de passe personnel</p>
+                      <p style="margin:0;font-size:13px;color:#6b7280;">Une invite s'affiche automatiquement a la premiere connexion pour securiser votre compte.</p>
+                    </td>
+                  </tr>
+                </table>
+
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+                  <tr>
+                    <td style="width:32px;vertical-align:top;padding-top:1px;">
+                      <div style="width:24px;height:24px;background:#6366F1;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">3</div>
+                    </td>
+                    <td style="padding-left:12px;">
+                      <p style="margin:0 0 3px;font-size:13px;font-weight:600;color:#111827;">Personnalisez votre carte</p>
+                      <p style="margin:0;font-size:13px;color:#6b7280;">Onglet <strong>Carte</strong> — ajoutez votre logo, vos couleurs et le nom affiche sur la carte client.</p>
+                    </td>
+                  </tr>
+                </table>
+
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+                  <tr>
+                    <td style="width:32px;vertical-align:top;padding-top:1px;">
+                      <div style="width:24px;height:24px;background:#6366F1;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">4</div>
+                    </td>
+                    <td style="padding-left:12px;">
+                      <p style="margin:0 0 3px;font-size:13px;font-weight:600;color:#111827;">Configurez vos recompenses</p>
+                      <p style="margin:0;font-size:13px;color:#6b7280;">Onglet <strong>Fidelite</strong> — fixez le seuil de ${loyaltyLabel.toLowerCase()} et les avantages offerts a vos clients.</p>
+                    </td>
+                  </tr>
+                </table>
+
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="width:32px;vertical-align:top;padding-top:1px;">
+                      <div style="width:24px;height:24px;background:#6366F1;border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">5</div>
+                    </td>
+                    <td style="padding-left:12px;">
+                      <p style="margin:0 0 3px;font-size:13px;font-weight:600;color:#111827;">Invitez vos clients</p>
+                      <p style="margin:0;font-size:13px;color:#6b7280;">Onglet <strong>Recruter</strong> — partagez votre QR code ou lien d'inscription pour que vos clients ajoutent la carte a leur Wallet.</p>
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- CTA -->
+      <tr>
+        <td style="padding:28px 40px 36px;text-align:center;">
+          <a href="${loginUrl}" style="display:inline-block;background:#6366F1;color:#ffffff;padding:13px 32px;text-decoration:none;border-radius:7px;font-size:14px;font-weight:600;letter-spacing:0.2px;">
+            Acceder a mon espace
+          </a>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="background:#f9fafb;padding:16px 40px;border-top:1px solid #e2e4e9;text-align:center;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;">Email genere automatiquement par Fidelyz — merci de ne pas repondre.</p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`
       }, {
         headers: {
           'api-key': this.apiKey,

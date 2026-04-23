@@ -1,33 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { X, Search, Calendar, Filter, Trash2, ChevronLeft, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react'
+import {
+  ArrowLeft, Search, Calendar, Filter, Trash2,
+  ChevronLeft, ChevronRight, AlertTriangle, Loader2,
+  Plus, Minus, Gift, History
+} from 'lucide-react'
 import api from '../api'
 import './HistoryModal.css'
 
-const TYPE_LABELS = {
-  add_points:    { label: 'Points ajoutés',  color: 'hist-badge-add' },
-  redeem_reward: { label: 'Cadeau utilisé',  color: 'hist-badge-redeem' },
-  remove_points: { label: 'Points retirés',  color: 'hist-badge-remove' },
-  add_stamps:    { label: 'Tampons ajoutés', color: 'hist-badge-add' },
+const TYPES = {
+  add_points:    { label: 'Points ajoutés',  iconClass: 'hist-icon-add',    Icon: Plus  },
+  redeem_reward: { label: 'Cadeau utilisé',  iconClass: 'hist-icon-redeem', Icon: Gift  },
+  remove_points: { label: 'Points retirés',  iconClass: 'hist-icon-remove', Icon: Minus },
+  add_stamps:    { label: 'Tampons ajoutés', iconClass: 'hist-icon-add',    Icon: Plus  },
 }
 
-function formatDay(dateStr) {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+function formatDay(iso) {
+  return new Date(iso).toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  })
 }
 
-function formatTime(dateStr) {
-  return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-function groupByDay(transactions) {
-  const groups = {}
-  for (const tx of transactions) {
+function groupByDay(txs) {
+  const map = {}
+  for (const tx of txs) {
     const day = tx.created_at.slice(0, 10)
-    if (!groups[day]) groups[day] = []
-    groups[day].push(tx)
+    if (!map[day]) map[day] = []
+    map[day].push(tx)
   }
-  return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a))
+  return Object.entries(map).sort(([a], [b]) => b.localeCompare(a))
 }
+
+const EMPTY_FILTERS = { dateFrom: '', dateTo: '', clientName: '', type: '' }
 
 export default function HistoryModal({ onClose }) {
   const [transactions, setTransactions]   = useState([])
@@ -37,179 +44,242 @@ export default function HistoryModal({ onClose }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting]           = useState(false)
 
-  const [filters, setFilters] = useState({
-    dateFrom: '',
-    dateTo: '',
-    clientName: '',
-    type: '',
-  })
-  const [appliedFilters, setAppliedFilters] = useState(filters)
+  const [draft, setDraft]       = useState(EMPTY_FILTERS)
+  const [applied, setApplied]   = useState(EMPTY_FILTERS)
 
-  const fetchHistory = useCallback(async (f, p) => {
+  const fetchHistory = useCallback(async (filters, p) => {
     setLoading(true)
     try {
-      const params = { page: p, ...Object.fromEntries(Object.entries(f).filter(([, v]) => v !== '')) }
+      const params = {
+        page: p,
+        ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ''))
+      }
       const { data } = await api.get('/pro/history', { params })
       setTransactions(data.transactions)
       setTotal(data.total)
-    } catch {
-      // silent
-    } finally {
-      setLoading(false)
-    }
+    } catch { /* silent */ }
+    finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchHistory(appliedFilters, page) }, [appliedFilters, page, fetchHistory])
+  useEffect(() => { fetchHistory(applied, page) }, [applied, page, fetchHistory])
 
-  const handleSearch = () => { setPage(1); setAppliedFilters(filters) }
-  const handleReset  = () => {
-    const empty = { dateFrom: '', dateTo: '', clientName: '', type: '' }
-    setFilters(empty); setPage(1); setAppliedFilters(empty)
-  }
+  const handleApply = () => { setPage(1); setApplied(draft) }
+  const handleClear = () => { setDraft(EMPTY_FILTERS); setPage(1); setApplied(EMPTY_FILTERS) }
 
   const handleDelete = async () => {
     setDeleting(true)
     try {
       await api.delete('/pro/history')
-      setTransactions([])
-      setTotal(0)
-      setConfirmDelete(false)
-    } catch {
-      // silent
-    } finally {
-      setDeleting(false)
-    }
+      setTransactions([]); setTotal(0); setConfirmDelete(false)
+    } catch { /* silent */ }
+    finally { setDeleting(false) }
   }
 
   const totalPages = Math.ceil(total / 100)
   const grouped    = groupByDay(transactions)
+  const hasFilters = Object.values(applied).some(v => v !== '')
 
   return (
-    <div className="hist-overlay">
-      <div className="hist-modal">
+    <>
+      <div className="hist-page">
 
-        {/* Header */}
-        <div className="hist-header">
-          <div className="hist-header-left">
+        {/* ── TOP BAR ── */}
+        <header className="hist-topbar">
+          <button className="hist-back-btn" onClick={onClose} aria-label="Retour">
+            <ArrowLeft size={18} />
+          </button>
+          <div className="hist-topbar-title">
             <h2>Historique des points &amp; cadeaux</h2>
-            <span className="hist-subtitle">{total} transaction{total !== 1 ? 's' : ''} — 6 derniers mois</span>
+            <span>
+              {loading ? 'Chargement…' : `${total} transaction${total !== 1 ? 's' : ''} · 6 derniers mois`}
+            </span>
           </div>
-          <button className="hist-close" onClick={onClose}><X size={20} /></button>
-        </div>
+          <button className="hist-delete-top-btn" onClick={() => setConfirmDelete(true)}>
+            <Trash2 size={14} />
+            <span>Supprimer</span>
+          </button>
+        </header>
 
-        {/* Filters */}
+        {/* ── FILTERS ── */}
         <div className="hist-filters">
-          <div className="hist-filter-row">
-            <div className="hist-filter-group">
-              <Calendar size={14} />
+          <div className="hist-filters-row">
+            <div className="hist-filter-pill">
+              <Calendar size={13} />
               <input
                 type="date"
-                value={filters.dateFrom}
-                onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))}
-                placeholder="Du"
+                value={draft.dateFrom}
+                onChange={e => setDraft(f => ({ ...f, dateFrom: e.target.value }))}
+                title="Date de début"
               />
             </div>
-            <div className="hist-filter-group">
-              <Calendar size={14} />
+            <div className="hist-filter-pill">
+              <Calendar size={13} />
               <input
                 type="date"
-                value={filters.dateTo}
-                onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))}
-                placeholder="Au"
+                value={draft.dateTo}
+                onChange={e => setDraft(f => ({ ...f, dateTo: e.target.value }))}
+                title="Date de fin"
               />
             </div>
-            <div className="hist-filter-group hist-filter-client">
-              <Search size={14} />
+            <div className="hist-filter-pill hist-filter-client">
+              <Search size={13} />
               <input
                 type="text"
-                value={filters.clientName}
-                onChange={e => setFilters(f => ({ ...f, clientName: e.target.value }))}
-                placeholder="Nom du client"
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="Nom du client…"
+                value={draft.clientName}
+                onChange={e => setDraft(f => ({ ...f, clientName: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleApply()}
               />
             </div>
-            <div className="hist-filter-group">
-              <Filter size={14} />
-              <select value={filters.type} onChange={e => setFilters(f => ({ ...f, type: e.target.value }))}>
-                <option value="">Tout</option>
+            <div className="hist-filter-pill">
+              <Filter size={13} />
+              <select
+                value={draft.type}
+                onChange={e => setDraft(f => ({ ...f, type: e.target.value }))}
+              >
+                <option value="">Tous les types</option>
                 <option value="add_points">Points ajoutés</option>
                 <option value="redeem_reward">Cadeau utilisé</option>
                 <option value="remove_points">Points retirés</option>
               </select>
             </div>
           </div>
-          <div className="hist-filter-actions">
-            <button className="hist-btn-search" onClick={handleSearch}><Search size={14} /> Rechercher</button>
-            <button className="hist-btn-reset"  onClick={handleReset}>Réinitialiser</button>
-            <button className="hist-btn-delete" onClick={() => setConfirmDelete(true)}><Trash2 size={14} /> Supprimer l'historique</button>
+
+          <div className="hist-filters-actions">
+            <button className="hist-btn-apply" onClick={handleApply}>
+              <Search size={13} /> Filtrer
+            </button>
+            {hasFilters && (
+              <button className="hist-btn-clear" onClick={handleClear}>
+                Réinitialiser
+              </button>
+            )}
+            {!loading && (
+              <span className="hist-result-count">
+                {total} résultat{total !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Body */}
+        {/* ── BODY ── */}
         <div className="hist-body">
           {loading ? (
-            <div className="hist-loading"><Loader2 size={24} className="hist-spin" /></div>
+            <div className="hist-loading">
+              <Loader2 size={28} className="hist-spin" />
+              Chargement de l'historique…
+            </div>
           ) : transactions.length === 0 ? (
-            <div className="hist-empty">Aucune transaction trouvée</div>
+            <div className="hist-empty">
+              <div className="hist-empty-icon"><History size={26} /></div>
+              <p>{hasFilters ? 'Aucun résultat' : 'Aucune transaction'}</p>
+              <span>{hasFilters ? 'Modifiez vos filtres.' : 'Les transactions apparaîtront ici.'}</span>
+            </div>
           ) : (
-            grouped.map(([day, txs]) => (
-              <div key={day} className="hist-day-group">
-                <div className="hist-day-label">{formatDay(day)}</div>
-                {txs.map(tx => {
-                  const meta = TYPE_LABELS[tx.type] || { label: tx.type, color: 'hist-badge-default' }
-                  const clientName = tx.prenom || tx.nom
-                    ? `${tx.prenom ?? ''} ${tx.nom ?? ''}`.trim()
-                    : 'Client supprimé'
-                  const sign = tx.points_change > 0 ? '+' : ''
-                  return (
-                    <div key={tx.id} className="hist-row">
-                      <div className="hist-row-left">
-                        <span className={`hist-badge ${meta.color}`}>{meta.label}</span>
-                        <span className="hist-client">{clientName}</span>
-                        {tx.description && <span className="hist-desc">{tx.description}</span>}
-                      </div>
-                      <div className="hist-row-right">
-                        {tx.points_change !== 0 && (
-                          <span className={`hist-pts ${tx.points_change > 0 ? 'hist-pts-pos' : 'hist-pts-neg'}`}>
-                            {sign}{tx.points_change} pts
-                          </span>
-                        )}
-                        <span className="hist-time">{formatTime(tx.created_at)}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ))
+            <>
+              {grouped.map(([day, txs]) => (
+                <div key={day} className="hist-day-group">
+                  <div className="hist-day-header">
+                    <span className="hist-day-label">{formatDay(day)}</span>
+                    <div className="hist-day-line" />
+                    <span className="hist-day-count">{txs.length}</span>
+                  </div>
+
+                  <div className="hist-card-group">
+                    {txs.map(tx => {
+                      const meta     = TYPES[tx.type] || { label: tx.type, iconClass: 'hist-icon-default', Icon: History }
+                      const { Icon } = meta
+                      const client   = [tx.prenom, tx.nom].filter(Boolean).join(' ') || 'Client supprimé'
+                      const sign     = tx.points_change > 0 ? '+' : ''
+
+                      return (
+                        <div key={tx.id} className="hist-row">
+                          <div className={`hist-row-icon ${meta.iconClass}`}>
+                            <Icon size={16} />
+                          </div>
+                          <div className="hist-row-info">
+                            <div className="hist-row-top">
+                              <span className="hist-type-label">{meta.label}</span>
+                            </div>
+                            <span className="hist-client-name">{client}</span>
+                            {tx.description && (
+                              <span className="hist-desc">{tx.description}</span>
+                            )}
+                          </div>
+                          <div className="hist-row-right">
+                            {tx.points_change !== 0 && (
+                              <span className={`hist-pts ${tx.points_change > 0 ? 'hist-pts-pos' : 'hist-pts-neg'}`}>
+                                {sign}{tx.points_change} pts
+                              </span>
+                            )}
+                            <span className="hist-time">{formatTime(tx.created_at)}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {totalPages > 1 && (
+                <div className="hist-pagination">
+                  <button
+                    className="hist-page-btn"
+                    onClick={() => setPage(p => p - 1)}
+                    disabled={page === 1}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="hist-page-info">Page {page} / {totalPages}</span>
+                  <button
+                    className="hist-page-btn"
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page === totalPages}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="hist-pagination">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeft size={16} /></button>
-            <span>Page {page} / {totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}><ChevronRight size={16} /></button>
-          </div>
-        )}
       </div>
 
-      {/* Confirm delete */}
+      {/* ── CONFIRM DELETE ── */}
       {confirmDelete && (
         <div className="hist-confirm-overlay">
-          <div className="hist-confirm-box">
-            <AlertTriangle size={32} className="hist-confirm-icon" />
-            <h3>Supprimer tout l'historique ?</h3>
-            <p>Cette action est irréversible. Toutes les transactions enregistrées seront définitivement effacées.</p>
+          <div className="hist-confirm-card">
+            <div className="hist-confirm-icon-wrap">
+              <AlertTriangle size={28} />
+            </div>
+            <h3>Supprimer l'historique ?</h3>
+            <p>
+              Cette action est irréversible. Toutes les transactions enregistrées
+              seront définitivement effacées.
+            </p>
             <div className="hist-confirm-actions">
-              <button className="hist-confirm-cancel" onClick={() => setConfirmDelete(false)} disabled={deleting}>Annuler</button>
-              <button className="hist-confirm-ok" onClick={handleDelete} disabled={deleting}>
-                {deleting ? <Loader2 size={14} className="hist-spin" /> : <Trash2 size={14} />} Supprimer
+              <button
+                className="hist-btn-cancel"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+              >
+                Annuler
+              </button>
+              <button
+                className="hist-btn-confirm-delete"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting
+                  ? <Loader2 size={14} className="hist-spin" />
+                  : <Trash2 size={14} />
+                }
+                Supprimer
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

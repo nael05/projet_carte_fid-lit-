@@ -724,187 +724,179 @@ function ProDashboard() {
                 </div>
               </div>
 
-              <div className="stt-container">
+              <div className="cfg-wrap">
 
-                {/* ── BLOC 1 : Mode d'attribution ── */}
-                <form onSubmit={handleSaveLoyaltyConfig}>
-                  <div className="stt-card">
-                    <div className="stt-card-header">
-                      <div className="stt-card-icon"><Award size={16} /></div>
-                      <div>
-                        <h3 className="stt-card-title">Mode d'attribution</h3>
-                        <p className="stt-card-sub">Comment les points sont attribués à chaque scan</p>
+                {/* ── Section 1 : Mode d'attribution ── */}
+                <form onSubmit={handleSaveLoyaltyConfig} className="cfg-section">
+                  <div className="cfg-section-label">
+                    <Award size={13} /> Attribution des points
+                  </div>
+
+                  {/* Mode toggle */}
+                  <div className="cfg-mode-toggle">
+                    <button
+                      type="button"
+                      className={`cfg-mode-btn ${loyaltyConfig.points_adding_mode === 'automatic' ? 'cfg-mode-btn--on' : ''}`}
+                      onClick={() => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: 'automatic'})}
+                    >
+                      <span className="cfg-mode-title">Automatique</span>
+                      <span className="cfg-mode-desc">Points fixes à chaque scan</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`cfg-mode-btn ${loyaltyConfig.points_adding_mode === 'manual' ? 'cfg-mode-btn--on' : ''}`}
+                      onClick={() => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: 'manual'})}
+                    >
+                      <span className="cfg-mode-title">Manuel</span>
+                      <span className="cfg-mode-desc">Saisie libre à chaque scan</span>
+                    </button>
+                  </div>
+
+                  {/* Points fixes (mode auto) */}
+                  {loyaltyConfig.points_adding_mode === 'automatic' && (
+                    <div className="cfg-field">
+                      <label className="cfg-label">Points par passage</label>
+                      <div className="cfg-input-row">
+                        <input
+                          className="cfg-input cfg-input-num"
+                          type="number" min="1"
+                          value={loyaltyConfig.points_per_purchase}
+                          onChange={e => setLoyaltyConfig({...loyaltyConfig, points_per_purchase: parseInt(e.target.value)})}
+                        />
+                        <span className="cfg-unit">pts / scan</span>
                       </div>
                     </div>
+                  )}
 
-                    <div className="stt-field-row">
-                      <div className="stt-field">
-                        <label className="stt-label">Mode au scan</label>
-                        <select
-                          className="stt-select"
-                          value={loyaltyConfig.points_adding_mode}
-                          onChange={(e) => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: e.target.value})}
-                        >
-                          <option value="automatic">Automatique — points fixes</option>
-                          <option value="manual">Manuel — saisie à chaque scan</option>
-                        </select>
+                  {/* Raccourcis (mode manuel) */}
+                  {loyaltyConfig.points_adding_mode === 'manual' && (
+                    <div className="cfg-field">
+                      <label className="cfg-label">Raccourcis de points <span className="cfg-label-hint">— boutons rapides au scan</span></label>
+                      <div className="cfg-chips">
+                        {(loyaltyConfig.points_shortcuts?.length > 0
+                          ? loyaltyConfig.points_shortcuts
+                          : []
+                        ).map((v, i) => (
+                          <span key={i} className="cfg-chip">
+                            +{v}
+                            <button type="button" className="cfg-chip-x"
+                              onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: prev.points_shortcuts.filter((_, j) => j !== i) }))}>
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                        {!loyaltyConfig.points_shortcuts?.length && (
+                          <span className="cfg-chips-default">Par défaut : +5, +10, +20, +50</span>
+                        )}
                       </div>
-
-                      {loyaltyConfig.points_adding_mode === 'automatic' && (
-                        <div className="stt-field">
-                          <label className="stt-label">Points par passage</label>
-                          <input
-                            className="stt-input"
-                            type="number"
-                            min="1"
-                            value={loyaltyConfig.points_per_purchase}
-                            onChange={e => setLoyaltyConfig({...loyaltyConfig, points_per_purchase: parseInt(e.target.value)})}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {loyaltyConfig.points_adding_mode === 'manual' && (
-                      <div className="stt-sub-block">
-                        <p className="stt-sub-label">Raccourcis de points</p>
-                        <p className="stt-hint">Boutons rapides affichés lors du scan. Sans raccourci : valeurs par défaut (5, 10, 20, 50).</p>
-                        <div className="stt-chips">
-                          {(loyaltyConfig.points_shortcuts?.length > 0 ? loyaltyConfig.points_shortcuts : []).map((v, i) => (
-                            <span key={i} className="stt-chip">
-                              +{v}
-                              <button
-                                type="button"
-                                className="stt-chip-remove"
-                                onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: prev.points_shortcuts.filter((_, j) => j !== i) }))}
-                              >×</button>
-                            </span>
-                          ))}
-                          {(loyaltyConfig.points_shortcuts?.length === 0) && (
-                            <span className="stt-chips-empty">Par défaut : +5, +10, +20, +50</span>
-                          )}
-                        </div>
-                        <div className="stt-inline-row">
-                          <input
-                            className="stt-input stt-input-sm"
-                            type="number"
-                            min="1"
-                            placeholder="Ex : 25"
-                            value={shortcutInput}
-                            onChange={e => setShortcutInput(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const v = parseInt(shortcutInput);
-                                if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
-                                  setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a, b) => a - b) }));
-                                  setShortcutInput('');
-                                }
-                              }
-                            }}
-                          />
-                          <button
-                            type="button"
-                            className="pro-btn-secondary"
-                            onClick={() => {
+                      <div className="cfg-input-row">
+                        <input
+                          className="cfg-input cfg-input-num"
+                          type="number" min="1" placeholder="25"
+                          value={shortcutInput}
+                          onChange={e => setShortcutInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
                               const v = parseInt(shortcutInput);
                               if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
-                                setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a, b) => a - b) }));
+                                setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a,b) => a-b) }));
                                 setShortcutInput('');
                               }
-                            }}
-                          ><Plus size={15} /> Ajouter</button>
-                          {loyaltyConfig.points_shortcuts?.length > 0 && (
-                            <button
-                              type="button"
-                              className="pro-btn-secondary stt-btn-muted"
-                              onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [] }))}
-                            >Réinitialiser</button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="stt-sub-block">
-                      <div className="stt-sub-block-header">
-                        <p className="stt-sub-label">Solde maximum par client</p>
-                        {loyaltyConfig.max_points_balance
-                          ? <span className="stt-badge stt-badge-accent">{loyaltyConfig.max_points_balance} pts max</span>
-                          : <span className="stt-badge stt-badge-muted">Illimité</span>
-                        }
-                      </div>
-                      <p className="stt-hint">Un client ne pourra jamais dépasser ce total. Laissez vide pour aucune limite.</p>
-                      <div className="stt-inline-row">
-                        <input
-                          className="stt-input stt-input-sm"
-                          type="number"
-                          min="1"
-                          placeholder="Ex : 500"
-                          value={loyaltyConfig.max_points_balance ?? ''}
-                          onChange={e => setLoyaltyConfig({
-                            ...loyaltyConfig,
-                            max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
-                          })}
+                            }
+                          }}
                         />
-                        {loyaltyConfig.max_points_balance !== null && loyaltyConfig.max_points_balance !== undefined && (
-                          <button
-                            type="button"
-                            className="pro-btn-secondary stt-btn-muted"
-                            onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}
-                          >Désactiver</button>
+                        <button type="button" className="cfg-btn-add"
+                          onClick={() => {
+                            const v = parseInt(shortcutInput);
+                            if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
+                              setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a,b) => a-b) }));
+                              setShortcutInput('');
+                            }
+                          }}>
+                          <Plus size={14} /> Ajouter
+                        </button>
+                        {loyaltyConfig.points_shortcuts?.length > 0 && (
+                          <button type="button" className="cfg-btn-ghost"
+                            onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [] }))}>
+                            Réinitialiser
+                          </button>
                         )}
                       </div>
                     </div>
+                  )}
 
-                    <div className="stt-card-footer">
-                      <button type="submit" className="stt-save-btn" disabled={savingSettings}>
-                        {savingSettings ? <Loader2 size={15} className="pro-spin" /> : <Save size={15} />}
-                        Enregistrer
-                      </button>
+                  {/* Solde max */}
+                  <div className="cfg-field cfg-field--sep">
+                    <div className="cfg-field-header">
+                      <label className="cfg-label">Solde maximum par client</label>
+                      {loyaltyConfig.max_points_balance
+                        ? <span className="cfg-pill cfg-pill--blue">{loyaltyConfig.max_points_balance} pts max</span>
+                        : <span className="cfg-pill cfg-pill--gray">Illimité</span>
+                      }
                     </div>
+                    <div className="cfg-input-row">
+                      <input
+                        className="cfg-input cfg-input-num"
+                        type="number" min="1" placeholder="500"
+                        value={loyaltyConfig.max_points_balance ?? ''}
+                        onChange={e => setLoyaltyConfig({
+                          ...loyaltyConfig,
+                          max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
+                        })}
+                      />
+                      <span className="cfg-unit">pts</span>
+                      {loyaltyConfig.max_points_balance != null && (
+                        <button type="button" className="cfg-btn-ghost"
+                          onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}>
+                          Désactiver
+                        </button>
+                      )}
+                    </div>
+                    <p className="cfg-hint">Laissez vide pour aucune limite.</p>
                   </div>
+
+                  <button type="submit" className="cfg-save-btn" disabled={savingSettings}>
+                    {savingSettings ? <Loader2 size={14} className="pro-spin" /> : <Save size={14} />}
+                    Enregistrer
+                  </button>
                 </form>
 
-                {/* ── BLOC 2 : Paliers ── */}
-                <div className="stt-card">
-                  <div className="stt-card-header">
-                    <div className="stt-card-icon"><Gift size={16} /></div>
-                    <div>
-                      <h3 className="stt-card-title">Paliers de récompenses</h3>
-                      <p className="stt-card-sub">Cadeaux débloqués quand un client atteint le seuil de points</p>
-                    </div>
+                {/* ── Section 2 : Paliers ── */}
+                <div className="cfg-section">
+                  <div className="cfg-section-label">
+                    <Gift size={13} /> Paliers de récompenses
                   </div>
 
-                  <div className="tiers-list">
-                    {loyaltyConfig.reward_tiers.map(tier => (
-                      <div key={tier.id} className="tier-item-row">
-                        <div className="tier-item-info-box">
-                          <strong className="tier-points-badge">{tier.points_required} pts</strong>
-                          <span className="tier-title-text">{tier.title}</span>
+                  {loyaltyConfig.reward_tiers.length === 0 ? (
+                    <div className="cfg-empty">
+                      <Gift size={20} />
+                      <span>Aucun palier défini</span>
+                    </div>
+                  ) : (
+                    <div className="cfg-tiers">
+                      {loyaltyConfig.reward_tiers.map(tier => (
+                        <div key={tier.id} className="cfg-tier-row">
+                          <div className="cfg-tier-pts">{tier.points_required}<span>pts</span></div>
+                          <span className="cfg-tier-title">{tier.title}</span>
+                          <button className="cfg-tier-del" onClick={() => handleDeleteTier(tier.id)}>
+                            <Trash2 size={15} />
+                          </button>
                         </div>
-                        <button className="tier-delete-btn" onClick={() => handleDeleteTier(tier.id)}><Trash2 size={16} /></button>
-                      </div>
-                    ))}
-                    {loyaltyConfig.reward_tiers.length === 0 && (
-                      <div className="pro-empty-small">Aucun palier défini</div>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
 
-                  <div className="tier-add-form">
-                    <div className="tier-input-group pts-group">
-                      <label>Points requis</label>
-                      <input type="number" placeholder="ex: 50" value={newTier.points_required} onChange={e => setNewTier({...newTier, points_required: e.target.value})} />
-                    </div>
-                    <div className="tier-input-group title-group">
-                      <label>Nom de l'offre</label>
-                      <input type="text" placeholder="ex: Café offert" value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} />
-                    </div>
-                    <button className="pro-btn-secondary tier-add-submit" onClick={handleAddTier} disabled={savingSettings}>
-                      <Plus size={16} /> Ajouter
+                  <div className="cfg-tier-add">
+                    <input className="cfg-input cfg-input-num" type="number" placeholder="pts" value={newTier.points_required} onChange={e => setNewTier({...newTier, points_required: e.target.value})} />
+                    <input className="cfg-input cfg-input-flex" type="text" placeholder="Nom de l'offre (ex : Café offert)" value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} />
+                    <button className="cfg-btn-add" onClick={handleAddTier} disabled={savingSettings}>
+                      <Plus size={14} /> Ajouter
                     </button>
                   </div>
                 </div>
 
-                {/* ── BLOC 3 : Historique ── */}
+                {/* ── Section 3 : Historique ── */}
                 <button className="hist-open-btn" onClick={() => setShowHistory(true)}>
                   <div className="hist-open-btn-icon"><History size={18} /></div>
                   <div className="hist-open-btn-text">

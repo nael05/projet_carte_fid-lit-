@@ -139,6 +139,19 @@ export const createCompany = async (req, res) => {
       [customizationId, companyId, loyalty_type, '#1f2937', '#ffffff', '#3b82f6', '#374151']
     );
 
+    // Envoi de l'email de bienvenue (non bloquant)
+    emailService.sendWelcomeEmail({
+      email,
+      nom,
+      prenom: prenom || null,
+      telephone: telephone || null,
+      tempPassword,
+      loyaltyType: loyalty_type,
+      frontendUrl: process.env.FRONTEND_URL || 'https://fidelyzapp.fr'
+    }).catch(err => {
+      logger.error('Échec envoi email bienvenue (non bloquant)', { error: err.message });
+    });
+
     res.json({
       success: true,
       companyId,

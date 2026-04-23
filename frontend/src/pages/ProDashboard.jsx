@@ -338,7 +338,7 @@ function ProDashboard() {
     const csvContent = [headers, ...rows]
       .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
       .join('\n')
-    const encoded = new TextEncoder().encode('﻿sep=;\n' + csvContent)
+    const encoded = new TextEncoder().encode('﻿' + 'sep=;\n' + csvContent)
     const blob = new Blob([encoded], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)

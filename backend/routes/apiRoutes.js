@@ -28,7 +28,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max (sharp resize ensuite)
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Seules les images sont autorisées'));
@@ -55,8 +55,8 @@ router.get('/pro/sessions', verifyToken, isPro, apiController.getProSessions);
 router.post('/pro/logout-device', verifyToken, isPro, apiController.logoutProDevice);
 router.post('/pro/logout-all', verifyToken, isPro, apiController.logoutProAll);
 router.put('/pro/change-password', verifyToken, isPro, apiController.changePassword);
-router.post('/pro/forgot-password', apiController.forgotPassword);
-router.post('/pro/reset-password', apiController.resetPassword);
+router.post('/pro/forgot-password', loginLimiter, apiController.forgotPassword);
+router.post('/pro/reset-password', loginLimiter, apiController.resetPassword);
 router.get('/pro/clients', verifyToken, isPro, apiController.getClients);
 router.post('/pro/scan', verifyToken, isPro, apiController.handleScan);
 router.get('/pro/scan-lookup/:clientId', verifyToken, isPro, apiController.getScanInfo);

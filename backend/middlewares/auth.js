@@ -21,7 +21,7 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     req.user = decoded;
     
     // Pour les Pro: vérifier la session de l'appareil

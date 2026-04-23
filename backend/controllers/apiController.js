@@ -896,6 +896,10 @@ export const registerClientAndGeneratePass = async (req, res) => {
     return res.status(400).json({ error: 'Tous les champs sont requis' });
   }
 
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Adresse email invalide' });
+  }
+
   if (!['apple', 'google'].includes(type_wallet)) {
     return res.status(400).json({ error: 'Type de wallet invalide' });
   }
@@ -1276,7 +1280,7 @@ export const redeemReward = async (req, res) => {
     const newPoints = currentPoints - tier.points_required;
 
     // 1. Mise à jour DB clients
-    await pool.query('UPDATE clients SET points = ? WHERE id = ?', [newPoints, clientId]);
+    await pool.query('UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?', [newPoints, clientId, empresaId]);
 
     // 🔄 Sync TOUS les Wallets (Apple et Google)
     // OPTIMISATION : Non-bloquant

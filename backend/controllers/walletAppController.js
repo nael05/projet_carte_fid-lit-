@@ -258,9 +258,19 @@ export const addPointsToWallet = async (req, res) => {
     const wallet = walletRows[0];
     const { id: walletId, pass_serial_number, loyalty_type } = wallet;
 
+    // Appliquer le plafond par transaction si configuré
+    let cappedPoints = pointsToAdd;
+    const [cfgRows] = await db.query(
+      'SELECT max_points_per_transaction FROM loyalty_config WHERE entreprise_id = ?',
+      [wallet.entreprise_id]
+    );
+    if (cfgRows.length > 0 && cfgRows[0].max_points_per_transaction !== null) {
+      cappedPoints = Math.min(cappedPoints, cfgRows[0].max_points_per_transaction);
+    }
+
     const isStamps = loyalty_type === 'stamps';
     const oldBalance = isStamps ? wallet.stamps_balance : wallet.points_balance;
-    const newBalance = oldBalance + pointsToAdd;
+    const newBalance = oldBalance + cappedPoints;
 
     await db.query(`UPDATE wallet_cards SET ${isStamps ? 'stamps_balance' : 'points_balance'} = ?, last_updated = NOW() WHERE id = ?`, [newBalance, walletId]);
 
@@ -269,7 +279,7 @@ export const addPointsToWallet = async (req, res) => {
         wallet_card_id, pass_serial_number, action, value, old_balance, new_balance,
         description, triggered_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [walletId, pass_serial_number, isStamps ? 'add_stamps' : 'add_points', pointsToAdd, oldBalance, newBalance, reason || 'API update', 'admin_api']
+      [walletId, pass_serial_number, isStamps ? 'add_stamps' : 'add_points', cappedPoints, oldBalance, newBalance, reason || 'API update', 'admin_api']
     );
 
     // 🔄 Synchronisation Centralisée (Apple & Google)
@@ -280,7 +290,7 @@ export const addPointsToWallet = async (req, res) => {
 
     // Envoi notification Visuelle
     try {
-      await sendLoyaltyUpdateNotification(clientId, wallet.entreprise_id, pointsToAdd, false);
+      await sendLoyaltyUpdateNotification(clientId, wallet.entreprise_id, cappedPoints, false);
     } catch (pushErr) {
       logger.warn('Push loyalty notification failed in walletApp', pushErr.message);
     }

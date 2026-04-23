@@ -41,6 +41,7 @@ function ProDashboard() {
   const [loyaltyConfig, setLoyaltyConfig] = useState({
     points_adding_mode: 'automatic',
     points_per_purchase: 10,
+    max_points_per_transaction: null,
     reward_tiers: []
   })
   
@@ -668,6 +669,35 @@ function ProDashboard() {
                           />
                         </div>
                       )}
+                    </div>
+                    <div className="pro-form-group" style={{ marginTop: '12px' }}>
+                      <label>Plafond de points par transaction</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="Illimité"
+                          value={loyaltyConfig.max_points_per_transaction ?? ''}
+                          onChange={e => setLoyaltyConfig({
+                            ...loyaltyConfig,
+                            max_points_per_transaction: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
+                          })}
+                          style={{ width: '140px' }}
+                        />
+                        {loyaltyConfig.max_points_per_transaction !== null && (
+                          <button
+                            type="button"
+                            className="pro-action-btn"
+                            onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_per_transaction: null })}
+                            title="Supprimer la limite"
+                          ><X size={14} /></button>
+                        )}
+                      </div>
+                      <small style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
+                        {loyaltyConfig.max_points_per_transaction
+                          ? `Max ${loyaltyConfig.max_points_per_transaction} pts par transaction — le surplus est ignoré`
+                          : 'Aucune limite — laissez vide pour illimité'}
+                      </small>
                     </div>
                     <button type="submit" className="pro-btn-primary" style={{ marginTop: '15px' }} disabled={savingSettings}>
                       {savingSettings ? <Loader2 size={16} className="pro-spin" /> : <Save size={16} />} Enregistrer Mode

@@ -624,7 +624,7 @@ export const handleScan = async (req, res) => {
     }
 
     const [config] = await pool.query(
-      'SELECT points_adding_mode, points_per_purchase, reward_title FROM loyalty_config WHERE entreprise_id = ?',
+      'SELECT points_adding_mode, points_per_purchase, max_points_per_transaction, reward_title FROM loyalty_config WHERE entreprise_id = ?',
       [empresaId]
     );
 
@@ -642,6 +642,12 @@ export const handleScan = async (req, res) => {
       pointsToAdd = Number(loyaltyConfig.points_per_purchase) || 10;
     } else if (isNaN(pointsToAdd) || pointsToAdd < 0) {
       pointsToAdd = 0; // Sécurité pour le mode manuel
+    }
+
+    // Appliquer le plafond par transaction si configuré
+    const maxPts = loyaltyConfig.max_points_per_transaction;
+    if (maxPts !== null && maxPts !== undefined && pointsToAdd > maxPts) {
+      pointsToAdd = maxPts;
     }
 
     const currentPoints = Number(clientRows[0].points) || 0;
@@ -743,6 +749,13 @@ export const finalizeFullTransaction = async (req, res) => {
     let totalChange = 0;
     let descriptionParts = [];
 
+    // Charger le plafond par transaction
+    const [cfgRows] = await pool.query(
+      'SELECT max_points_per_transaction FROM loyalty_config WHERE entreprise_id = ?',
+      [empresaId]
+    );
+    const maxPtsPerTx = cfgRows.length > 0 ? cfgRows[0].max_points_per_transaction : null;
+
     // 2. Gérer le cadeau en premier (si présent)
     if (rewardTierId) {
       const [tierRows] = await pool.query(
@@ -767,8 +780,11 @@ export const finalizeFullTransaction = async (req, res) => {
       }
     }
 
-    // 3. Ajouter les points du jour
-    const ptsToAdd = Number(pointsToAdd) || 0;
+    // 3. Ajouter les points du jour (avec plafond si configuré)
+    let ptsToAdd = Number(pointsToAdd) || 0;
+    if (maxPtsPerTx !== null && maxPtsPerTx !== undefined && ptsToAdd > maxPtsPerTx) {
+      ptsToAdd = maxPtsPerTx;
+    }
     if (ptsToAdd > 0) {
       currentPoints += ptsToAdd;
       totalChange += ptsToAdd;

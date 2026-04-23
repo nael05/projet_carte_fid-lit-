@@ -102,125 +102,150 @@
 
 /* ---- FILTER PANEL ---- */
 .hist-filter-panel {
-  background: var(--bg-subtle);
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border-light);
-  padding: 14px 16px;
+  padding: 14px 16px 12px;
   flex-shrink: 0;
+  overflow: hidden;
   animation: histIn 150ms ease-out;
-  overflow-x: hidden;
 }
 
-/* Ligne dates : flex avec labels inline */
-.hist-filter-dates {
+.hist-filter-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Champ générique */
+.hf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hf-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+/* Date range — deux inputs dans un conteneur commun */
+.hf-date-range {
+  display: flex;
+  align-items: center;
+  background: var(--bg-app);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.hf-date-range:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+.hf-date {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 9px 10px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.hf-date-sep {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* Input client avec icône */
+.hf-input-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  background: var(--bg-app);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 9px 12px;
+  transition: border-color 0.15s;
 }
+.hf-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
 
-.hist-filter-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+.hf-icon { color: var(--text-tertiary); flex-shrink: 0; }
 
-.hist-date-input {
+.hf-input {
   flex: 1;
   min-width: 0;
-  max-width: 100%;
-  padding: 8px 8px;
-  border: 1px solid var(--border-medium);
-  border-radius: 9px;
+  border: none;
+  background: transparent;
   font-size: 13px;
   font-family: var(--font-family);
   color: var(--text-primary);
-  background: var(--bg-elevated, #fff);
   outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
 }
-.dark-mode .hist-date-input { background: var(--bg-subtle); }
-.hist-date-input:focus { border-color: var(--accent); }
+.hf-input::placeholder { color: var(--text-tertiary); }
 
-/* Ligne client + type */
-.hist-filter-row2 {
+/* Select type */
+.hf-select {
+  width: 100%;
+  background: var(--bg-app);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.hf-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+.dark-mode .hf-date-range,
+.dark-mode .hf-input-wrap,
+.dark-mode .hf-select { background: var(--bg-elevated); }
+
+/* Actions */
+.hf-actions {
   display: flex;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
-.hist-text-input {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border-medium);
-  border-radius: 9px;
-  font-size: 13px;
-  font-family: var(--font-family);
-  color: var(--text-primary);
-  background: var(--bg-elevated, #fff);
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-.dark-mode .hist-text-input { background: var(--bg-subtle); }
-.hist-text-input:focus { border-color: var(--accent); }
-.hist-text-input::placeholder { color: var(--text-tertiary); }
-
-.hist-select-input {
-  flex-shrink: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border-medium);
-  border-radius: 9px;
-  font-size: 13px;
-  font-family: var(--font-family);
-  color: var(--text-primary);
-  background: var(--bg-elevated, #fff);
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-.dark-mode .hist-select-input { background: var(--bg-subtle); }
-.hist-select-input:focus { border-color: var(--accent); }
-
-.hist-filter-footer {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.hist-btn-clear {
+.hf-btn-clear {
   display: flex; align-items: center; gap: 5px;
-  padding: 8px 14px;
+  padding: 9px 14px;
   background: transparent;
   border: 1px solid var(--border-medium);
-  border-radius: 9px;
+  border-radius: 10px;
   font-size: 13px; font-weight: 600;
   font-family: var(--font-family);
   color: var(--text-secondary);
   cursor: pointer;
   transition: var(--transition);
 }
-.hist-btn-clear:hover { background: var(--bg-hover); }
+.hf-btn-clear:hover { background: var(--bg-hover); }
 
-.hist-btn-apply {
+.hf-btn-apply {
   display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px;
+  padding: 9px 18px;
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 9px;
+  border-radius: 10px;
   font-size: 13px; font-weight: 700;
   font-family: var(--font-family);
   cursor: pointer;
   transition: opacity 0.15s;
-  box-shadow: 0 3px 10px rgba(37,99,235,0.3);
+  box-shadow: 0 3px 12px rgba(37,99,235,0.3);
 }
-.hist-btn-apply:hover { opacity: 0.88; }
+.hf-btn-apply:hover { opacity: 0.88; }
 
 /* ---- STATS BAR ---- */
 .hist-stats-bar {
@@ -524,12 +549,10 @@
 }
 
 @media (max-width: 640px) {
-  .hist-filter-panel { padding: 10px 12px; }
-  .hist-filter-row2 { flex-wrap: wrap; }
-  .hist-select-input { width: 100%; }
-  .hist-filter-footer { justify-content: stretch; }
-  .hist-btn-clear,
-  .hist-btn-apply { flex: 1; justify-content: center; }
+  .hist-filter-panel { padding: 10px 12px 10px; }
+  .hf-actions { gap: 6px; }
+  .hf-btn-clear,
+  .hf-btn-apply { flex: 1; justify-content: center; }
   .hist-stats-bar { padding: 6px 12px; }
   .hist-stats-count { font-size: 12px; }
 }

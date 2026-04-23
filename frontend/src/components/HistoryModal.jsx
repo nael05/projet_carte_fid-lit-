@@ -117,42 +117,52 @@ export default function HistoryModal({ onClose }) {
           </button>
         </header>
 
-        {/* ── FILTER PANEL (accordéon) ── */}
+        {/* ── FILTER PANEL ── */}
         {showFilters && (
           <div className="hist-filter-panel">
+            <div className="hist-filter-fields">
 
-            {/* Ligne dates */}
-            <div className="hist-filter-dates">
-              <span className="hist-filter-label">Du</span>
-              <input className="hist-date-input" type="date" value={draft.dateFrom}
-                onChange={e => setDraft(f => ({ ...f, dateFrom: e.target.value }))} />
-              <span className="hist-filter-label">au</span>
-              <input className="hist-date-input" type="date" value={draft.dateTo}
-                onChange={e => setDraft(f => ({ ...f, dateTo: e.target.value }))} />
+              {/* Date range */}
+              <div className="hf-field">
+                <span className="hf-label">Période</span>
+                <div className="hf-date-range">
+                  <input className="hf-date" type="date" value={draft.dateFrom}
+                    onChange={e => setDraft(f => ({ ...f, dateFrom: e.target.value }))} />
+                  <span className="hf-date-sep">→</span>
+                  <input className="hf-date" type="date" value={draft.dateTo}
+                    onChange={e => setDraft(f => ({ ...f, dateTo: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Client */}
+              <div className="hf-field">
+                <span className="hf-label">Client</span>
+                <div className="hf-input-wrap">
+                  <Search size={13} className="hf-icon" />
+                  <input className="hf-input" type="text" placeholder="Nom du client…"
+                    value={draft.clientName}
+                    onChange={e => setDraft(f => ({ ...f, clientName: e.target.value }))}
+                    onKeyDown={e => e.key === 'Enter' && handleApply()} />
+                </div>
+              </div>
+
+              {/* Type */}
+              <div className="hf-field">
+                <span className="hf-label">Type</span>
+                <select className="hf-select" value={draft.type}
+                  onChange={e => setDraft(f => ({ ...f, type: e.target.value }))}>
+                  <option value="">Tout</option>
+                  <option value="add_points">Points ajoutés</option>
+                  <option value="redeem_reward">Cadeau utilisé</option>
+                  <option value="remove_points">Points retirés</option>
+                </select>
+              </div>
+
             </div>
 
-            {/* Ligne client + type */}
-            <div className="hist-filter-row2">
-              <input className="hist-text-input" type="text" placeholder="Nom du client…"
-                value={draft.clientName}
-                onChange={e => setDraft(f => ({ ...f, clientName: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleApply()} />
-              <select className="hist-select-input" value={draft.type}
-                onChange={e => setDraft(f => ({ ...f, type: e.target.value }))}>
-                <option value="">Tout type</option>
-                <option value="add_points">Points ajoutés</option>
-                <option value="redeem_reward">Cadeau utilisé</option>
-                <option value="remove_points">Points retirés</option>
-              </select>
-            </div>
-
-            <div className="hist-filter-footer">
-              <button className="hist-btn-clear" onClick={handleClear}>
-                <X size={13} /> Effacer
-              </button>
-              <button className="hist-btn-apply" onClick={handleApply}>
-                <Search size={13} /> Appliquer
-              </button>
+            <div className="hf-actions">
+              <button className="hf-btn-clear" onClick={handleClear}><X size={13} /> Effacer</button>
+              <button className="hf-btn-apply" onClick={handleApply}><Search size={13} /> Appliquer</button>
             </div>
           </div>
         )}

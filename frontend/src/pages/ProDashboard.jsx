@@ -335,11 +335,13 @@ function ProDashboard() {
       c.type_wallet || '',
       c.marketing_optin ? 'Oui' : 'Non'
     ])
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+    const csvContent = ['sep=\t']
+      .concat([headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join('\t')))
       .join('\n')
-    const encoded = new TextEncoder().encode('﻿' + 'sep=;\n' + csvContent)
-    const blob = new Blob([encoded], { type: 'text/csv;charset=utf-8;' })
+    const BOM = new Uint8Array([0xFF, 0xFE])
+    const view = new Uint16Array(csvContent.length)
+    for (let i = 0; i < csvContent.length; i++) view[i] = csvContent.charCodeAt(i)
+    const blob = new Blob([BOM, view], { type: 'text/csv;charset=utf-16le;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `clients-${proInfo?.nom?.toLowerCase().replace(/\s+/g, '-') || 'export'}.csv`

@@ -720,31 +720,41 @@ function ProDashboard() {
                 <Settings size={22} />
                 <div>
                   <h2>Paramètres</h2>
-                  <p>Configuration de votre programme Fidélité</p>
+                  <p>Configuration de votre programme de fidélité</p>
                 </div>
               </div>
 
-              <div className="pro-settings-container">
-                <form className="pro-settings-form" onSubmit={handleSaveLoyaltyConfig}>
-                  <div className="pro-settings-card">
-                    <h3>Mode d'attribution</h3>
-                    <div className="pro-form-row">
-                      <div className="pro-form-group">
-                        <label>Mode au Scan</label>
-                        <select 
-                          value={loyaltyConfig.points_adding_mode} 
+              <div className="stt-container">
+
+                {/* ── BLOC 1 : Mode d'attribution ── */}
+                <form onSubmit={handleSaveLoyaltyConfig}>
+                  <div className="stt-card">
+                    <div className="stt-card-header">
+                      <div className="stt-card-icon"><Award size={16} /></div>
+                      <div>
+                        <h3 className="stt-card-title">Mode d'attribution</h3>
+                        <p className="stt-card-sub">Comment les points sont attribués à chaque scan</p>
+                      </div>
+                    </div>
+
+                    <div className="stt-field-row">
+                      <div className="stt-field">
+                        <label className="stt-label">Mode au scan</label>
+                        <select
+                          className="stt-select"
+                          value={loyaltyConfig.points_adding_mode}
                           onChange={(e) => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: e.target.value})}
-                          style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-light)' }}
                         >
-                          <option value="automatic">Automatique (Points Fixes)</option>
-                          <option value="manual">Manuel (Saisie à chaque scan)</option>
+                          <option value="automatic">Automatique — points fixes</option>
+                          <option value="manual">Manuel — saisie à chaque scan</option>
                         </select>
                       </div>
-                      
+
                       {loyaltyConfig.points_adding_mode === 'automatic' && (
-                        <div className="pro-form-group">
-                          <label>Points fixes par passage</label>
+                        <div className="stt-field">
+                          <label className="stt-label">Points par passage</label>
                           <input
+                            className="stt-input"
                             type="number"
                             min="1"
                             value={loyaltyConfig.points_per_purchase}
@@ -755,136 +765,127 @@ function ProDashboard() {
                     </div>
 
                     {loyaltyConfig.points_adding_mode === 'manual' && (
-                      <div style={{ marginTop: '20px', border: '1px solid var(--border-light)', borderRadius: '10px', overflow: 'hidden' }}>
-                        <div style={{ padding: '12px 16px', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-light)' }}>
-                          <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>Raccourcis de points</span>
+                      <div className="stt-sub-block">
+                        <p className="stt-sub-label">Raccourcis de points</p>
+                        <p className="stt-hint">Boutons rapides affichés lors du scan. Sans raccourci : valeurs par défaut (5, 10, 20, 50).</p>
+                        <div className="stt-chips">
+                          {(loyaltyConfig.points_shortcuts?.length > 0 ? loyaltyConfig.points_shortcuts : []).map((v, i) => (
+                            <span key={i} className="stt-chip">
+                              +{v}
+                              <button
+                                type="button"
+                                className="stt-chip-remove"
+                                onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: prev.points_shortcuts.filter((_, j) => j !== i) }))}
+                              >×</button>
+                            </span>
+                          ))}
+                          {(loyaltyConfig.points_shortcuts?.length === 0) && (
+                            <span className="stt-chips-empty">Par défaut : +5, +10, +20, +50</span>
+                          )}
                         </div>
-                        <div style={{ padding: '14px 16px' }}>
-                          <p className="pro-hint" style={{ marginBottom: '12px' }}>
-                            Ces boutons apparaissent lors du scan en mode manuel. Si aucun raccourci n'est défini, les valeurs par défaut (5, 10, 20, 50) s'appliquent.
-                          </p>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-                            {(loyaltyConfig.points_shortcuts?.length > 0 ? loyaltyConfig.points_shortcuts : []).map((v, i) => (
-                              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'var(--accent)', color: '#fff', borderRadius: '20px', padding: '4px 12px', fontWeight: 700, fontSize: '13px' }}>
-                                +{v}
-                                <button
-                                  type="button"
-                                  onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: prev.points_shortcuts.filter((_, j) => j !== i) }))}
-                                  style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '0', lineHeight: 1, fontSize: '14px', opacity: 0.8 }}
-                                >×</button>
-                              </span>
-                            ))}
-                            {(loyaltyConfig.points_shortcuts?.length === 0) && (
-                              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Par défaut : +5, +10, +20, +50</span>
-                            )}
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                              type="number"
-                              min="1"
-                              placeholder="Ex : 25"
-                              value={shortcutInput}
-                              onChange={e => setShortcutInput(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  const v = parseInt(shortcutInput);
-                                  if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
-                                    setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a, b) => a - b) }));
-                                    setShortcutInput('');
-                                  }
-                                }
-                              }}
-                              style={{ width: '100px' }}
-                            />
-                            <button
-                              type="button"
-                              className="pro-btn-secondary"
-                              onClick={() => {
+                        <div className="stt-inline-row">
+                          <input
+                            className="stt-input stt-input-sm"
+                            type="number"
+                            min="1"
+                            placeholder="Ex : 25"
+                            value={shortcutInput}
+                            onChange={e => setShortcutInput(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
                                 const v = parseInt(shortcutInput);
                                 if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
                                   setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a, b) => a - b) }));
                                   setShortcutInput('');
                                 }
-                              }}
-                            >
-                              <Plus size={16} /> Ajouter
-                            </button>
-                            {loyaltyConfig.points_shortcuts?.length > 0 && (
-                              <button
-                                type="button"
-                                className="pro-btn-secondary"
-                                style={{ color: 'var(--text-secondary)' }}
-                                onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [] }))}
-                              >
-                                Réinitialiser
-                              </button>
-                            )}
-                          </div>
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="pro-btn-secondary"
+                            onClick={() => {
+                              const v = parseInt(shortcutInput);
+                              if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
+                                setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a, b) => a - b) }));
+                                setShortcutInput('');
+                              }
+                            }}
+                          ><Plus size={15} /> Ajouter</button>
+                          {loyaltyConfig.points_shortcuts?.length > 0 && (
+                            <button
+                              type="button"
+                              className="pro-btn-secondary stt-btn-muted"
+                              onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [] }))}
+                            >Réinitialiser</button>
+                          )}
                         </div>
                       </div>
                     )}
 
-                    <div style={{ marginTop: '20px', border: '1px solid var(--border-light)', borderRadius: '10px', overflow: 'hidden' }}>
-                      <div style={{ padding: '12px 16px', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>Solde maximum par client</span>
+                    <div className="stt-sub-block">
+                      <div className="stt-sub-block-header">
+                        <p className="stt-sub-label">Solde maximum par client</p>
                         {loyaltyConfig.max_points_balance
-                          ? <span style={{ background: 'var(--accent)', color: '#fff', padding: '3px 12px', borderRadius: '20px', fontWeight: 700, fontSize: '13px' }}>{loyaltyConfig.max_points_balance} pts max</span>
-                          : <span style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)', padding: '3px 12px', borderRadius: '20px', fontSize: '12px' }}>Illimité</span>
+                          ? <span className="stt-badge stt-badge-accent">{loyaltyConfig.max_points_balance} pts max</span>
+                          : <span className="stt-badge stt-badge-muted">Illimité</span>
                         }
                       </div>
-                      <div style={{ padding: '14px 16px' }}>
-                        <p className="pro-hint" style={{ marginBottom: '10px' }}>
-                          Un client ne pourra jamais dépasser ce solde total. Exemple&nbsp;: s'il est à 480&nbsp;pts et que la limite est 500, il ne gagnera que 20&nbsp;pts.
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="Ex : 500"
-                            value={loyaltyConfig.max_points_balance ?? ''}
-                            onChange={e => setLoyaltyConfig({
-                              ...loyaltyConfig,
-                              max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
-                            })}
-                          />
-                          {loyaltyConfig.max_points_balance !== null && loyaltyConfig.max_points_balance !== undefined && (
-                            <button
-                              type="button"
-                              className="pro-btn-secondary"
-                              style={{ whiteSpace: 'nowrap' }}
-                              onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}
-                            >
-                              Désactiver
-                            </button>
-                          )}
-                        </div>
+                      <p className="stt-hint">Un client ne pourra jamais dépasser ce total. Laissez vide pour aucune limite.</p>
+                      <div className="stt-inline-row">
+                        <input
+                          className="stt-input stt-input-sm"
+                          type="number"
+                          min="1"
+                          placeholder="Ex : 500"
+                          value={loyaltyConfig.max_points_balance ?? ''}
+                          onChange={e => setLoyaltyConfig({
+                            ...loyaltyConfig,
+                            max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
+                          })}
+                        />
+                        {loyaltyConfig.max_points_balance !== null && loyaltyConfig.max_points_balance !== undefined && (
+                          <button
+                            type="button"
+                            className="pro-btn-secondary stt-btn-muted"
+                            onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}
+                          >Désactiver</button>
+                        )}
                       </div>
                     </div>
-                    <button type="submit" className="pro-btn-primary" style={{ marginTop: '15px' }} disabled={savingSettings}>
-                      {savingSettings ? <Loader2 size={16} className="pro-spin" /> : <Save size={16} />} Enregistrer Mode
-                    </button>
+
+                    <div className="stt-card-footer">
+                      <button type="submit" className="stt-save-btn" disabled={savingSettings}>
+                        {savingSettings ? <Loader2 size={15} className="pro-spin" /> : <Save size={15} />}
+                        Enregistrer
+                      </button>
+                    </div>
                   </div>
                 </form>
 
-                <div className="pro-settings-card" style={{ marginTop: '20px' }}>
-                  <h3>Paliers de Récompenses</h3>
-                  <p className="pro-hint">Définissez des seuils de points et les cadeaux associés. Vos clients pourront les débloquer une fois le score atteint.</p>
-                  
-                  <div className="tiers-list" style={{ marginTop: '15px' }}>
+                {/* ── BLOC 2 : Paliers ── */}
+                <div className="stt-card">
+                  <div className="stt-card-header">
+                    <div className="stt-card-icon"><Gift size={16} /></div>
+                    <div>
+                      <h3 className="stt-card-title">Paliers de récompenses</h3>
+                      <p className="stt-card-sub">Cadeaux débloqués quand un client atteint le seuil de points</p>
+                    </div>
+                  </div>
+
+                  <div className="tiers-list">
                     {loyaltyConfig.reward_tiers.map(tier => (
                       <div key={tier.id} className="tier-item-row">
                         <div className="tier-item-info-box">
                           <strong className="tier-points-badge">{tier.points_required} pts</strong>
                           <span className="tier-title-text">{tier.title}</span>
                         </div>
-                        <button className="tier-delete-btn" onClick={() => handleDeleteTier(tier.id)}><Trash2 size={18} /></button>
+                        <button className="tier-delete-btn" onClick={() => handleDeleteTier(tier.id)}><Trash2 size={16} /></button>
                       </div>
                     ))}
                     {loyaltyConfig.reward_tiers.length === 0 && (
-                      <div className="pro-empty-small">
-                        Aucun palier défini
-                      </div>
+                      <div className="pro-empty-small">Aucun palier défini</div>
                     )}
                   </div>
 
@@ -898,21 +899,21 @@ function ProDashboard() {
                       <input type="text" placeholder="ex: Café offert" value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} />
                     </div>
                     <button className="pro-btn-secondary tier-add-submit" onClick={handleAddTier} disabled={savingSettings}>
-                      <Plus size={18} /> Ajouter
+                      <Plus size={16} /> Ajouter
                     </button>
                   </div>
                 </div>
 
+                {/* ── BLOC 3 : Historique ── */}
                 <button className="hist-open-btn" onClick={() => setShowHistory(true)}>
-                  <div className="hist-open-btn-icon">
-                    <History size={18} />
-                  </div>
+                  <div className="hist-open-btn-icon"><History size={18} /></div>
                   <div className="hist-open-btn-text">
                     <strong>Historique des points &amp; cadeaux</strong>
                     <span>Points ajoutés, cadeaux utilisés, retraits</span>
                   </div>
                   <ChevronRight size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                 </button>
+
               </div>
             </div>
           )}

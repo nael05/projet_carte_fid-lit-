@@ -507,111 +507,6 @@ function ProDashboard() {
                 </div>
               )}
 
-              {/* ===== ÉTAPE 1 : CHOIX DU CADEAU ===== */}
-              {scanStep === 'reward' && activeTransaction && (
-                <div className="scan-action-modal centered-modal">
-                   <div className="pro-modal-box-premium floating-card">
-                      <div className="modal-header-mini">
-                        <Award size={24} className="icon-accent" />
-                        <div className="client-info-mini">
-                           <h3>{activeTransaction.clientName}</h3>
-                           <span>{activeTransaction.currentPoints} pts disponibles</span>
-                        </div>
-                        <button className="close-btn-mini" onClick={() => { setScanStep(null); setActiveTransaction(null); }}><X size={18} /></button>
-                      </div>
-
-                      <div className="modal-content-scrollable">
-                         <p className="step-instruction">Choisir un cadeau à déduire maintenant :</p>
-                         <div className="rewards-selection-grid">
-                            {activeTransaction.allRewards.length === 0 ? (
-                               <div className="empty-rewards">Aucun cadeau configuré</div>
-                            ) : (
-                               activeTransaction.allRewards.map(reward => {
-                                  const canAfford = activeTransaction.currentPoints >= reward.points_required;
-                                  return (
-                                    <button 
-                                      key={reward.id} 
-                                      className={`reward-tile ${!canAfford ? 'locked' : ''}`}
-                                      disabled={!canAfford || isProcessing}
-                                      onClick={() => handleRewardStepChoice(reward)}
-                                    >
-                                       <div className="reward-tile-icon">
-                                          {canAfford ? <Gift size={18} /> : <Lock size={16} />}
-                                       </div>
-                                       <div className="reward-tile-text">
-                                          <strong>{reward.title}</strong>
-                                          <span>{reward.points_required} pts</span>
-                                       </div>
-                                    </button>
-                                  );
-                               })
-                            )}
-                         </div>
-                      </div>
-
-                      <div className="modal-footer-sticky">
-                         <button className="pro-btn-skip" onClick={() => handleRewardStepChoice(null)} disabled={isProcessing}>
-                            Pas de cadeau / Continuer <ChevronRight size={18} />
-                         </button>
-                      </div>
-                   </div>
-                </div>
-              )}
-
-              {/* ===== ÉTAPE 2 : ATTRIBUTION DES POINTS ===== */}
-              {scanStep === 'points' && activeTransaction && (
-                <div className="scan-action-modal centered-modal">
-                   <div className="pro-modal-box-premium floating-card points-card">
-                      <div className="modal-header-mini">
-                        <PlusCircle size={24} className="icon-success" />
-                        <div className="client-info-mini">
-                           <h3>{activeTransaction.clientName}</h3>
-                           <span>Nouveau solde : <strong>{activeTransaction.currentPoints} pts</strong></span>
-                        </div>
-                        <button className="close-btn-mini" onClick={() => { setScanStep(null); setActiveTransaction(null); }}><X size={18} /></button>
-                      </div>
-
-                      <div className="modal-content-centered">
-                         {loyaltyConfig.points_adding_mode === 'automatic' ? (
-                            <div className="auto-points-view">
-                               <div className="points-pills large">+{loyaltyConfig.points_per_purchase}</div>
-                               <p>Points automatiques pour le passage de ce jour.</p>
-                            </div>
-                         ) : (
-                            <div className="manual-points-view">
-                               <p className="step-instruction">Attribuer les points du jour :</p>
-                               <div className="points-input-container">
-                                  <input 
-                                    type="number" 
-                                    autoFocus
-                                    className="points-entry" 
-                                    placeholder="Montant..."
-                                    value={pointsToAdd}
-                                    onChange={(e) => setPointsToAdd(e.target.value)}
-                                  />
-                                  <span className="entry-unit">pts</span>
-                               </div>
-                               <div className="entry-shortcuts">
-                                  {[5, 10, 20, 50].map(v => (
-                                    <button key={v} onClick={() => setPointsToAdd(v.toString())}>+{v}</button>
-                                  ))}
-                               </div>
-                            </div>
-                         )}
-                      </div>
-
-                      <div className="modal-footer-sticky">
-                         <button 
-                           className="pro-btn-primary-premium full-width" 
-                           onClick={handleFinalizePointsStep}
-                           disabled={isProcessing}
-                         >
-                            {isProcessing ? <Loader2 className="pro-spin" size={20} /> : 'Finaliser la transaction'}
-                         </button>
-                      </div>
-                   </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -847,6 +742,112 @@ function ProDashboard() {
               <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(selectedClientCard.id, 1)}><Plus size={16} /></button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ===== ÉTAPE 1 : CHOIX DU CADEAU ===== */}
+      {scanStep === 'reward' && activeTransaction && (
+        <div className="scan-action-modal centered-modal">
+           <div className="pro-modal-box-premium floating-card">
+              <div className="modal-header-mini">
+                <Award size={24} className="icon-accent" />
+                <div className="client-info-mini">
+                   <h3>{activeTransaction.clientName}</h3>
+                   <span>{activeTransaction.currentPoints} pts disponibles</span>
+                </div>
+                <button className="close-btn-mini" onClick={() => { setScanStep(null); setActiveTransaction(null); }}><X size={18} /></button>
+              </div>
+
+              <div className="modal-content-scrollable">
+                 <p className="step-instruction">Choisir un cadeau à déduire maintenant :</p>
+                 <div className="rewards-selection-grid">
+                    {activeTransaction.allRewards.length === 0 ? (
+                       <div className="empty-rewards">Aucun cadeau configuré</div>
+                    ) : (
+                       activeTransaction.allRewards.map(reward => {
+                          const canAfford = activeTransaction.currentPoints >= reward.points_required;
+                          return (
+                            <button
+                              key={reward.id}
+                              className={`reward-tile ${!canAfford ? 'locked' : ''}`}
+                              disabled={!canAfford || isProcessing}
+                              onClick={() => handleRewardStepChoice(reward)}
+                            >
+                               <div className="reward-tile-icon">
+                                  {canAfford ? <Gift size={18} /> : <Lock size={16} />}
+                               </div>
+                               <div className="reward-tile-text">
+                                  <strong>{reward.title}</strong>
+                                  <span>{reward.points_required} pts</span>
+                               </div>
+                            </button>
+                          );
+                       })
+                    )}
+                 </div>
+              </div>
+
+              <div className="modal-footer-sticky">
+                 <button className="pro-btn-skip" onClick={() => handleRewardStepChoice(null)} disabled={isProcessing}>
+                    Pas de cadeau / Continuer <ChevronRight size={18} />
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* ===== ÉTAPE 2 : ATTRIBUTION DES POINTS ===== */}
+      {scanStep === 'points' && activeTransaction && (
+        <div className="scan-action-modal centered-modal">
+           <div className="pro-modal-box-premium floating-card points-card">
+              <div className="modal-header-mini">
+                <PlusCircle size={24} className="icon-success" />
+                <div className="client-info-mini">
+                   <h3>{activeTransaction.clientName}</h3>
+                   <span>Nouveau solde : <strong>{activeTransaction.currentPoints} pts</strong></span>
+                </div>
+                <button className="close-btn-mini" onClick={() => { setScanStep(null); setActiveTransaction(null); }}><X size={18} /></button>
+              </div>
+
+              <div className="modal-content-centered">
+                 {loyaltyConfig.points_adding_mode === 'automatic' ? (
+                    <div className="auto-points-view">
+                       <div className="points-pills large">+{loyaltyConfig.points_per_purchase}</div>
+                       <p>Points automatiques pour le passage de ce jour.</p>
+                    </div>
+                 ) : (
+                    <div className="manual-points-view">
+                       <p className="step-instruction">Attribuer les points du jour :</p>
+                       <div className="points-input-container">
+                          <input
+                            type="number"
+                            autoFocus
+                            className="points-entry"
+                            placeholder="Montant..."
+                            value={pointsToAdd}
+                            onChange={(e) => setPointsToAdd(e.target.value)}
+                          />
+                          <span className="entry-unit">pts</span>
+                       </div>
+                       <div className="entry-shortcuts">
+                          {[5, 10, 20, 50].map(v => (
+                            <button key={v} onClick={() => setPointsToAdd(v.toString())}>+{v}</button>
+                          ))}
+                       </div>
+                    </div>
+                 )}
+              </div>
+
+              <div className="modal-footer-sticky">
+                 <button
+                   className="pro-btn-primary-premium full-width"
+                   onClick={handleFinalizePointsStep}
+                   disabled={isProcessing}
+                 >
+                    {isProcessing ? <Loader2 className="pro-spin" size={20} /> : 'Finaliser la transaction'}
+                 </button>
+              </div>
+           </div>
         </div>
       )}
     </div>

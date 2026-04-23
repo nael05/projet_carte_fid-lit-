@@ -322,12 +322,26 @@ export class PassGenerator {
         }
       }
 
-      // setLocations() écrit dans propsSymbol → présent dans le pass.json final
-      // null = supprime la clé pour effacer les "fantômes" Apple Wallet
+      // Injecter les localisations via setLocations() (API officielle de la lib)
+      // Fallback sur affectation directe si la méthode n'existe pas ou échoue
       if (validLocations.length > 0) {
-        pass.setLocations(...validLocations);
+        try {
+          if (typeof pass.setLocations === 'function') {
+            pass.setLocations(...validLocations);
+          } else {
+            pass.locations = validLocations;
+          }
+        } catch (locErr) {
+          logger.warn('setLocations failed, using direct assignment', { error: locErr.message });
+          pass.locations = validLocations;
+        }
       } else {
-        pass.setLocations(null);
+        try {
+          if (typeof pass.setLocations === 'function') {
+            pass.setLocations(null);
+          }
+        } catch (_) { /* ignore */ }
+        pass.locations = [];
       }
 
       // --- LAYOUT PREMIUM (Style Fidelyz) ---

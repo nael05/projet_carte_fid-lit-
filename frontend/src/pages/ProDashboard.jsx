@@ -254,6 +254,22 @@ function ProDashboard() {
     }
   }
 
+  const handleManualClientScan = async (clientId) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/pro/scan-lookup/${clientId}`);
+      setActiveTransaction({
+        ...response.data,
+        clientId
+      });
+      setScanStep('reward');
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Impossible de charger les données du client', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const handleRedeem = async (rewardTierId) => {
     try {
       setLoading(true)
@@ -665,6 +681,7 @@ function ProDashboard() {
                       <div className="pro-client-actions">
                         <button className="pro-action-btn" onClick={() => adjustPoints(client.id, -1)} title="-1"><Minus size={16} /></button>
                         <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(client.id, 1)} title="+1"><Plus size={16} /></button>
+                        <button className="pro-action-btn pro-action-manual" onClick={(e) => { e.stopPropagation(); handleManualClientScan(client.id); }} title="Ajouter des points manuellement"><ScanLine size={16} /></button>
                         <button className="pro-action-btn pro-action-delete" onClick={(e) => { e.stopPropagation(); handleDeleteClient(client.id, `${client.prenom} ${client.nom}`); }} title="Supprimer client"><Trash2 size={16} /></button>
                       </div>
                     </div>

@@ -428,6 +428,10 @@
   color: #ef4444 !important;
   background: rgba(239, 68, 68, 0.1) !important;
 }
+.pro-action-manual:hover {
+  color: var(--accent) !important;
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.1) !important;
+}
 .pro-action-btn:hover { background: var(--bg-subtle); color: var(--text-primary); }
 .pro-action-btn:active { background: var(--bg-hover); }
 .pro-action-btn.pro-action-add {

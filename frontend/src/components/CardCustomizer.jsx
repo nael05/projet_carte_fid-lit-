@@ -488,103 +488,105 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
           )}
 
           {activeTab === 'proximity' && (
-            <div className="proximity-settings">
-              {/* PROMO DU MOMENT (Design Screenshot) */}
-              <div className="promo-setup-card" style={{ marginTop: '2rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
-                  <RotateCw size={24} className="pro-spin-on-hover" style={{ color: '#3b82f6' }} />
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', letterSpacing: '0.5px', color: 'var(--text-primary)' }}>PROMO DU MOMENT</h3>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>(NOTIFICATION PUSH)</p>
-                  </div>
-                </div>
+            <div className="prox-wrap">
 
-                <div className="settings-group" style={{ background: 'var(--bg-app)', padding: '1.2rem', borderRadius: '10px', border: '1px solid var(--border-medium)' }}>
-                  <label style={{ fontSize: '0.9rem', marginBottom: '10px', display: 'block', fontWeight: '500', color: 'var(--text-secondary)' }}>Texte de la promotion</label>
+              {/* ── NOTIFICATION PUSH ── */}
+              <div className="prox-section">
+                <div className="prox-section-label">
+                  <RotateCw size={13} className="pro-spin-on-hover" />
+                  Notification Push
+                </div>
+                <div>
+                  <label className="prox-label">Texte de la promotion</label>
                   <textarea
+                    className="prox-textarea"
                     name="relevant_text"
                     value={config.relevant_text}
                     onChange={handleChange}
                     placeholder="Ex: -20% sur tout le magasin ce week-end !"
                     rows={3}
-                    style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: '8px', width: '100%', padding: '12px', color: 'var(--text-primary)' }}
                   />
-                  <p style={{ marginTop: '12px', fontSize: '0.8rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-tertiary)' }}>
-                    💡 La modification de ce champ déclenche une notification Push immédiate chez vos clients Apple.
-                  </p>
+                </div>
+                <div className="prox-hint">
+                  💡 La modification de ce champ déclenche une notification Push immédiate chez vos clients Apple.
                 </div>
               </div>
 
-              <div className="settings-header" style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3>Géolocalisation & Proximité</h3>
-                  <p>Affichez la carte sur l'écran verrouillé près de vos établissements (Max 10).</p>
+              {/* ── GÉOLOCALISATION ── */}
+              <div className="prox-section">
+                <div className="prox-section-header">
+                  <div className="prox-section-label">
+                    Géolocalisation &amp; Proximité
+                  </div>
+                  <button
+                    className="prox-btn-add"
+                    onClick={addLocation}
+                    disabled={(config.locations || []).length >= 10}
+                  >
+                    + Ajouter un lieu
+                  </button>
                 </div>
-                <button
-                  onClick={addLocation}
-                  disabled={(config.locations || []).length >= 10}
-                  style={{
-                    background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px',
-                    padding: '8px 12px', cursor: (config.locations || []).length >= 10 ? 'not-allowed' : 'pointer',
-                    opacity: (config.locations || []).length >= 10 ? 0.5 : 1
-                  }}
-                >
-                  + Ajouter un lieu
-                </button>
-              </div>
+                <div className="prox-section-title">
+                  Affichez la carte sur l'écran verrouillé près de vos établissements
+                  <span className="prox-section-sub"> (max 10)</span>
+                </div>
 
-              <div className="locations-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                {(config.locations || []).map((loc, index) => (
-                  <div key={index} style={{ background: 'var(--bg-app)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Lieu #{index + 1}</strong>
-                      <button onClick={() => removeLocation(index)} style={{ background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>
-                        Retirer
-                      </button>
-                    </div>
-
-                    <div className="settings-grid">
-                      <div className="settings-group" style={{ marginBottom: '10px' }}>
-                        <label style={{ fontSize: '0.8rem' }}>Latitude</label>
+                <div className="prox-locs-list">
+                  {(config.locations || []).map((loc, index) => (
+                    <div key={index} className="prox-loc-card">
+                      <div className="prox-loc-header">
+                        <span className="prox-loc-num">Lieu #{index + 1}</span>
+                        <button className="prox-loc-del" onClick={() => removeLocation(index)}>
+                          Retirer
+                        </button>
+                      </div>
+                      <div className="prox-coord-row">
+                        <div className="prox-coord-field">
+                          <label className="prox-label">Latitude</label>
+                          <input
+                            className="prox-input"
+                            type="number" step="any"
+                            value={loc.latitude ?? ''}
+                            onChange={(e) => handleLocationChange(index, 'latitude', e.target.value)}
+                            placeholder="Ex: 48.8566"
+                          />
+                        </div>
+                        <div className="prox-coord-field">
+                          <label className="prox-label">Longitude</label>
+                          <input
+                            className="prox-input"
+                            type="number" step="any"
+                            value={loc.longitude ?? ''}
+                            onChange={(e) => handleLocationChange(index, 'longitude', e.target.value)}
+                            placeholder="Ex: 2.3522"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="prox-label">Texte sur l'écran verrouillé</label>
                         <input
-                          type="number" step="any"
-                          value={loc.latitude ?? ''}
-                          onChange={(e) => handleLocationChange(index, 'latitude', e.target.value)}
-                          placeholder="Ex: 48.8566"
+                          className="prox-input"
+                          type="text"
+                          value={loc.relevantText || ''}
+                          onChange={(e) => handleLocationChange(index, 'relevantText', e.target.value)}
+                          placeholder="Ex: Bienvenue ! N'oubliez pas votre carte."
                         />
                       </div>
-                      <div className="settings-group" style={{ marginBottom: '10px' }}>
-                        <label style={{ fontSize: '0.8rem' }}>Longitude</label>
-                        <input
-                          type="number" step="any"
-                          value={loc.longitude ?? ''}
-                          onChange={(e) => handleLocationChange(index, 'longitude', e.target.value)}
-                          placeholder="Ex: 2.3522"
-                        />
-                      </div>
                     </div>
-                    <div className="settings-group">
-                      <label style={{ fontSize: '0.8rem' }}>Texte de notification sur l'écran verrouillé</label>
-                      <input
-                        type="text"
-                        value={loc.relevantText || ''}
-                        onChange={(e) => handleLocationChange(index, 'relevantText', e.target.value)}
-                        placeholder="Ex: Bienvenue ! N'oubliez pas votre carte."
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))}
 
-                {(!config.locations || config.locations.length === 0) && (
-                  <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed #374151', color: '#9ca3af' }}>
-                    Aucun lieu configuré. Vos clients ne recevront pas de notification à proximité.
-                  </div>
-                )}
+                  {(!config.locations || config.locations.length === 0) && (
+                    <div className="prox-empty">
+                      Aucun lieu configuré.<br />Vos clients ne recevront pas de notification à proximité.
+                    </div>
+                  )}
+                </div>
+
+                <div className="prox-alert">
+                  💡 <span><strong>Astuce :</strong> Trouvez vos coordonnées sur Google Maps avec un clic droit. La notification s'affiche à environ 100m du lieu.</span>
+                </div>
               </div>
 
-              <div className="info-alert" style={{ marginTop: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px', borderRadius: '8px', color: '#60a5fa', fontSize: '0.85rem' }}>
-                💡 <strong>Astuce :</strong> Vous trouvez vos coordonnées sur Google Maps en faisant un clic droit. La notification s'affiche à environ 100m du lieu.
-              </div>
             </div>
           )}
 

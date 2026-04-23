@@ -55,6 +55,7 @@ function ProDashboard() {
   const navigate = useNavigate()
   const scannerRef = useRef(null)
   const scannerInstance = useRef(null)
+  const qrRef = useRef(null)
   const { token, isSuspended, logout } = useAuth()
 
   useEffect(() => {
@@ -322,6 +323,30 @@ function ProDashboard() {
   }
 
   const handleLogout = () => { logout(); navigate('/pro/login') }
+
+  const handleDownloadQR = () => {
+    const svg = qrRef.current.querySelector('svg')
+    const svgData = new XMLSerializer().serializeToString(svg)
+    const size = 400
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, size, size)
+    const blob = new Blob([svgData], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+    const img = new Image()
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, size, size)
+      URL.revokeObjectURL(url)
+      const a = document.createElement('a')
+      a.download = `qrcode-${proInfo.nom.toLowerCase().replace(/\s+/g, '-')}.png`
+      a.href = canvas.toDataURL('image/png')
+      a.click()
+    }
+    img.src = url
+  }
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/join/${proInfo.id}`)
@@ -602,13 +627,19 @@ function ProDashboard() {
                 </div>
               </div>
               <div className="pro-recruit-content">
-                <div className="pro-qr-display">
+                <div className="pro-qr-display" ref={qrRef}>
                   {proInfo ? (
                     <QRCodeSVG value={`${window.location.origin}/join/${proInfo.id}`} size={200} level="H" includeMargin={false} />
                   ) : (
                     <div className="pro-qr-placeholder"><Loader2 size={24} className="pro-spin" /></div>
                   )}
                 </div>
+                {proInfo && (
+                  <button className="pro-qr-download-btn" onClick={handleDownloadQR}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Télécharger PNG
+                  </button>
+                )}
                 <p className="pro-recruit-hint">Lien d'inscription client</p>
                 <div className="pro-link-copy">
                   <input type="text" readOnly value={proInfo ? `${window.location.origin}/join/${proInfo.id}` : ''} />

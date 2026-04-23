@@ -69,7 +69,13 @@ class GoogleWalletGenerator {
 
     const googleLocations = Array.isArray(locationsArray)
       ? locationsArray
-          .filter(loc => loc.latitude && loc.longitude)
+          .filter(loc => {
+            if (loc.latitude === '' || loc.latitude === null || loc.latitude === undefined) return false;
+            if (loc.longitude === '' || loc.longitude === null || loc.longitude === undefined) return false;
+            const lat = Number(loc.latitude);
+            const lng = Number(loc.longitude);
+            return !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+          })
           .slice(0, 20)
           .map(loc => ({ latitude: Number(loc.latitude), longitude: Number(loc.longitude) }))
       : [];

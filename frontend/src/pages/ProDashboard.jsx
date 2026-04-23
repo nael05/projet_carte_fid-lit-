@@ -335,8 +335,8 @@ function ProDashboard() {
       c.type_wallet || '',
       c.marketing_optin ? 'Oui' : 'Non'
     ])
-    const csvContent = ['sep=\t']
-      .concat([headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join('\t')))
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join('\t'))
       .join('\n')
     const BOM = new Uint8Array([0xFF, 0xFE])
     const view = new Uint16Array(csvContent.length)

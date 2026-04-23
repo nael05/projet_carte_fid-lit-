@@ -85,7 +85,7 @@ export default function HistoryModal({ onClose }) {
   const grouped    = groupByDay(transactions)
 
   return (
-    <div className="hist-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="hist-overlay">
       <div className="hist-modal">
 
         {/* Header */}

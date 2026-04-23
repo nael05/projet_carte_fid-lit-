@@ -2255,8 +2255,8 @@ button:active {
 .dark-mode .cfg-input { background: var(--bg-elevated); }
 .cfg-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
 .cfg-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
-.cfg-input-num  { width: 100px; }
-.cfg-input-flex { flex: 1; min-width: 0; }
+.cfg-input-num  { width: 100px; flex-shrink: 0; }
+.cfg-input-flex { flex: 1; min-width: 120px; }
 
 .cfg-unit {
   font-size: 13px;
@@ -2446,8 +2446,7 @@ button:active {
   .cfg-mode-btn { padding: 10px 12px; }
   .cfg-save-btn { align-self: stretch; justify-content: center; }
   .cfg-tier-add { flex-wrap: wrap; }
-  .cfg-tier-add .cfg-input-num { width: 80px; }
-  .cfg-tier-add .cfg-btn-add { width: 100%; justify-content: center; }
+  .cfg-tier-add .cfg-btn-add { flex: 1; justify-content: center; }
 }
 
 /* ---- HISTORY OPEN BUTTON ---- */

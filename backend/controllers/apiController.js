@@ -1345,6 +1345,11 @@ export const redeemReward = async (req, res) => {
     // 1. Mise à jour DB clients
     await pool.query('UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?', [newPoints, clientId, empresaId]);
 
+    await pool.query(
+      "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'redeem_reward', ?, ?)",
+      [randomUUID(), clientId, empresaId, -tier.points_required, `Utilisation : ${tier.title}`]
+    );
+
     // 🔄 Sync TOUS les Wallets (Apple et Google)
     // OPTIMISATION : Non-bloquant
     walletSyncService.syncClientWallet(clientId, empresaId).catch(e =>

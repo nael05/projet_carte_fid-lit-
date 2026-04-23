@@ -466,41 +466,40 @@
 .hist-btn-confirm-delete:disabled { opacity: 0.5; cursor: default; }
 
 /* ---- RESPONSIVE ---- */
+
+/* Tablette : deux colonnes mais inputs un peu plus petits */
 @media (max-width: 640px) {
-  /* Topbar plus compact */
   .hist-topbar { padding: 10px 12px; gap: 8px; }
   .hist-topbar-title h2 { font-size: 15px; }
   .hist-back-btn,
   .hist-filter-toggle,
   .hist-delete-top-btn { width: 34px; height: 34px; }
 
-  /* Filtre : colonne unique */
-  .hist-filter-panel { padding: 12px; }
-  .hist-filter-grid {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-  .hist-field--wide { grid-column: span 1; }
-
-  /* Stats bar */
-  .hist-stats-bar { padding: 6px 12px; }
-  .hist-stats-count { font-size: 12px; }
-
-  /* Body */
   .hist-body { padding: 10px 12px; }
-
-  /* Rows */
   .hist-row { padding: 10px 12px; gap: 9px; }
   .hist-row-icon { width: 30px; height: 30px; border-radius: 8px; }
   .hist-type-label { font-size: 12px; }
   .hist-client-name { font-size: 11px; }
   .hist-pts { font-size: 13px; }
   .hist-time { font-size: 10px; }
-
-  /* Day header */
   .hist-day-label { font-size: 10px; }
-
-  /* Confirm */
   .hist-confirm-card { padding: 24px 18px 18px; }
   .hist-confirm-card h3 { font-size: 15px; }
+}
+
+/* Mobile : grille en colonne unique */
+@media (max-width: 480px) {
+  .hist-filter-panel { padding: 10px 12px; }
+  .hist-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .hist-field--wide { grid-column: span 1; }
+  .hist-filter-footer { justify-content: stretch; }
+  .hist-btn-clear,
+  .hist-btn-apply { flex: 1; justify-content: center; }
+
+  .hist-stats-bar { padding: 6px 12px; }
+  .hist-stats-count { font-size: 12px; }
 }

@@ -110,10 +110,10 @@
 
 .hist-filter-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
-  min-width: 0;
   margin-bottom: 10px;
+  overflow: hidden;
 }
 
 .hist-field {
@@ -136,7 +136,6 @@
   background: var(--bg-elevated, #fff);
   border: 1px solid var(--border-medium);
   border-radius: 9px;
-  min-width: 0;
   padding: 8px 10px;
   font-size: 13px;
   font-family: var(--font-family);
@@ -145,7 +144,10 @@
   outline: none;
   transition: border-color 0.15s;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 .dark-mode .hist-field input,
 .dark-mode .hist-field select { background: var(--bg-subtle); }

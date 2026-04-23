@@ -162,6 +162,7 @@
 .settings-group textarea:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 /* Color Pickers Grid */
@@ -860,12 +861,12 @@
   transition: var(--transition);
 }
 
-.form-field input:focus, 
+.form-field input:focus,
 .form-field textarea:focus {
   outline: none;
   background: var(--bg-surface);
   border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .field-hint {

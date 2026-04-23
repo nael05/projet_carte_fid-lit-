@@ -338,7 +338,7 @@ function ProDashboard() {
     const csvContent = [headers, ...rows]
       .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
       .join('\n')
-    const blob = new Blob(['sep=;\n' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['﻿sep=;\n' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `clients-${proInfo?.nom?.toLowerCase().replace(/\s+/g, '-') || 'export'}.csv`

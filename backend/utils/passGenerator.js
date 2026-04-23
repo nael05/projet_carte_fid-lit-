@@ -455,6 +455,7 @@ export class PassGenerator {
             key: 'instagram',
             label: 'INSTAGRAM',
             value: social.url,
+            attributedValue: `<a href='${social.url}'>${social.displayHandle}</a>`,
             dataDetectorTypes: ['PKDataDetectorTypeLink']
           });
         }
@@ -467,6 +468,7 @@ export class PassGenerator {
             key: 'facebook',
             label: 'FACEBOOK',
             value: social.url,
+            attributedValue: `<a href='${social.url}'>${social.displayHandle}</a>`,
             dataDetectorTypes: ['PKDataDetectorTypeLink']
           });
         }
@@ -479,6 +481,7 @@ export class PassGenerator {
             key: 'tiktok',
             label: 'TIKTOK',
             value: social.url,
+            attributedValue: `<a href='${social.url}'>${social.displayHandle}</a>`,
             dataDetectorTypes: ['PKDataDetectorTypeLink']
           });
         }

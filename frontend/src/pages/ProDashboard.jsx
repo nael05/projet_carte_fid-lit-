@@ -670,34 +670,41 @@ function ProDashboard() {
                         </div>
                       )}
                     </div>
-                    <div className="pro-form-group" style={{ marginTop: '16px' }}>
-                      <label>Solde maximum de points par client</label>
-                      <div className="pro-form-row" style={{ alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Illimité"
-                          value={loyaltyConfig.max_points_balance ?? ''}
-                          onChange={e => setLoyaltyConfig({
-                            ...loyaltyConfig,
-                            max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
-                          })}
-                          style={{ maxWidth: '150px' }}
-                        />
-                        {loyaltyConfig.max_points_balance !== null && loyaltyConfig.max_points_balance !== undefined && (
-                          <button
-                            type="button"
-                            className="pro-action-btn"
-                            onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}
-                            title="Supprimer la limite"
-                          ><X size={14} /></button>
-                        )}
-                      </div>
-                      <p className="pro-hint" style={{ marginTop: '6px' }}>
+                    <div style={{ marginTop: '20px', border: '1px solid var(--border-light)', borderRadius: '10px', overflow: 'hidden' }}>
+                      <div style={{ padding: '12px 16px', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>Solde maximum par client</span>
                         {loyaltyConfig.max_points_balance
-                          ? `Un client ne peut pas dépasser ${loyaltyConfig.max_points_balance} pts. Ex : à 450 pts, il ne gagnera que ${loyaltyConfig.max_points_balance - 450 > 0 ? loyaltyConfig.max_points_balance - 450 : 0} pts supplémentaires max.`
-                          : 'Aucune limite — laisser vide pour illimité.'}
-                      </p>
+                          ? <span style={{ background: 'var(--accent)', color: '#fff', padding: '3px 12px', borderRadius: '20px', fontWeight: 700, fontSize: '13px' }}>{loyaltyConfig.max_points_balance} pts max</span>
+                          : <span style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)', padding: '3px 12px', borderRadius: '20px', fontSize: '12px' }}>Illimité</span>
+                        }
+                      </div>
+                      <div style={{ padding: '14px 16px' }}>
+                        <p className="pro-hint" style={{ marginBottom: '10px' }}>
+                          Un client ne pourra jamais dépasser ce solde total. Exemple&nbsp;: s'il est à 480&nbsp;pts et que la limite est 500, il ne gagnera que 20&nbsp;pts.
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Ex : 500"
+                            value={loyaltyConfig.max_points_balance ?? ''}
+                            onChange={e => setLoyaltyConfig({
+                              ...loyaltyConfig,
+                              max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
+                            })}
+                          />
+                          {loyaltyConfig.max_points_balance !== null && loyaltyConfig.max_points_balance !== undefined && (
+                            <button
+                              type="button"
+                              className="pro-btn-secondary"
+                              style={{ whiteSpace: 'nowrap' }}
+                              onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}
+                            >
+                              Désactiver
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <button type="submit" className="pro-btn-primary" style={{ marginTop: '15px' }} disabled={savingSettings}>
                       {savingSettings ? <Loader2 size={16} className="pro-spin" /> : <Save size={16} />} Enregistrer Mode

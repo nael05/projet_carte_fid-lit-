@@ -155,14 +155,14 @@
   font-size: 14px;
   background: var(--bg-app);
   color: var(--text-primary);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .settings-group input:focus,
 .settings-group textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-light);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 /* Color Pickers Grid */
@@ -847,7 +847,7 @@
   margin-bottom: 4px;
 }
 
-.form-field input, 
+.form-field input,
 .form-field textarea {
   width: 100%;
   min-height: 44px;
@@ -858,7 +858,7 @@
   font-size: 15px;
   color: var(--text-primary);
   font-family: var(--font-family);
-  transition: var(--transition);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-field input:focus,
@@ -866,7 +866,7 @@
   outline: none;
   background: var(--bg-surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-light);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 .field-hint {
@@ -1001,7 +1001,7 @@
   min-height: 72px;
 }
 .dark-mode .prox-textarea { background: var(--bg-elevated); }
-.prox-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.prox-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
 .prox-textarea::placeholder { color: var(--text-tertiary); }
 
 .prox-hint {
@@ -1029,7 +1029,7 @@
   min-width: 0;
 }
 .dark-mode .prox-input { background: var(--bg-elevated); }
-.prox-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.prox-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
 .prox-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
 
 .prox-coord-row {

@@ -62,8 +62,8 @@ export const createWalletPass = async (req, res) => {
        LEFT JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
        LEFT JOIN card_customization cc ON e.id = cc.company_id
-       WHERE c.id = ?`,
-      [clientId]
+       WHERE c.id = ? AND c.entreprise_id = ?`,
+      [clientId, req.user.id]
     );
 
     if (!clientRows || clientRows.length === 0) {
@@ -117,7 +117,7 @@ export const createWalletPass = async (req, res) => {
         });
       } catch (err) {
         logger.error('Erreur génération Google Wallet', err);
-        return res.status(500).json({ error: 'Erreur génération Google Wallet', details: err.message });
+        return res.status(500).json({ error: 'Erreur génération Google Wallet' });
       }
     }
 
@@ -224,7 +224,7 @@ export const createWalletPass = async (req, res) => {
 
   } catch (error) {
     logger.error(`❌ Erreur création pass: ${error.message}`);
-    res.status(500).json({ error: 'Erreur création pass', details: error.message });
+    res.status(500).json({ error: 'Erreur création pass' });
   }
 };
 
@@ -293,7 +293,7 @@ export const addPointsToWallet = async (req, res) => {
     });
   } catch (error) {
     logger.error(`❌ Erreur ajout points: ${error.message}`);
-    res.status(500).json({ error: 'Erreur lors de l\'ajout de points', details: error.message });
+    res.status(500).json({ error: 'Erreur lors de l\'ajout de points' });
   }
 };
 
@@ -305,16 +305,16 @@ export const getWalletStatus = async (req, res) => {
     const { clientId } = req.params;
 
     const [walletRows] = await db.query(
-      `SELECT wc.id, wc.pass_serial_number, wc.points_balance, wc.stamps_balance, 
+      `SELECT wc.id, wc.pass_serial_number, wc.points_balance, wc.stamps_balance,
               wc.wallet_added_at, wc.last_updated,
               e.loyalty_type, COUNT(apr.id) as device_count
        FROM wallet_cards wc
-       LEFT JOIN clients c ON wc.client_id = c.id
+       JOIN clients c ON wc.client_id = c.id
        LEFT JOIN entreprises e ON c.entreprise_id = e.id
        LEFT JOIN apple_pass_registrations apr ON wc.pass_serial_number = apr.pass_serial_number
-       WHERE wc.client_id = ? OR wc.pass_serial_number = ?
+       WHERE wc.client_id = ? AND c.entreprise_id = ?
        GROUP BY wc.id`,
-      [clientId, clientId]
+      [clientId, req.user.id]
     );
 
     if (!walletRows || walletRows.length === 0) {
@@ -335,7 +335,7 @@ export const getWalletStatus = async (req, res) => {
     });
   } catch (error) {
     logger.error(`❌ Erreur statut: ${error.message}`);
-    res.status(500).json({ error: 'Erreur récupération statut', details: error.message });
+    res.status(500).json({ error: 'Erreur récupération statut' });
   }
 };
 

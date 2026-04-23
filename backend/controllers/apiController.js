@@ -69,7 +69,7 @@ export const adminLogin = async (req, res) => {
 export const getEnterprises = async (req, res) => {
   try {
     const [enterprises] = await pool.query(
-      'SELECT id, nom, email, prenom, telephone, statut, loyalty_type, temporary_password, must_change_password, created_at FROM entreprises ORDER BY created_at DESC'
+      'SELECT id, nom, email, prenom, telephone, statut, loyalty_type, must_change_password, created_at FROM entreprises ORDER BY created_at DESC'
     );
 
     res.json(enterprises);
@@ -375,9 +375,9 @@ export const changePassword = async (req, res) => {
     //   [empresaId, req.headers.authorization.split(' ')[1]]
     // );
 
-    // UPDATE: changer le mot de passe et mettre must_change_password à FALSE
+    // UPDATE: changer le mot de passe, effacer le mdp temporaire et désactiver le flag
     const [updateResult] = await pool.query(
-      'UPDATE entreprises SET mot_de_passe = ?, must_change_password = FALSE WHERE id = ?',
+      'UPDATE entreprises SET mot_de_passe = ?, must_change_password = FALSE, temporary_password = NULL WHERE id = ?',
       [hashedPassword, empresaId]
     );
 
@@ -674,7 +674,7 @@ export const handleScan = async (req, res) => {
     });
   } catch (err) {
     logger.error('Handle scan error', err);
-    res.status(500).json({ error: 'Erreur SQL [SCAN]: ' + err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 

@@ -53,11 +53,19 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 const ipRangeRegex = /^http:\/\/(192\.168|10)\.\d+\.\d+:(300[0-9]|5[0-9]{3})$/;
 
 app.use(cors({
-  origin: true, // Répercuter l'origine de la requête pour éviter les erreurs CORS bloquantes
+  origin: (origin, callback) => {
+    // Requêtes sans origine (ex: Postman, appels server-to-server Apple Wallet)
+    if (!origin) return callback(null, true);
+    const allowed = allowedOrigins.some(o =>
+      typeof o === 'string' ? o === origin : o.test(origin)
+    );
+    if (allowed) return callback(null, true);
+    callback(new Error(`CORS: origine non autorisée — ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Id'],
-  maxAge: 86400, // 24 heures
+  maxAge: 86400,
 }));
 
 // ===== BODY PARSER =====

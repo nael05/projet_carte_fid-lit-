@@ -120,7 +120,7 @@ export const updateLoyaltyConfig = async (req, res) => {
       stack: err.stack 
     });
     // Message V3 pour confirmer que le code est bien à jour sur le serveur
-    res.status(500).json({ error: 'Erreur SQL [V3]: ' + err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 

@@ -10,8 +10,7 @@
 import express from 'express';
 import * as walletAppController from '../controllers/walletAppController.js';
 import * as appleWebserviceController from '../controllers/appleWebserviceController.js';
-import { verifyToken, isPro } from '../middlewares/auth.js';
-import passGenerator from '../utils/passGenerator.js';
+import { verifyToken, isPro, isAdmin } from '../middlewares/auth.js';
 import db from '../db.js';
 import logger from '../utils/logger.js';
 
@@ -139,7 +138,7 @@ router.post('/wallet/v1/log', appleWebserviceController.logAppleWalletErrors);
  * Liste toutes les cartes créées pour une entreprise
  * Auth: JWT Token (Admin)
  */
-router.get('/app/wallet/admin/cards/:companyId', verifyToken, async (req, res) => {
+router.get('/app/wallet/admin/cards/:companyId', verifyToken, isAdmin, async (req, res) => {
   try {
     const { companyId } = req.params;
 
@@ -158,40 +157,7 @@ router.get('/app/wallet/admin/cards/:companyId', verifyToken, async (req, res) =
     res.json({ success: true, cards });
   } catch (error) {
     logger.error(`Erreur fetch admin cards: ${error.message}`);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/app/wallet/test-download
- * TEMPORAIRE: Route non-authentifiée pour tester directement sur un iPhone
- */
-router.get('/app/wallet/test-download', async (req, res) => {
-  try {
-    const dummyClient = {
-       clientId: 'test-123',
-       firstName: 'Test',
-       lastName: 'Client',
-       loyaltyType: 'stamps',
-       balance: 3,
-       stampMaxCount: 10,
-       qrCodeValue: 'TEST-12345',
-       createdAt: new Date().toISOString()
-    };
-    const dummyCustomization = {
-       apple_pass_description: 'Test Pass',
-       apple_organization_name: 'fidelyz test'
-    };
-
-    const passBuffer = await passGenerator.generateLoyaltyPass(dummyClient, dummyCustomization, 'TEST-123', 'fake-token-123456789');
-
-    res.set({
-      'Content-Type': 'application/vnd.apple.pkpass',
-      'Content-Disposition': 'attachment; filename="test.pkpass"'
-    });
-    res.send(passBuffer);
-  } catch (err) {
-    res.status(500).send("Erreur: " + err.message);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

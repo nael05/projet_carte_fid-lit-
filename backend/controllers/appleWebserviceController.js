@@ -74,19 +74,17 @@ export const registerDevice = async (req, res) => {
 
     // 2. Vérification de l'authentification (ApplePass <token>)
     const authHeader = req.headers.authorization;
-    let authToken = null;
-    
-    if (authHeader && authHeader.startsWith('ApplePass ')) {
-      authToken = authHeader.substring('ApplePass '.length);
-    } else {
-      logger.info(`ℹ️ Note: Header ApplePass non fourni pour ${serialNumber}. Continuation basée sur le SerialNumber.`);
+    if (!authHeader || !authHeader.startsWith('ApplePass ')) {
+      logger.warn(`⚠️ Enregistrement refusé: Header ApplePass manquant pour ${serialNumber}`);
+      return res.status(401).json({ error: 'Authorization required' });
     }
+    const authToken = authHeader.substring('ApplePass '.length);
 
     if (!deviceLibraryIdentifier || !serialNumber || !pushToken) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
-    // 3. Vérifier que le pass existe (et vérifier le token s'il est fourni)
+    // 3. Vérifier que le pass existe et que le token est valide
     const [passRows] = await db.query(
       'SELECT id, authentication_token FROM wallet_cards WHERE pass_serial_number = ?',
       [serialNumber]
@@ -97,9 +95,9 @@ export const registerDevice = async (req, res) => {
       return res.status(404).json({ error: 'Pass not found' });
     }
 
-    if (authToken && passRows[0].authentication_token !== authToken) {
-      logger.warn(`🔒 Token fourni invalide pour le pass ${serialNumber}. On loggue mais on autorise l'inscription du pushToken pour ne pas couper la synchro.`);
-      // Note: On pourrait bloquer ici, mais en debug on préfère laisser l'iPhone s'enregistrer
+    if (passRows[0].authentication_token !== authToken) {
+      logger.warn(`🔒 Enregistrement refusé: Token invalide pour le pass ${serialNumber}`);
+      return res.status(401).json({ error: 'Invalid authentication token' });
     }
 
     // 4. Insérer ou mettre à jour l'enregistrement du device

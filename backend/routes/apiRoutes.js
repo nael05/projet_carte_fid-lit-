@@ -62,6 +62,8 @@ router.post('/pro/scan', verifyToken, isPro, apiController.handleScan);
 router.get('/pro/scan-lookup/:clientId', verifyToken, isPro, apiController.getScanInfo);
 router.post('/pro/scan/finalize', verifyToken, isPro, apiController.finalizeFullTransaction);
 router.put('/pro/adjust-points/:clientId', verifyToken, isPro, apiController.adjustPoints);
+router.get('/pro/history', verifyToken, isPro, apiController.getTransactionHistory);
+router.delete('/pro/history', verifyToken, isPro, apiController.deleteTransactionHistory);
 
 router.get('/pro/info', verifyToken, isPro, apiController.getProInfo);
 router.delete('/pro/clients/:clientId', verifyToken, isPro, apiController.deleteClient);

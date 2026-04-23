@@ -1,0 +1,408 @@
+/* ============================================================
+   HISTORY MODAL — Points & Rewards Transaction Log
+   ============================================================ */
+
+.hist-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.hist-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 780px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+/* ---- HEADER ---- */
+.hist-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.hist-header-left h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.hist-subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.hist-close {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.hist-close:hover { background: var(--border-light); }
+
+/* ---- FILTERS ---- */
+.hist-filters {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hist-filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hist-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 7px 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.hist-filter-client {
+  flex: 1;
+  min-width: 160px;
+}
+
+.hist-filter-group input,
+.hist-filter-group select {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.hist-filter-group input::placeholder { color: var(--text-tertiary); }
+
+.hist-filter-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hist-btn-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.hist-btn-search:hover { opacity: 0.88; }
+
+.hist-btn-reset {
+  padding: 8px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.hist-btn-reset:hover { background: var(--border-light); }
+
+.hist-btn-delete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #ef4444;
+  border-radius: 10px;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.hist-btn-delete:hover { background: #ef4444; color: #fff; }
+
+/* ---- BODY ---- */
+.hist-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.hist-loading {
+  display: flex;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text-tertiary);
+}
+
+.hist-empty {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+/* ---- DAY GROUP ---- */
+.hist-day-group { margin-bottom: 4px; }
+
+.hist-day-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 24px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* ---- ROW ---- */
+.hist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.1s;
+}
+.hist-row:hover { background: var(--bg-subtle); }
+.hist-row:last-child { border-bottom: none; }
+
+.hist-row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.hist-row-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ---- BADGES ---- */
+.hist-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hist-badge-add    { background: #dcfce7; color: #15803d; }
+.hist-badge-redeem { background: #fef9c3; color: #a16207; }
+.hist-badge-remove { background: #fee2e2; color: #b91c1c; }
+.hist-badge-default{ background: var(--bg-subtle); color: var(--text-secondary); }
+
+.dark-mode .hist-badge-add    { background: rgba(21,128,61,0.2);  color: #4ade80; }
+.dark-mode .hist-badge-redeem { background: rgba(161,98,7,0.2);   color: #fbbf24; }
+.dark-mode .hist-badge-remove { background: rgba(185,28,28,0.2);  color: #f87171; }
+
+/* ---- LABELS ---- */
+.hist-client {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.hist-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.hist-pts {
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.hist-pts-pos { color: #16a34a; }
+.hist-pts-neg { color: #dc2626; }
+
+.dark-mode .hist-pts-pos { color: #4ade80; }
+.dark-mode .hist-pts-neg { color: #f87171; }
+
+.hist-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* ---- PAGINATION ---- */
+.hist-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-light);
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.hist-pagination button {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+  transition: background 0.15s;
+}
+.hist-pagination button:hover:not(:disabled) { background: var(--border-light); }
+.hist-pagination button:disabled { opacity: 0.35; cursor: default; }
+
+/* ---- CONFIRM DELETE ---- */
+.hist-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.hist-confirm-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+.hist-confirm-icon {
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+.hist-confirm-box h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.hist-confirm-box p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.hist-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.hist-confirm-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.hist-confirm-cancel:hover { background: var(--border-light); }
+
+.hist-confirm-ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.hist-confirm-ok:hover:not(:disabled) { opacity: 0.88; }
+.hist-confirm-ok:disabled { opacity: 0.5; cursor: default; }
+
+/* ---- SPIN ---- */
+@keyframes hist-spin { to { transform: rotate(360deg); } }
+.hist-spin { animation: hist-spin 0.7s linear infinite; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 600px) {
+  .hist-modal { border-radius: 16px; max-height: 95vh; }
+  .hist-header { padding: 16px 16px 12px; }
+  .hist-filters { padding: 12px 16px; }
+  .hist-filter-row { gap: 8px; }
+  .hist-filter-group { padding: 6px 8px; }
+  .hist-row { padding: 10px 16px; }
+  .hist-day-label { padding: 6px 16px; }
+  .hist-desc { display: none; }
+  .hist-client { max-width: 110px; }
+  .hist-btn-delete { margin-left: 0; }
+}

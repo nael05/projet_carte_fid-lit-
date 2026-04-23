@@ -6,7 +6,8 @@ import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 import CardCustomizer from '../components/CardCustomizer'
-import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2, Sun, Moon, Gift, Lock, ChevronRight, PlusCircle } from 'lucide-react'
+import HistoryModal from '../components/HistoryModal'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2, Sun, Moon, Gift, Lock, ChevronRight, PlusCircle, History } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {
@@ -31,6 +32,7 @@ function ProDashboard() {
 
   const [redeemModal, setRedeemModal] = useState(null); // { clientId, clientName, rewards }
   const [deleteModal, setDeleteModal] = useState(null); // { clientId, clientName }
+  const [showHistory, setShowHistory] = useState(false)
   const [pointsToAdd, setPointsToAdd] = useState('');
 
   // Two-Step Transaction Flow
@@ -900,11 +902,40 @@ function ProDashboard() {
                     </button>
                   </div>
                 </div>
+
+                <button
+                  className="hist-open-btn"
+                  onClick={() => setShowHistory(true)}
+                  style={{
+                    marginTop: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '14px 18px',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '14px',
+                    color: 'var(--text-primary)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--border-light)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
+                >
+                  <History size={18} style={{ color: 'var(--accent)' }} />
+                  Historique des points &amp; cadeaux
+                  <ChevronRight size={16} style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }} />
+                </button>
               </div>
             </div>
           )}
         </main>
       )}
+
+      {showHistory && <HistoryModal onClose={() => setShowHistory(false)} />}
 
       {/* Mobile NavBar */}
       <nav className="pro-bottom-nav">

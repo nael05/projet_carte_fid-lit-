@@ -575,6 +575,64 @@ export const getClients = async (req, res) => {
   }
 };
 
+export const getTransactionHistory = async (req, res) => {
+  const empresaId = req.user.id;
+  const { dateFrom, dateTo, clientName, type, page = 1 } = req.query;
+  const limit = 100;
+  const offset = (parseInt(page) - 1) * limit;
+
+  try {
+    // Auto-purge des entrées de plus de 6 mois
+    await pool.query(
+      'DELETE FROM transaction_history WHERE entreprise_id = ? AND created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)',
+      [empresaId]
+    );
+
+    let where = 'WHERE th.entreprise_id = ?';
+    const params = [empresaId];
+
+    if (dateFrom) { where += ' AND DATE(th.created_at) >= ?'; params.push(dateFrom); }
+    if (dateTo)   { where += ' AND DATE(th.created_at) <= ?'; params.push(dateTo); }
+    if (type)     { where += ' AND th.type = ?'; params.push(type); }
+    if (clientName) {
+      where += ' AND CONCAT(c.prenom, " ", c.nom) LIKE ?';
+      params.push(`%${clientName}%`);
+    }
+
+    const [rows] = await pool.query(
+      `SELECT th.id, th.type, th.points_change, th.description, th.created_at,
+              c.nom, c.prenom, c.telephone
+       FROM transaction_history th
+       LEFT JOIN clients c ON c.id = th.client_id
+       ${where}
+       ORDER BY th.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    const [countRows] = await pool.query(
+      `SELECT COUNT(*) as total FROM transaction_history th LEFT JOIN clients c ON c.id = th.client_id ${where}`,
+      params
+    );
+
+    res.json({ transactions: rows, total: countRows[0].total, page: parseInt(page), limit });
+  } catch (err) {
+    logger.error('getTransactionHistory error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const deleteTransactionHistory = async (req, res) => {
+  const empresaId = req.user.id;
+  try {
+    await pool.query('DELETE FROM transaction_history WHERE entreprise_id = ?', [empresaId]);
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('deleteTransactionHistory error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
 export const deleteClient = async (req, res) => {
   const { clientId } = req.params;
   const empresaId = req.user.id;

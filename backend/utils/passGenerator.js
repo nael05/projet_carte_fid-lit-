@@ -397,6 +397,7 @@ export class PassGenerator {
           key: 'review_google',
           label: 'LAISSEZ-NOUS UN AVIS GOOGLE',
           value: customization.apple_review_url,
+          attributedValue: `<a href='${customization.apple_review_url}'>Cliquez ici</a>`,
           dataDetectorTypes: ['PKDataDetectorTypeLink']
         });
       }

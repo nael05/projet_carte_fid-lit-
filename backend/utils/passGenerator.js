@@ -289,9 +289,9 @@ export class PassGenerator {
         }
       }
 
-      // Toujours initialiser avec un tableau vide pour forcer l'écrasement du cache d'Apple Wallet.
-      // Sans ça, Apple Wallet garde les anciennes localisations ("fantômes") au lieu de les supprimer.
-      pass.locations = [];
+      // Collecter toutes les localisations valides puis les injecter via setLocations()
+      // (la lib stocke en interne via un Symbol — push direct sur pass.locations n'écrit pas dans le pass.json)
+      const validLocations = [];
 
       if (Array.isArray(locationsArray) && locationsArray.length > 0) {
         locationsArray.slice(0, 10).forEach(loc => {
@@ -305,11 +305,7 @@ export class PassGenerator {
           const rawText = (loc.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
           const cleanText = rawText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
 
-          this.safeAddLocation(pass, {
-            latitude: lat,
-            longitude: lng,
-            relevantText: cleanText.substring(0, 255)
-          });
+          validLocations.push({ latitude: lat, longitude: lng, relevantText: cleanText.substring(0, 255) });
           logger.info(`📍 [APPLE LOC ADD] Lat: ${lat}, Lng: ${lng}, Text: "${cleanText}"`);
         });
       } else {
@@ -318,16 +314,20 @@ export class PassGenerator {
         const fbLatValid = customization?.latitude !== '' && customization?.latitude != null && !isNaN(fbLat) && fbLat >= -90 && fbLat <= 90;
         const fbLngValid = customization?.longitude !== '' && customization?.longitude != null && !isNaN(fbLng) && fbLng >= -180 && fbLng <= 180;
         if (fbLatValid && fbLngValid) {
-          // Fallback ultime s'il reste des vieilles coordonnées non migrées (sera nullifié rapidement par le front)
+          // Fallback ultime s'il reste des vieilles coordonnées non migrées
           const rawFallbackText = (customization.relevant_text || customization.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
           const cleanFallbackText = rawFallbackText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
-          this.safeAddLocation(pass, {
-            latitude: fbLat,
-            longitude: fbLng,
-            relevantText: cleanFallbackText.substring(0, 255)
-          });
+          validLocations.push({ latitude: fbLat, longitude: fbLng, relevantText: cleanFallbackText.substring(0, 255) });
           logger.info(`📍 [APPLE FALLBACK ADD] Lat: ${fbLat}, Lng: ${fbLng}, Text: "${cleanFallbackText}"`);
         }
+      }
+
+      // setLocations() écrit dans propsSymbol → présent dans le pass.json final
+      // null = supprime la clé pour effacer les "fantômes" Apple Wallet
+      if (validLocations.length > 0) {
+        pass.setLocations(...validLocations);
+      } else {
+        pass.setLocations(null);
       }
 
       // --- LAYOUT PREMIUM (Style Fidelyz) ---

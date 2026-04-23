@@ -28,8 +28,15 @@ export const getLoyaltyConfig = async (req, res) => {
       [empresaId]
     );
 
+    const row = config[0];
+    let points_shortcuts = [];
+    if (row.points_shortcuts) {
+      try { points_shortcuts = JSON.parse(row.points_shortcuts); } catch (_) {}
+    }
+
     res.json({
-      ...config[0],
+      ...row,
+      points_shortcuts,
       reward_tiers: tiers
     });
   } catch (err) {
@@ -49,7 +56,8 @@ export const updateLoyaltyConfig = async (req, res) => {
     max_points_balance,
     apple_wallet_key,
     google_wallet_key,
-    push_notifications_enabled
+    push_notifications_enabled,
+    points_shortcuts
   } = req.body;
 
   try {
@@ -87,6 +95,12 @@ export const updateLoyaltyConfig = async (req, res) => {
         updates.push('max_points_balance = ?');
         // null = pas de limite, sinon valeur entière positive
         params.push(max_points_balance === null ? null : Math.max(1, parseInt(max_points_balance) || 1));
+      }
+      if (points_shortcuts !== undefined) {
+        updates.push('points_shortcuts = ?');
+        // null ou tableau vide = pas de raccourcis perso (utilise les défauts côté frontend)
+        const arr = Array.isArray(points_shortcuts) ? points_shortcuts.filter(n => Number.isInteger(n) && n > 0) : [];
+        params.push(arr.length > 0 ? JSON.stringify(arr) : null);
       }
 
       if (updates.length > 0) {

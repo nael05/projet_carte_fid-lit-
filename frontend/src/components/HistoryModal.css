@@ -112,6 +112,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  min-width: 0;
   margin-bottom: 10px;
 }
 
@@ -135,6 +136,7 @@
   background: var(--bg-elevated, #fff);
   border: 1px solid var(--border-medium);
   border-radius: 9px;
+  min-width: 0;
   padding: 8px 10px;
   font-size: 13px;
   font-family: var(--font-family);

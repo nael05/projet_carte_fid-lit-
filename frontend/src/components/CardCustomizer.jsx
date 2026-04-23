@@ -6,6 +6,8 @@ import {
   ShieldCheck, Phone, MapPin, Star
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
+import appleLogo from '../assets/apple.svg';
+import googleLogo from '../assets/google.svg';
 import './CardCustomizer.css';
 
 const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
@@ -311,13 +313,13 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
             className={`platform-btn apple ${platform === 'apple' ? 'active' : ''}`}
             onClick={() => { setPlatform('apple'); setActiveTab('appearance'); }}
           >
-            <Apple size={20} /> Apple Wallet
+            <img src={appleLogo} alt="Apple" style={{ width: 20, height: 20, objectFit: 'contain' }} /> Apple Wallet
           </button>
           <button
             className={`platform-btn google ${platform === 'google' ? 'active' : ''}`}
             onClick={() => { setPlatform('google'); setActiveTab('appearance'); }}
           >
-            <Smartphone size={20} /> Google Wallet
+            <img src={googleLogo} alt="Google" style={{ width: 20, height: 20, objectFit: 'contain' }} /> Google Wallet
           </button>
         </div>
 

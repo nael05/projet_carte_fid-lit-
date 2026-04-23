@@ -324,6 +324,28 @@ function ProDashboard() {
 
   const handleLogout = () => { logout(); navigate('/pro/login') }
 
+  const handleExportCSV = () => {
+    const headers = ['Prénom', 'Nom', 'Téléphone', 'Email', 'Points', 'Type Wallet', 'Optin Marketing']
+    const rows = clients.map(c => [
+      c.prenom || '',
+      c.nom || '',
+      c.telephone || '',
+      c.email || '',
+      c.points || 0,
+      c.type_wallet || '',
+      c.marketing_optin ? 'Oui' : 'Non'
+    ])
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+      .join('\n')
+    const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `clients-${proInfo?.nom?.toLowerCase().replace(/\s+/g, '-') || 'export'}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   const handleDownloadQR = () => {
     const svg = qrRef.current.querySelector('svg')
     const svgData = new XMLSerializer().serializeToString(svg)
@@ -564,6 +586,12 @@ function ProDashboard() {
                   <h2>Clients ({clients.length})</h2>
                   <p>Gérez vos clients et leur cagnotte</p>
                 </div>
+                {clients.length > 0 && (
+                  <button className="pro-export-btn" onClick={handleExportCSV} title="Exporter en Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Exporter
+                  </button>
+                )}
               </div>
 
               <div className="pro-search-bar">

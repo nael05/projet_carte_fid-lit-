@@ -231,6 +231,23 @@
   font-size: 13px;
   color: var(--text-tertiary);
 }
+.pro-export-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.pro-export-btn:hover { background: var(--bg-hover); transform: translateY(-1px); }
 
 /* ---- SCANNER ---- */
 .pro-scanner-area {

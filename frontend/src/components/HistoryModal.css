@@ -17,6 +17,7 @@
   background: var(--bg-app);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   animation: histIn 200ms ease-out;
 }
 
@@ -109,53 +110,82 @@
   overflow-x: hidden;
 }
 
-.hist-filter-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+/* Ligne dates : flex avec labels inline */
+.hist-filter-dates {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
-  width: 100%;
+  margin-bottom: 8px;
+  flex-wrap: nowrap;
   overflow: hidden;
 }
 
-.hist-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.hist-field--wide { grid-column: span 2; }
-
-.hist-field span {
-  font-size: 11px;
+.hist-filter-label {
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.hist-field input,
-.hist-field select {
-  background: var(--bg-elevated, #fff);
-  border: 1px solid var(--border-medium);
-  border-radius: 9px;
-  padding: 8px 10px;
-  font-size: 13px;
-  font-family: var(--font-family);
-  font-weight: 500;
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color 0.15s;
-  width: 100%;
+.hist-date-input {
+  flex: 1;
   min-width: 0;
   max-width: 100%;
+  padding: 8px 8px;
+  border: 1px solid var(--border-medium);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  background: var(--bg-elevated, #fff);
+  outline: none;
   box-sizing: border-box;
-  overflow: hidden;
+  transition: border-color 0.15s;
 }
-.dark-mode .hist-field input,
-.dark-mode .hist-field select { background: var(--bg-subtle); }
-.hist-field input:focus,
-.hist-field select:focus { border-color: var(--accent); }
-.hist-field input::placeholder { color: var(--text-tertiary); font-weight: 400; }
+.dark-mode .hist-date-input { background: var(--bg-subtle); }
+.hist-date-input:focus { border-color: var(--accent); }
+
+/* Ligne client + type */
+.hist-filter-row2 {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hist-text-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-medium);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  background: var(--bg-elevated, #fff);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.dark-mode .hist-text-input { background: var(--bg-subtle); }
+.hist-text-input:focus { border-color: var(--accent); }
+.hist-text-input::placeholder { color: var(--text-tertiary); }
+
+.hist-select-input {
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-medium);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  background: var(--bg-elevated, #fff);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.dark-mode .hist-select-input { background: var(--bg-subtle); }
+.hist-select-input:focus { border-color: var(--accent); }
 
 .hist-filter-footer {
   display: flex;
@@ -493,19 +523,13 @@
   .hist-confirm-card h3 { font-size: 15px; }
 }
 
-/* Mobile : grille en colonne unique */
 @media (max-width: 640px) {
-  .hist-filter-panel { padding: 10px 12px; overflow-x: hidden; }
-  .hist-filter-grid {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  .hist-field--wide { grid-column: span 1; }
+  .hist-filter-panel { padding: 10px 12px; }
+  .hist-filter-row2 { flex-wrap: wrap; }
+  .hist-select-input { width: 100%; }
   .hist-filter-footer { justify-content: stretch; }
   .hist-btn-clear,
   .hist-btn-apply { flex: 1; justify-content: center; }
-
   .hist-stats-bar { padding: 6px 12px; }
   .hist-stats-count { font-size: 12px; }
 }

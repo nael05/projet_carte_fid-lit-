@@ -120,34 +120,32 @@ export default function HistoryModal({ onClose }) {
         {/* ── FILTER PANEL (accordéon) ── */}
         {showFilters && (
           <div className="hist-filter-panel">
-            <div className="hist-filter-grid">
-              <label className="hist-field">
-                <span>Du</span>
-                <input type="date" value={draft.dateFrom}
-                  onChange={e => setDraft(f => ({ ...f, dateFrom: e.target.value }))} />
-              </label>
-              <label className="hist-field">
-                <span>Au</span>
-                <input type="date" value={draft.dateTo}
-                  onChange={e => setDraft(f => ({ ...f, dateTo: e.target.value }))} />
-              </label>
-              <label className="hist-field hist-field--wide">
-                <span>Client</span>
-                <input type="text" placeholder="Nom du client…" value={draft.clientName}
-                  onChange={e => setDraft(f => ({ ...f, clientName: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && handleApply()} />
-              </label>
-              <label className="hist-field">
-                <span>Type</span>
-                <select value={draft.type}
-                  onChange={e => setDraft(f => ({ ...f, type: e.target.value }))}>
-                  <option value="">Tout</option>
-                  <option value="add_points">Points ajoutés</option>
-                  <option value="redeem_reward">Cadeau utilisé</option>
-                  <option value="remove_points">Points retirés</option>
-                </select>
-              </label>
+
+            {/* Ligne dates */}
+            <div className="hist-filter-dates">
+              <span className="hist-filter-label">Du</span>
+              <input className="hist-date-input" type="date" value={draft.dateFrom}
+                onChange={e => setDraft(f => ({ ...f, dateFrom: e.target.value }))} />
+              <span className="hist-filter-label">au</span>
+              <input className="hist-date-input" type="date" value={draft.dateTo}
+                onChange={e => setDraft(f => ({ ...f, dateTo: e.target.value }))} />
             </div>
+
+            {/* Ligne client + type */}
+            <div className="hist-filter-row2">
+              <input className="hist-text-input" type="text" placeholder="Nom du client…"
+                value={draft.clientName}
+                onChange={e => setDraft(f => ({ ...f, clientName: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleApply()} />
+              <select className="hist-select-input" value={draft.type}
+                onChange={e => setDraft(f => ({ ...f, type: e.target.value }))}>
+                <option value="">Tout type</option>
+                <option value="add_points">Points ajoutés</option>
+                <option value="redeem_reward">Cadeau utilisé</option>
+                <option value="remove_points">Points retirés</option>
+              </select>
+            </div>
+
             <div className="hist-filter-footer">
               <button className="hist-btn-clear" onClick={handleClear}>
                 <X size={13} /> Effacer

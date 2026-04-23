@@ -81,16 +81,20 @@
   gap: 12px;
   padding: 12px;
   border: none;
-  background: #000;
+  background: transparent;
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .platform-btn img {
+  filter: brightness(0) invert(0.5);
+}
+
+.platform-btn.active img {
   filter: brightness(0) invert(1);
 }
 

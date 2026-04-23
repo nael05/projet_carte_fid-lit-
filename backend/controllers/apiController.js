@@ -995,6 +995,7 @@ export const getCardCustomization = async (req, res) => {
       try {
         parsedResult.locations = JSON.parse(parsedResult.locations);
       } catch (e) {
+        logger.warn('locations JSON parse error in getCardCustomization', { raw: parsedResult.locations, error: e.message });
         parsedResult.locations = [];
       }
     }

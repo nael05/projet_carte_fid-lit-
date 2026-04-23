@@ -177,7 +177,12 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
 
   const handleLocationChange = (index, field, value) => {
     const updatedLocs = [...(config.locations || [])];
-    updatedLocs[index] = { ...updatedLocs[index], [field]: value };
+    let parsed = value;
+    if (field === 'latitude' || field === 'longitude') {
+      parsed = value === '' ? '' : parseFloat(value);
+      if (isNaN(parsed)) parsed = '';
+    }
+    updatedLocs[index] = { ...updatedLocs[index], [field]: parsed };
     setConfig(prev => ({ ...prev, locations: updatedLocs }));
   };
 
@@ -541,7 +546,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                         <label style={{ fontSize: '0.8rem' }}>Latitude</label>
                         <input
                           type="number" step="any"
-                          value={loc.latitude || ''}
+                          value={loc.latitude ?? ''}
                           onChange={(e) => handleLocationChange(index, 'latitude', e.target.value)}
                           placeholder="Ex: 48.8566"
                         />
@@ -550,7 +555,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
                         <label style={{ fontSize: '0.8rem' }}>Longitude</label>
                         <input
                           type="number" step="any"
-                          value={loc.longitude || ''}
+                          value={loc.longitude ?? ''}
                           onChange={(e) => handleLocationChange(index, 'longitude', e.target.value)}
                           placeholder="Ex: 2.3522"
                         />

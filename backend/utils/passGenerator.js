@@ -295,29 +295,39 @@ export class PassGenerator {
 
       if (Array.isArray(locationsArray) && locationsArray.length > 0) {
         locationsArray.slice(0, 10).forEach(loc => {
-          if (loc.latitude && loc.longitude) {
-            const rawText = (loc.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
-            const cleanText = rawText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
+          if (loc.latitude === '' || loc.latitude === null || loc.latitude === undefined) return;
+          if (loc.longitude === '' || loc.longitude === null || loc.longitude === undefined) return;
+          const lat = Number(loc.latitude);
+          const lng = Number(loc.longitude);
+          if (isNaN(lat) || isNaN(lng)) return;
+          if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
-            this.safeAddLocation(pass, {
-              latitude: Number(loc.latitude),
-              longitude: Number(loc.longitude),
-              relevantText: cleanText.substring(0, 255)
-            });
-            logger.info(`📍 [APPLE LOC ADD] Lat: ${loc.latitude}, Lng: ${loc.longitude}, Text: "${cleanText}"`);
-          }
+          const rawText = (loc.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
+          const cleanText = rawText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
+
+          this.safeAddLocation(pass, {
+            latitude: lat,
+            longitude: lng,
+            relevantText: cleanText.substring(0, 255)
+          });
+          logger.info(`📍 [APPLE LOC ADD] Lat: ${lat}, Lng: ${lng}, Text: "${cleanText}"`);
         });
-      } else if (customization?.latitude && customization?.longitude) {
-        // Fallback ultime s'il reste des vieilles coordonnées non migrées (sera nullifié rapidement par le front)
-        const rawFallbackText = (customization.relevant_text || customization.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
-        const cleanFallbackText = rawFallbackText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
-          
-        this.safeAddLocation(pass, {
-          latitude: Number(customization.latitude),
-          longitude: Number(customization.longitude),
-          relevantText: cleanFallbackText.substring(0, 255)
-        });
-        logger.info(`📍 [APPLE FALLBACK ADD] Lat: ${customization.latitude}, Lng: ${customization.longitude}, Text: "${cleanFallbackText}"`);
+      } else {
+        const fbLat = Number(customization?.latitude);
+        const fbLng = Number(customization?.longitude);
+        const fbLatValid = customization?.latitude !== '' && customization?.latitude != null && !isNaN(fbLat) && fbLat >= -90 && fbLat <= 90;
+        const fbLngValid = customization?.longitude !== '' && customization?.longitude != null && !isNaN(fbLng) && fbLng >= -180 && fbLng <= 180;
+        if (fbLatValid && fbLngValid) {
+          // Fallback ultime s'il reste des vieilles coordonnées non migrées (sera nullifié rapidement par le front)
+          const rawFallbackText = (customization.relevant_text || customization.relevantText || '').replace(/Bientot/gi, '').replace(/Soon/gi, '').trim();
+          const cleanFallbackText = rawFallbackText || `Bienvenue chez ${clientData.companyName || 'nous'}`;
+          this.safeAddLocation(pass, {
+            latitude: fbLat,
+            longitude: fbLng,
+            relevantText: cleanFallbackText.substring(0, 255)
+          });
+          logger.info(`📍 [APPLE FALLBACK ADD] Lat: ${fbLat}, Lng: ${fbLng}, Text: "${cleanFallbackText}"`);
+        }
       }
 
       // --- LAYOUT PREMIUM (Style Fidelyz) ---

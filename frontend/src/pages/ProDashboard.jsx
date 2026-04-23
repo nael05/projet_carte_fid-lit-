@@ -30,6 +30,7 @@ function ProDashboard() {
   const [clientSearch, setClientSearch] = useState('')
 
   const [redeemModal, setRedeemModal] = useState(null); // { clientId, clientName, rewards }
+  const [deleteModal, setDeleteModal] = useState(null); // { clientId, clientName }
   const [pointsToAdd, setPointsToAdd] = useState('');
 
   // Two-Step Transaction Flow
@@ -293,14 +294,15 @@ function ProDashboard() {
     }
   }
 
-  const handleDeleteClient = async (clientId, clientName) => {
-    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer le client ${clientName} ? Cette action supprimera également sa carte de fidélité et son historique.`)) {
-      return;
-    }
+  const handleDeleteClient = (clientId, clientName) => {
+    setDeleteModal({ clientId, clientName });
+  }
 
+  const handleConfirmDelete = async () => {
+    const { clientId, clientName } = deleteModal;
+    setDeleteModal(null);
     try {
       await api.delete(`/pro/clients/${clientId}`);
-      // Mettre à jour la liste locale
       setClients(prev => prev.filter(c => c.id !== clientId));
       addToast(`Le client ${clientName} a été supprimé.`, 'error');
     } catch (err) {
@@ -851,6 +853,24 @@ function ProDashboard() {
             <div className="pro-modal-actions">
               <button className="pro-action-btn" onClick={() => adjustPoints(selectedClientCard.id, -1)}><Minus size={16} /></button>
               <button className="pro-action-btn pro-action-add" onClick={() => adjustPoints(selectedClientCard.id, 1)}><Plus size={16} /></button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmation Suppression Client */}
+      {deleteModal && (
+        <div className="modal-backdrop" style={{ zIndex: 1100 }} onClick={() => setDeleteModal(null)}>
+          <div className="pro-modal delete-confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className="delete-confirm-icon"><Trash2 size={28} /></div>
+            <h3>Supprimer le client</h3>
+            <p className="delete-confirm-text">
+              Êtes-vous sûr de vouloir supprimer <strong>{deleteModal.clientName}</strong> ?<br />
+              Sa carte de fidélité et son historique seront définitivement supprimés.
+            </p>
+            <div className="delete-confirm-actions">
+              <button className="delete-confirm-cancel" onClick={() => setDeleteModal(null)}>Annuler</button>
+              <button className="delete-confirm-ok" onClick={handleConfirmDelete}>Supprimer</button>
             </div>
           </div>
         </div>

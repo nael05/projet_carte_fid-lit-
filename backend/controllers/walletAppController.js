@@ -258,18 +258,20 @@ export const addPointsToWallet = async (req, res) => {
     const wallet = walletRows[0];
     const { id: walletId, pass_serial_number, loyalty_type } = wallet;
 
-    // Appliquer le plafond par transaction si configuré
-    let cappedPoints = pointsToAdd;
-    const [cfgRows] = await db.query(
-      'SELECT max_points_per_transaction FROM loyalty_config WHERE entreprise_id = ?',
-      [wallet.entreprise_id]
-    );
-    if (cfgRows.length > 0 && cfgRows[0].max_points_per_transaction !== null) {
-      cappedPoints = Math.min(cappedPoints, cfgRows[0].max_points_per_transaction);
-    }
-
     const isStamps = loyalty_type === 'stamps';
     const oldBalance = isStamps ? wallet.stamps_balance : wallet.points_balance;
+
+    // Plafonner le solde total si configuré
+    let cappedPoints = pointsToAdd;
+    const [cfgRows] = await db.query(
+      'SELECT max_points_balance FROM loyalty_config WHERE entreprise_id = ?',
+      [wallet.entreprise_id]
+    );
+    if (cfgRows.length > 0 && cfgRows[0].max_points_balance !== null) {
+      const roomLeft = Math.max(0, cfgRows[0].max_points_balance - oldBalance);
+      cappedPoints = Math.min(cappedPoints, roomLeft);
+    }
+
     const newBalance = oldBalance + cappedPoints;
 
     await db.query(`UPDATE wallet_cards SET ${isStamps ? 'stamps_balance' : 'points_balance'} = ?, last_updated = NOW() WHERE id = ?`, [newBalance, walletId]);

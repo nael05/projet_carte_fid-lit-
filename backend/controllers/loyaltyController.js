@@ -46,7 +46,7 @@ export const updateLoyaltyConfig = async (req, res) => {
   const {
     points_adding_mode,
     points_per_purchase,
-    max_points_per_transaction,
+    max_points_balance,
     apple_wallet_key,
     google_wallet_key,
     push_notifications_enabled
@@ -83,10 +83,10 @@ export const updateLoyaltyConfig = async (req, res) => {
         updates.push('push_notifications_enabled = ?');
         params.push(push_notifications_enabled ? 1 : 0);
       }
-      if (max_points_per_transaction !== undefined) {
-        updates.push('max_points_per_transaction = ?');
+      if (max_points_balance !== undefined) {
+        updates.push('max_points_balance = ?');
         // null = pas de limite, sinon valeur entière positive
-        params.push(max_points_per_transaction === null ? null : Math.max(1, parseInt(max_points_per_transaction) || 1));
+        params.push(max_points_balance === null ? null : Math.max(1, parseInt(max_points_balance) || 1));
       }
 
       if (updates.length > 0) {

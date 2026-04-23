@@ -41,7 +41,7 @@ function ProDashboard() {
   const [loyaltyConfig, setLoyaltyConfig] = useState({
     points_adding_mode: 'automatic',
     points_per_purchase: 10,
-    max_points_per_transaction: null,
+    max_points_balance: null,
     reward_tiers: []
   })
   
@@ -670,34 +670,34 @@ function ProDashboard() {
                         </div>
                       )}
                     </div>
-                    <div className="pro-form-group" style={{ marginTop: '12px' }}>
-                      <label>Plafond de points par transaction</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="pro-form-group" style={{ marginTop: '16px' }}>
+                      <label>Solde maximum de points par client</label>
+                      <div className="pro-form-row" style={{ alignItems: 'center', gap: '10px', marginTop: '6px' }}>
                         <input
                           type="number"
                           min="1"
                           placeholder="Illimité"
-                          value={loyaltyConfig.max_points_per_transaction ?? ''}
+                          value={loyaltyConfig.max_points_balance ?? ''}
                           onChange={e => setLoyaltyConfig({
                             ...loyaltyConfig,
-                            max_points_per_transaction: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
+                            max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
                           })}
-                          style={{ width: '140px' }}
+                          style={{ maxWidth: '150px' }}
                         />
-                        {loyaltyConfig.max_points_per_transaction !== null && (
+                        {loyaltyConfig.max_points_balance !== null && loyaltyConfig.max_points_balance !== undefined && (
                           <button
                             type="button"
                             className="pro-action-btn"
-                            onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_per_transaction: null })}
+                            onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}
                             title="Supprimer la limite"
                           ><X size={14} /></button>
                         )}
                       </div>
-                      <small style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                        {loyaltyConfig.max_points_per_transaction
-                          ? `Max ${loyaltyConfig.max_points_per_transaction} pts par transaction — le surplus est ignoré`
-                          : 'Aucune limite — laissez vide pour illimité'}
-                      </small>
+                      <p className="pro-hint" style={{ marginTop: '6px' }}>
+                        {loyaltyConfig.max_points_balance
+                          ? `Un client ne peut pas dépasser ${loyaltyConfig.max_points_balance} pts. Ex : à 450 pts, il ne gagnera que ${loyaltyConfig.max_points_balance - 450 > 0 ? loyaltyConfig.max_points_balance - 450 : 0} pts supplémentaires max.`
+                          : 'Aucune limite — laisser vide pour illimité.'}
+                      </p>
                     </div>
                     <button type="submit" className="pro-btn-primary" style={{ marginTop: '15px' }} disabled={savingSettings}>
                       {savingSettings ? <Loader2 size={16} className="pro-spin" /> : <Save size={16} />} Enregistrer Mode

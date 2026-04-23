@@ -624,7 +624,7 @@ export const handleScan = async (req, res) => {
     }
 
     const [config] = await pool.query(
-      'SELECT points_adding_mode, points_per_purchase, max_points_per_transaction, reward_title FROM loyalty_config WHERE entreprise_id = ?',
+      'SELECT points_adding_mode, points_per_purchase, max_points_balance, reward_title FROM loyalty_config WHERE entreprise_id = ?',
       [empresaId]
     );
 
@@ -644,14 +644,15 @@ export const handleScan = async (req, res) => {
       pointsToAdd = 0; // Sécurité pour le mode manuel
     }
 
-    // Appliquer le plafond par transaction si configuré
-    const maxPts = loyaltyConfig.max_points_per_transaction;
-    if (maxPts !== null && maxPts !== undefined && pointsToAdd > maxPts) {
-      pointsToAdd = maxPts;
-    }
-
     const currentPoints = Number(clientRows[0].points) || 0;
-    const newPoints = currentPoints + pointsToAdd;
+    let newPoints = currentPoints + pointsToAdd;
+
+    // Plafonner le solde total si configuré
+    const maxBalance = loyaltyConfig.max_points_balance;
+    if (maxBalance !== null && maxBalance !== undefined && newPoints > maxBalance) {
+      newPoints = maxBalance;
+      pointsToAdd = Math.max(0, maxBalance - currentPoints);
+    }
 
     await pool.query(
       'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
@@ -749,12 +750,12 @@ export const finalizeFullTransaction = async (req, res) => {
     let totalChange = 0;
     let descriptionParts = [];
 
-    // Charger le plafond par transaction
+    // Charger le plafond de solde
     const [cfgRows] = await pool.query(
-      'SELECT max_points_per_transaction FROM loyalty_config WHERE entreprise_id = ?',
+      'SELECT max_points_balance FROM loyalty_config WHERE entreprise_id = ?',
       [empresaId]
     );
-    const maxPtsPerTx = cfgRows.length > 0 ? cfgRows[0].max_points_per_transaction : null;
+    const maxBalance = cfgRows.length > 0 ? cfgRows[0].max_points_balance : null;
 
     // 2. Gérer le cadeau en premier (si présent)
     if (rewardTierId) {
@@ -780,10 +781,11 @@ export const finalizeFullTransaction = async (req, res) => {
       }
     }
 
-    // 3. Ajouter les points du jour (avec plafond si configuré)
+    // 3. Ajouter les points du jour (avec plafond de solde si configuré)
     let ptsToAdd = Number(pointsToAdd) || 0;
-    if (maxPtsPerTx !== null && maxPtsPerTx !== undefined && ptsToAdd > maxPtsPerTx) {
-      ptsToAdd = maxPtsPerTx;
+    if (maxBalance !== null && maxBalance !== undefined && ptsToAdd > 0) {
+      const roomLeft = Math.max(0, maxBalance - currentPoints);
+      ptsToAdd = Math.min(ptsToAdd, roomLeft);
     }
     if (ptsToAdd > 0) {
       currentPoints += ptsToAdd;

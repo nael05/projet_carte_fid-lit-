@@ -903,31 +903,15 @@ function ProDashboard() {
                   </div>
                 </div>
 
-                <button
-                  className="hist-open-btn"
-                  onClick={() => setShowHistory(true)}
-                  style={{
-                    marginTop: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    width: '100%',
-                    padding: '14px 18px',
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '14px',
-                    color: 'var(--text-primary)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--border-light)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
-                >
-                  <History size={18} style={{ color: 'var(--accent)' }} />
-                  Historique des points &amp; cadeaux
-                  <ChevronRight size={16} style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }} />
+                <button className="hist-open-btn" onClick={() => setShowHistory(true)}>
+                  <div className="hist-open-btn-icon">
+                    <History size={18} />
+                  </div>
+                  <div className="hist-open-btn-text">
+                    <strong>Historique des points &amp; cadeaux</strong>
+                    <span>Points ajoutés, cadeaux utilisés, retraits</span>
+                  </div>
+                  <ChevronRight size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                 </button>
               </div>
             </div>

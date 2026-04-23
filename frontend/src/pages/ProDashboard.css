@@ -2103,3 +2103,58 @@ button:active {
     border-radius: 20px !important;
   }
 }
+
+/* ---- HISTORY OPEN BUTTON ---- */
+.hist-open-btn {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--accent-light) 0%, rgba(37,99,235,0.06) 100%);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: 14px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+}
+.hist-open-btn:hover {
+  background: linear-gradient(135deg, rgba(37,99,235,0.15) 0%, rgba(37,99,235,0.08) 100%);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.15);
+}
+.hist-open-btn:active { transform: translateY(0); }
+
+.hist-open-btn-icon {
+  width: 38px;
+  height: 38px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.hist-open-btn-text {
+  flex: 1;
+  min-width: 0;
+}
+.hist-open-btn-text strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+.hist-open-btn-text span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}

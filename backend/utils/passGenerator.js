@@ -370,16 +370,19 @@ export class PassGenerator {
       // Champ dynamique : affiche la progression vers le prochain palier.
       // secondaryFields est le seul type de champ où changeMessage déclenche
       // la notification lock screen sur iOS (headerFields ne le fait pas).
+      // %@ est remplacé par la valeur du champ — on construit la valeur pour
+      // que le changeMessage final corresponde exactement au message voulu.
+      const missing = nextTierForMsg ? nextTierForMsg.points_required - currentBalance : 0;
       const hintValue = nextTierForMsg
-        ? `Encore ${nextTierForMsg.points_required - currentBalance} pts pour "${nextTierForMsg.title}"`
-        : 'Voir récompenses au dos';
+        ? `Encore ${missing} pts pour obtenir cette récompense "${nextTierForMsg.title}"`
+        : `${currentBalance} points`;
       const hintChangeMessage = nextTierForMsg
-        ? `Points mis à jour → %@`
-        : 'Bravo, vous avez atteint tous vos paliers !';
+        ? 'Points mis à jour : %@'
+        : 'Bravo, vous avez %@ et avez atteint tous vos paliers !';
 
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
-        label: nextTierForMsg ? 'PROCHAIN PALIER' : 'RÉCOMPENSES',
+        label: nextTierForMsg ? 'PROCHAIN PALIER' : 'VOS POINTS',
         value: hintValue,
         changeMessage: hintChangeMessage
       });

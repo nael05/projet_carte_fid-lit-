@@ -231,6 +231,13 @@ class GoogleWalletGenerator {
           id: 'rewards_module'
        });
     }
+    if (config?.relevant_text) {
+      textModulesData.push({
+        header: 'OFFRE EN COURS',
+        body: config.relevant_text,
+        id: 'promo_module'
+      });
+    }
 
     const loyaltyObject = {
       id: objectId,
@@ -331,6 +338,13 @@ class GoogleWalletGenerator {
         header: 'Vos Paliers de Récompenses',
         body: tiersList,
         id: 'rewards_module'
+      });
+    }
+    if (config?.relevant_text) {
+      textModulesData.push({
+        header: 'OFFRE EN COURS',
+        body: config.relevant_text,
+        id: 'promo_module'
       });
     }
 

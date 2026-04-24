@@ -348,16 +348,14 @@ export class PassGenerator {
 
       // 1. Points (Header)
       const currentBalance = clientData.balance || 0;
+      const lastChange = clientData.lastPointsChange || 0;
+      const isRedemptionPass = lastChange < 0;
       const nextTierForMsg = (clientData.rewardTiers || []).find(t => t.points_required > currentBalance);
-      const pointsChangeMessage = nextTierForMsg
-        ? `Solde mis à jour : %@ points. Il vous manque ${nextTierForMsg.points_required - currentBalance} pts pour "${nextTierForMsg.title}".`
-        : 'Solde mis à jour : %@ points';
 
       this.safeAddField(pass.headerFields, {
         key: 'points_header',
         label: 'POINTS',
-        value: `${currentBalance}`,
-        changeMessage: pointsChangeMessage
+        value: `${currentBalance}`
       });
 
       // 2. Bonjour (Secondary)
@@ -367,22 +365,35 @@ export class PassGenerator {
         value: (clientData.firstName || 'Client').toUpperCase()
       });
 
-      // Champ dynamique : affiche la progression vers le prochain palier.
-      // secondaryFields est le seul type de champ où changeMessage déclenche
-      // la notification lock screen sur iOS (headerFields ne le fait pas).
-      // %@ est remplacé par la valeur du champ — on construit la valeur pour
-      // que le changeMessage final corresponde exactement au message voulu.
-      const missing = nextTierForMsg ? nextTierForMsg.points_required - currentBalance : 0;
-      const hintValue = nextTierForMsg
-        ? `Encore ${missing} pts pour obtenir cette récompense "${nextTierForMsg.title}"`
-        : `${currentBalance} points`;
-      const hintChangeMessage = nextTierForMsg
-        ? 'Points mis à jour : %@'
-        : 'Bravo, vous avez %@ et avez atteint tous vos paliers !';
+      // Champ dynamique (secondaryField) — seul type où changeMessage déclenche
+      // la notification lock screen sur iOS. %@ est remplacé par la valeur du champ.
+      let hintValue, hintLabel, hintChangeMessage;
+
+      if (isRedemptionPass) {
+        const usedPoints = Math.abs(lastChange);
+        const redeemedTier = (clientData.rewardTiers || []).find(t => t.points_required === usedPoints);
+        const rewardName = redeemedTier ? redeemedTier.title : 'votre récompense';
+        hintValue = `"${rewardName}"`;
+        hintLabel = 'RÉCOMPENSE UTILISÉE';
+        hintChangeMessage = `Vous avez utilisé ${usedPoints} points pour cette récompense : %@`;
+      } else if (nextTierForMsg) {
+        const missing = nextTierForMsg.points_required - currentBalance;
+        hintValue = `Encore ${missing} pts pour obtenir cette récompense "${nextTierForMsg.title}"`;
+        hintLabel = 'PROCHAIN PALIER';
+        hintChangeMessage = lastChange > 0
+          ? `+ ${lastChange} points : %@`
+          : 'Objectif mis à jour : %@';
+      } else {
+        hintValue = `${currentBalance} points`;
+        hintLabel = 'VOS POINTS';
+        hintChangeMessage = lastChange > 0
+          ? `+ ${lastChange} points : Bravo, vous avez %@ et avez atteint tous vos paliers !`
+          : 'Solde mis à jour : %@';
+      }
 
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
-        label: nextTierForMsg ? 'PROCHAIN PALIER' : 'VOS POINTS',
+        label: hintLabel,
         value: hintValue,
         changeMessage: hintChangeMessage
       });

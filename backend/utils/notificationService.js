@@ -29,21 +29,26 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
 
     const nextTier = allTiers.find(t => t.points_required > newPoints);
 
-    let nextTierMessage = '';
-    if (nextTier) {
-      const missingPoints = nextTier.points_required - newPoints;
-      nextTierMessage = ` Il vous manque ${missingPoints} points pour le palier "${nextTier.title}".`;
+    // 3. Préparer le message (même format Apple & Google)
+    let title, body;
+    if (isRedemption) {
+      const usedPoints = Math.abs(pointsChange);
+      const redeemedTier = allTiers.find(t => t.points_required === usedPoints);
+      const rewardName = redeemedTier ? redeemedTier.title : 'votre récompense';
+      title = 'Récompense utilisée';
+      body = `Vous avez utilisé ${usedPoints} points pour cette récompense : "${rewardName}"`;
+    } else if (nextTier) {
+      const missing = nextTier.points_required - newPoints;
+      title = `+ ${pointsChange} points`;
+      body = `Encore ${missing} pts pour obtenir cette récompense "${nextTier.title}"`;
     } else if (allTiers.length === 0 && clientData.points_for_reward > newPoints) {
-      // Fallback legacy uniquement si aucun palier n'est défini pour cette entreprise
       const missing = clientData.points_for_reward - newPoints;
-      nextTierMessage = ` Il vous manque ${missing} points pour votre prochaine récompense : "${clientData.reward_title || 'Cadeau'}".`;
+      title = `+ ${pointsChange} points`;
+      body = `Il vous manque ${missing} pts pour votre récompense "${clientData.reward_title || 'Cadeau'}"`;
+    } else {
+      title = `+ ${pointsChange} points`;
+      body = `Bravo, vous avez ${newPoints} points et avez atteint tous vos paliers !`;
     }
-
-    // 3. Préparer le message
-    let title = isRedemption ? 'Récompense validée ! 🎁' : 'Points ajoutés ! ✨';
-    let body = isRedemption 
-        ? `${Math.abs(pointsChange)} points utilisés.${nextTierMessage}`
-        : `${pointsChange} points ajoutés ! Nouveau solde : ${newPoints} pts.${nextTierMessage}`;
 
     // 4. Vérifier si le client a un wallet Google
     const [googleCards] = await pool.query(
@@ -64,9 +69,9 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
     const walletSyncService = walletSyncModule.default;
 
     const googleNotifAfterSync = hasGoogleWallet
-      ? walletSyncService.syncClientWallet(clientId, empresaId)
+      ? walletSyncService.syncClientWallet(clientId, empresaId, pointsChange)
           .then(() => googleWalletGenerator.addMessageToObject(clientId, title, body))
-      : walletSyncService.syncClientWallet(clientId, empresaId);
+      : walletSyncService.syncClientWallet(clientId, empresaId, pointsChange);
 
     googleNotifAfterSync.catch(err => logger.error('Notification parallel error', err));
 

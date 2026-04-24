@@ -11,7 +11,7 @@ class WalletSyncService {
    * Synchronise la carte d'un client spécifique
    * Appelé après un ajout de points, ajustement ou redemption
    */
-  async syncClientWallet(clientId, companyId) {
+  async syncClientWallet(clientId, companyId, lastPointsChange = 0) {
     try {
       logger.info(`🔄 [SYNC] Début synchronisation pour client ${clientId} (Entreprise: ${companyId})`);
 
@@ -47,8 +47,8 @@ class WalletSyncService {
       // 3. Mettre à jour la base de données de synchronisation (wallet_cards)
       // On force last_updated = NOW(3) pour avoir une précision à la milliseconde pour Apple
       await db.query(
-        'UPDATE wallet_cards SET points_balance = ?, last_updated = NOW(3) WHERE client_id = ? AND company_id = ?',
-        [newBalance, clientId, companyId]
+        'UPDATE wallet_cards SET points_balance = ?, last_points_change = ?, last_updated = NOW(3) WHERE client_id = ? AND company_id = ?',
+        [newBalance, lastPointsChange, clientId, companyId]
       );
 
       // 4. Récupérer les infos de la carte pour Apple Wallet

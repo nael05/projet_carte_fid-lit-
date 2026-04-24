@@ -231,7 +231,8 @@ export const getUpdatedPass = async (req, res) => {
               cc.back_fields_phone, cc.back_fields_address, cc.back_fields_instagram,
               cc.back_fields_facebook, cc.back_fields_tiktok,
               cc.apple_review_url,
-              cc.latitude, cc.longitude, cc.relevant_text, cc.locations
+              cc.latitude, cc.longitude, cc.relevant_text, cc.locations,
+              wc.last_points_change
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
@@ -274,10 +275,7 @@ export const getUpdatedPass = async (req, res) => {
       [data.company_id]
     );
 
-    // Calculer les points gagnés (différence entre le solde actuel et le dernier envoyé au pass)
     const currentPoints = Number(data.points) || 0;
-    const lastPointsInPass = Number(data.points_balance) || 0;
-    const pointsGained = currentPoints - lastPointsInPass;
 
     // Vérification stricte du token de sécurité Apple
     if (data.authentication_token !== authToken) {
@@ -295,7 +293,7 @@ export const getUpdatedPass = async (req, res) => {
       loyaltyType: loyaltyType,
       balance: currentPoints, // Envoyer le solde réel actuel
       rewardTiers: tiers,
-      pointsGained: pointsGained > 0 ? pointsGained : 0,
+      lastPointsChange: Number(data.last_points_change) || 0,
       createdAt: data.created_at,
       qrCodeValue: data.id.toString(),
     };

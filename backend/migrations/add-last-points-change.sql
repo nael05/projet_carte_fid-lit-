@@ -1,0 +1,2 @@
+ALTER TABLE wallet_cards
+  ADD COLUMN IF NOT EXISTS last_points_change INT NOT NULL DEFAULT 0;

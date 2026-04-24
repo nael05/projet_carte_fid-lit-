@@ -2,7 +2,6 @@ import pool from '../db.js';
 import apnService from './apnService.js';
 import googleWalletGenerator from './googleWalletGenerator.js';
 import logger from './logger.js';
-import { randomUUID } from 'crypto';
 
 /**
  * Service de notification pour les mises à jour de fidélité
@@ -23,18 +22,20 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
     const clientData = combinedRows[0];
     const newPoints = clientData.points || 0;
 
-    // 2. Prochain palier
-    const [nextTiers] = await pool.query(
-      'SELECT title, points_required FROM reward_tiers WHERE entreprise_id = ? AND points_required > ? ORDER BY points_required ASC LIMIT 1',
-      [empresaId, newPoints]
+    // 2. Prochain palier — on récupère tous les paliers pour savoir si l'entreprise en a
+    const [allTiers] = await pool.query(
+      'SELECT title, points_required FROM reward_tiers WHERE entreprise_id = ? ORDER BY points_required ASC',
+      [empresaId]
     );
 
+    const nextTier = allTiers.find(t => t.points_required > newPoints);
+
     let nextTierMessage = '';
-    if (nextTiers.length > 0) {
-      const nextTier = nextTiers[0];
+    if (nextTier) {
       const missingPoints = nextTier.points_required - newPoints;
       nextTierMessage = ` Il vous manque ${missingPoints} points pour le palier "${nextTier.title}".`;
-    } else if (clientData.points_for_reward > newPoints) {
+    } else if (allTiers.length === 0 && clientData.points_for_reward > newPoints) {
+      // Fallback legacy uniquement si aucun palier n'est défini pour cette entreprise
       const missing = clientData.points_for_reward - newPoints;
       nextTierMessage = ` Il vous manque ${missing} points pour votre prochaine récompense : "${clientData.reward_title || 'Cadeau'}".`;
     }

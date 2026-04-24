@@ -349,16 +349,29 @@ export class PassGenerator {
       // 1. Points (Header)
       const currentBalance = clientData.balance || 0;
       const pointsDelta = clientData.lastPointsChange || 0;
+      const rewardTiers = Array.isArray(clientData.rewardTiers) ? clientData.rewardTiers : [];
+
+      let appleChangeMessage = '%@';
+      if (pointsDelta < 0) {
+        const usedPoints = Math.abs(pointsDelta);
+        const redeemedTier = rewardTiers.find(t => t.points_required === usedPoints);
+        const rewardName = redeemedTier ? redeemedTier.title : 'votre récompense';
+        appleChangeMessage = `Vous avez utilisé ${usedPoints} points pour cette récompense : "${rewardName}"`;
+      } else if (pointsDelta > 0) {
+        const nextTier = rewardTiers.find(t => t.points_required > currentBalance);
+        if (nextTier) {
+          const missing = nextTier.points_required - currentBalance;
+          appleChangeMessage = `+ ${pointsDelta} points : Encore ${missing} pts pour obtenir cette récompense "${nextTier.title}"`;
+        } else {
+          appleChangeMessage = `+ ${pointsDelta} points : Bravo, vous avez ${currentBalance} points et avez atteint tous vos paliers !`;
+        }
+      }
 
       this.safeAddField(pass.headerFields, {
         key: 'points_header',
         label: 'POINTS',
         value: `${currentBalance}`,
-        changeMessage: pointsDelta > 0
-          ? `+${pointsDelta} pts → %@ au total`
-          : pointsDelta < 0
-            ? `${pointsDelta} pts → %@ au total`
-            : '%@ pts'
+        changeMessage: appleChangeMessage
       });
 
       // 2. Bonjour (Secondary)

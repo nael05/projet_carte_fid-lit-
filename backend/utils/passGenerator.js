@@ -347,11 +347,17 @@ export class PassGenerator {
       // --- LAYOUT PREMIUM (Style Fidelyz) ---
 
       // 1. Points (Header)
+      const currentBalance = clientData.balance || 0;
+      const nextTierForMsg = (clientData.rewardTiers || []).find(t => t.points_required > currentBalance);
+      const pointsChangeMessage = nextTierForMsg
+        ? `Solde mis à jour : %@ points. Il vous manque ${nextTierForMsg.points_required - currentBalance} pts pour "${nextTierForMsg.title}".`
+        : 'Solde mis à jour : %@ points';
+
       this.safeAddField(pass.headerFields, {
         key: 'points_header',
         label: 'POINTS',
-        value: `${clientData.balance || 0}`,
-        changeMessage: "Solde mis à jour : %@ points"
+        value: `${currentBalance}`,
+        changeMessage: pointsChangeMessage
       });
 
       // 2. Bonjour (Secondary)

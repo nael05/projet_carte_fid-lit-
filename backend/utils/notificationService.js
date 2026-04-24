@@ -66,11 +66,16 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
     const pushTokens = registrations.map(r => r.push_token);
     const hasGoogleWallet = googleCards.length > 0;
 
-    // On lance en arrière-plan pour ne pas faire attendre le commerçant sur son dashboard
+    // On lance en arrière-plan pour ne pas faire attendre le commerçant sur son dashboard.
+    // Google : le message part APRÈS le sync pour que le solde affiché sur le pass soit déjà à jour.
+    const googleNotifAfterSync = hasGoogleWallet
+      ? walletSyncService.syncClientWallet(clientId, empresaId)
+          .then(() => googleWalletGenerator.addMessageToObject(clientId, title, body))
+      : walletSyncService.syncClientWallet(clientId, empresaId);
+
     Promise.all([
-      walletSyncService.syncClientWallet(clientId, empresaId),
-      registrations.length > 0 ? apnService.sendBulkAlertNotifications(pushTokens, title, body) : Promise.resolve(),
-      hasGoogleWallet ? googleWalletGenerator.addMessageToObject(clientId, title, body) : Promise.resolve()
+      googleNotifAfterSync,
+      registrations.length > 0 ? apnService.sendBulkAlertNotifications(pushTokens, title, body) : Promise.resolve()
     ]).catch(err => logger.error('Notification parallel error', err));
 
     logger.info(`✅ Flux de notification lancé en tâche de fond pour ${clientId}`);

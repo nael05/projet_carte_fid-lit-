@@ -295,6 +295,31 @@ class GoogleWalletGenerator {
     }
   }
 
+  async addMessageToObject(clientId, title, body) {
+    if (!this.client) return;
+    const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
+    try {
+      await this.client.loyaltyobject.addmessage({
+        resourceId: objectId,
+        requestBody: {
+          message: {
+            header: title,
+            body: body,
+            id: `msg_${Date.now()}`,
+            messageType: 'TEXT_AND_NOTIFY'
+          }
+        }
+      });
+      logger.info(`✅ [GOOGLE MSG] Notification envoyée à ${objectId}`);
+    } catch (err) {
+      if (err.code === 404) {
+        logger.warn(`⚠️ [GOOGLE MSG] Object ${objectId} introuvable`);
+        return;
+      }
+      logger.error(`❌ [GOOGLE MSG] Erreur addMessage ${objectId}: ${err.message}`);
+    }
+  }
+
   async updateLoyaltyObject(clientId, empresaId, newBalance, rewardTiers = [], config = null) {
     if (!this.client) return;
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;

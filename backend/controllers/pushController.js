@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import pool from '../db.js';
 import apnService from '../utils/apnService.js';
+import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -49,7 +50,13 @@ export const sendNotification = async (req, res) => {
       [clientIds, empresaId]
     );
 
-    if (registrations.length === 0) {
+    // Vérifier aussi les clients Google avant de rejeter
+    const [googleCheck] = await pool.query(
+      `SELECT 1 FROM wallet_cards WHERE client_id IN (?) AND pass_serial_number LIKE 'GOOGLE_%' LIMIT 1`,
+      [clientIds]
+    );
+
+    if (registrations.length === 0 && googleCheck.length === 0) {
       return res.status(404).json({ error: 'Aucun appareil enregistré trouvé pour les clients sélectionnés' });
     }
 
@@ -61,11 +68,11 @@ export const sendNotification = async (req, res) => {
       [notificationId, empresaId, title, message, registrations.length]
     );
 
-    // 3. Envoyer les notifications
+    // 3. Envoyer les notifications Apple
     const pushTokens = registrations.map(r => r.push_token);
     const results = await apnService.sendBulkAlertNotifications(pushTokens, title, message);
 
-    // 4. Enregistrer les résultats individuels
+    // 4. Enregistrer les résultats Apple
     for (const reg of registrations) {
       const result = results.results.find(res => res.token === reg.push_token);
       await pool.query(
@@ -75,7 +82,19 @@ export const sendNotification = async (req, res) => {
       );
     }
 
-    // Mettre à jour le statut final et le nombre de succès (optionnel)
+    // 5. Envoyer les notifications Google aux clients qui ont un wallet Google
+    const [googleCards] = await pool.query(
+      `SELECT DISTINCT w.client_id
+       FROM wallet_cards w
+       WHERE w.client_id IN (?) AND w.pass_serial_number LIKE 'GOOGLE_%'`,
+      [clientIds]
+    );
+    const googleResults = await Promise.allSettled(
+      googleCards.map(c => googleWalletGenerator.addMessageToObject(c.client_id, title, message))
+    );
+    const googleSent = googleResults.filter(r => r.status === 'fulfilled').length;
+
+    // Mettre à jour le statut final
     await pool.query(
       'UPDATE push_notifications_sent SET sent_at = NOW() WHERE id = ?',
       [notificationId]
@@ -83,9 +102,9 @@ export const sendNotification = async (req, res) => {
 
     res.json({
       success: true,
-      sentCount: results.sent,
+      sentCount: results.sent + googleSent,
       failedCount: results.failed,
-      message: `Notifications envoyées avec succès à ${results.sent} appareil(s).`
+      message: `Notifications envoyées avec succès à ${results.sent} appareil(s) Apple et ${googleSent} appareil(s) Google.`
     });
 
   } catch (err) {

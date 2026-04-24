@@ -1,5 +1,6 @@
 import pool from '../db.js';
 import apnService from './apnService.js';
+import googleWalletGenerator from './googleWalletGenerator.js';
 import logger from './logger.js';
 import { randomUUID } from 'crypto';
 
@@ -44,24 +45,32 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
         ? `${Math.abs(pointsChange)} points utilisés.${nextTierMessage}`
         : `${pointsChange} points ajoutés ! Nouveau solde : ${newPoints} pts.${nextTierMessage}`;
 
-    // 4. Récupérer les tokens push et lancer la synchro en simultané
-    const [registrations] = await pool.query(
-      `SELECT r.push_token 
-       FROM apple_pass_registrations r
-       JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
-       WHERE w.client_id = ?`,
-      [clientId]
-    );
+    // 4. Récupérer les tokens push Apple et les cartes Google en simultané
+    const [[registrations], [googleCards]] = await Promise.all([
+      pool.query(
+        `SELECT r.push_token
+         FROM apple_pass_registrations r
+         JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
+         WHERE w.client_id = ?`,
+        [clientId]
+      ),
+      pool.query(
+        `SELECT 1 FROM wallet_cards WHERE client_id = ? AND pass_serial_number LIKE 'GOOGLE_%' LIMIT 1`,
+        [clientId]
+      )
+    ]);
 
     // 5. Lancer tout en parallèle (Apple et Google) - SANS ATTENDRE (Un-await pour dashboard instantané)
     const walletSyncModule = await import('./walletSyncService.js');
     const walletSyncService = walletSyncModule.default;
     const pushTokens = registrations.map(r => r.push_token);
+    const hasGoogleWallet = googleCards.length > 0;
 
     // On lance en arrière-plan pour ne pas faire attendre le commerçant sur son dashboard
     Promise.all([
       walletSyncService.syncClientWallet(clientId, empresaId),
-      registrations.length > 0 ? apnService.sendBulkAlertNotifications(pushTokens, title, body) : Promise.resolve()
+      registrations.length > 0 ? apnService.sendBulkAlertNotifications(pushTokens, title, body) : Promise.resolve(),
+      hasGoogleWallet ? googleWalletGenerator.addMessageToObject(clientId, title, body) : Promise.resolve()
     ]).catch(err => logger.error('Notification parallel error', err));
 
     logger.info(`✅ Flux de notification lancé en tâche de fond pour ${clientId}`);

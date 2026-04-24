@@ -348,11 +348,17 @@ export class PassGenerator {
 
       // 1. Points (Header)
       const currentBalance = clientData.balance || 0;
+      const pointsDelta = clientData.lastPointsChange || 0;
 
       this.safeAddField(pass.headerFields, {
         key: 'points_header',
         label: 'POINTS',
-        value: `${currentBalance}`
+        value: `${currentBalance}`,
+        changeMessage: pointsDelta > 0
+          ? `+${pointsDelta} pts → %@ au total`
+          : pointsDelta < 0
+            ? `${pointsDelta} pts → %@ au total`
+            : '%@ pts'
       });
 
       // 2. Bonjour (Secondary)

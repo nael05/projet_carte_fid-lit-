@@ -351,27 +351,26 @@ export class PassGenerator {
       const pointsDelta = clientData.lastPointsChange || 0;
       const rewardTiers = Array.isArray(clientData.rewardTiers) ? clientData.rewardTiers : [];
 
-      let appleChangeMessage = '%@';
+      let appleNotifMessage = null;
       if (pointsDelta < 0) {
         const usedPoints = Math.abs(pointsDelta);
         const redeemedTier = rewardTiers.find(t => t.points_required === usedPoints);
         const rewardName = redeemedTier ? redeemedTier.title : 'votre récompense';
-        appleChangeMessage = `Vous avez utilisé ${usedPoints} points pour cette récompense : "${rewardName}"`;
+        appleNotifMessage = `Vous avez utilisé ${usedPoints} points pour cette récompense : "${rewardName}"`;
       } else if (pointsDelta > 0) {
         const nextTier = rewardTiers.find(t => t.points_required > currentBalance);
         if (nextTier) {
           const missing = nextTier.points_required - currentBalance;
-          appleChangeMessage = `+ ${pointsDelta} points : Encore ${missing} pts pour obtenir cette récompense "${nextTier.title}"`;
+          appleNotifMessage = `+ ${pointsDelta} points : Encore ${missing} pts pour obtenir cette récompense "${nextTier.title}"`;
         } else {
-          appleChangeMessage = `+ ${pointsDelta} points : Bravo, vous avez ${currentBalance} points et avez atteint tous vos paliers !`;
+          appleNotifMessage = `+ ${pointsDelta} points : Bravo, vous avez ${currentBalance} points et avez atteint tous vos paliers !`;
         }
       }
 
       this.safeAddField(pass.headerFields, {
         key: 'points_header',
         label: 'POINTS',
-        value: `${currentBalance}`,
-        changeMessage: appleChangeMessage
+        value: `${currentBalance}`
       });
 
       // 2. Bonjour (Secondary)
@@ -397,6 +396,15 @@ export class PassGenerator {
           altText: `N° Carte : ${shortId}`
         }
       ];
+
+      if (appleNotifMessage) {
+        this.safeAddField(pass.backFields, {
+          key: 'notif_msg',
+          label: 'DERNIÈRE MISE À JOUR',
+          value: appleNotifMessage,
+          changeMessage: '%@'
+        });
+      }
 
       this.safeAddField(pass.backFields, {
         key: 'company_info',

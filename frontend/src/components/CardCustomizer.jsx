@@ -343,12 +343,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
           >
             <Info size={16} /> Verso
           </button>
-          <button
-            className={`customizer-tab ${activeTab === 'proximity' ? 'active' : ''}`}
-            onClick={() => setActiveTab('proximity')}
-          >
-            <Globe size={16} /> GPS & Notifs
-          </button>
         </div>
 
         {/* Dynamic Settings Card */}
@@ -487,108 +481,6 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
             </div>
           )}
 
-          {activeTab === 'proximity' && (
-            <div className="prox-wrap">
-
-              {/* ── NOTIFICATION PUSH ── */}
-              <div className="prox-section">
-                <div className="prox-section-label">
-                  <RotateCw size={13} className="pro-spin-on-hover" />
-                  Notification Push
-                </div>
-                <div>
-                  <label className="prox-label">Texte de la promotion</label>
-                  <textarea
-                    className="prox-textarea"
-                    name="relevant_text"
-                    value={config.relevant_text}
-                    onChange={handleChange}
-                    placeholder="Ex: -20% sur tout le magasin ce week-end !"
-                    rows={3}
-                  />
-                </div>
-                <div className="prox-hint">
-                  💡 La modification de ce champ déclenche une notification Push immédiate chez vos clients Apple.
-                </div>
-              </div>
-
-              {/* ── GÉOLOCALISATION ── */}
-              <div className="prox-section">
-                <div className="prox-section-header">
-                  <div className="prox-section-label">
-                    Géolocalisation &amp; Proximité
-                  </div>
-                  <button
-                    className="prox-btn-add"
-                    onClick={addLocation}
-                    disabled={(config.locations || []).length >= 10}
-                  >
-                    + Ajouter un lieu
-                  </button>
-                </div>
-                <div className="prox-section-title">
-                  Affichez la carte sur l'écran verrouillé près de vos établissements
-                  <span className="prox-section-sub"> (max 10)</span>
-                </div>
-
-                <div className="prox-locs-list">
-                  {(config.locations || []).map((loc, index) => (
-                    <div key={index} className="prox-loc-card">
-                      <div className="prox-loc-header">
-                        <span className="prox-loc-num">Lieu #{index + 1}</span>
-                        <button className="prox-loc-del" onClick={() => removeLocation(index)}>
-                          Retirer
-                        </button>
-                      </div>
-                      <div className="prox-coord-row">
-                        <div className="prox-coord-field">
-                          <label className="prox-label">Latitude</label>
-                          <input
-                            className="prox-input"
-                            type="number" step="any"
-                            value={loc.latitude ?? ''}
-                            onChange={(e) => handleLocationChange(index, 'latitude', e.target.value)}
-                            placeholder="Ex: 48.8566"
-                          />
-                        </div>
-                        <div className="prox-coord-field">
-                          <label className="prox-label">Longitude</label>
-                          <input
-                            className="prox-input"
-                            type="number" step="any"
-                            value={loc.longitude ?? ''}
-                            onChange={(e) => handleLocationChange(index, 'longitude', e.target.value)}
-                            placeholder="Ex: 2.3522"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="prox-label">Texte sur l'écran verrouillé</label>
-                        <input
-                          className="prox-input"
-                          type="text"
-                          value={loc.relevantText || ''}
-                          onChange={(e) => handleLocationChange(index, 'relevantText', e.target.value)}
-                          placeholder="Ex: Bienvenue ! N'oubliez pas votre carte."
-                        />
-                      </div>
-                    </div>
-                  ))}
-
-                  {(!config.locations || config.locations.length === 0) && (
-                    <div className="prox-empty">
-                      Aucun lieu configuré.<br />Vos clients ne recevront pas de notification à proximité.
-                    </div>
-                  )}
-                </div>
-
-                <div className="prox-alert">
-                  💡 <span><strong>Astuce :</strong> Trouvez vos coordonnées sur Google Maps avec un clic droit. La notification s'affiche à environ 100m du lieu.</span>
-                </div>
-              </div>
-
-            </div>
-          )}
 
           {activeTab === 'infos' && (
             <div className="customizer-settings-content">

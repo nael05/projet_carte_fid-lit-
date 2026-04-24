@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext'
 
 import CardCustomizer from '../components/CardCustomizer'
 import HistoryModal from '../components/HistoryModal'
-import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2, Sun, Moon, Gift, Lock, ChevronRight, PlusCircle, History } from 'lucide-react'
+import { LogOut, ScanLine, Users, Link as LinkIcon, Palette, Smartphone, X, Copy, Plus, Minus, AlertCircle, Loader2, Phone, Mail, Award, Check, Settings, Save, Trash2, Sun, Moon, Gift, Lock, ChevronRight, PlusCircle, History, Globe, RotateCw } from 'lucide-react'
 import './ProDashboard.css'
 
 function ProDashboard() {
@@ -54,6 +54,8 @@ function ProDashboard() {
   const [newTier, setNewTier] = useState({ points_required: '', title: '' })
   
   const [savingSettings, setSavingSettings] = useState(false)
+  const [proxConfig, setProxConfig] = useState({ relevant_text: '', locations: [] })
+  const [proxSaving, setProxSaving] = useState(false)
   const navigate = useNavigate()
   const scannerRef = useRef(null)
   const scannerInstance = useRef(null)
@@ -121,6 +123,20 @@ function ProDashboard() {
       setPageError('Erreur lors du chargement de la liste des clients')
     }
   }
+
+  useEffect(() => {
+    if (proInfo?.id) {
+      const loadProxConfig = async () => {
+        try {
+          const { data } = await api.get(`/pro/card-customization/${proInfo.id}?loyaltyType=${proInfo.loyalty_type || 'points'}`)
+          let parsedLocs = []
+          try { parsedLocs = data.locations ? (typeof data.locations === 'string' ? JSON.parse(data.locations) : data.locations) : [] } catch (e) {}
+          setProxConfig({ relevant_text: data.relevant_text || '', locations: parsedLocs })
+        } catch (err) {}
+      }
+      loadProxConfig()
+    }
+  }, [proInfo])
 
   const loadLoyaltyConfig = async () => {
     try {
@@ -394,6 +410,40 @@ function ProDashboard() {
     navigator.clipboard.writeText(`${window.location.origin}/join/${proInfo.id}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleProxChange = (e) => {
+    const { name, value } = e.target
+    setProxConfig(prev => ({ ...prev, [name]: value }))
+  }
+  const handleProxLocationChange = (index, field, value) => {
+    const updatedLocs = [...(proxConfig.locations || [])]
+    let parsed = value
+    if (field === 'latitude' || field === 'longitude') { parsed = value === '' ? '' : parseFloat(value); if (isNaN(parsed)) parsed = '' }
+    updatedLocs[index] = { ...updatedLocs[index], [field]: parsed }
+    setProxConfig(prev => ({ ...prev, locations: updatedLocs }))
+  }
+  const addProxLocation = () => {
+    const current = proxConfig.locations || []
+    if (current.length >= 10) return
+    setProxConfig(prev => ({ ...prev, locations: [...current, { latitude: '', longitude: '', relevantText: '' }] }))
+  }
+  const removeProxLocation = (index) => {
+    const updatedLocs = [...(proxConfig.locations || [])]
+    updatedLocs.splice(index, 1)
+    setProxConfig(prev => ({ ...prev, locations: updatedLocs }))
+  }
+  const handleSaveProx = async () => {
+    if (!proInfo?.id) return
+    setProxSaving(true)
+    try {
+      await api.put(`/pro/card-customization/${proInfo.id}?loyaltyType=${proInfo.loyalty_type || 'points'}`, proxConfig)
+      addToast('GPS & Notifications enregistrés !')
+    } catch (err) {
+      addToast('Erreur lors de la sauvegarde', 'error')
+    } finally {
+      setProxSaving(false)
+    }
   }
 
   const handleSaveLoyaltyConfig = async (e) => {
@@ -722,6 +772,82 @@ function ProDashboard() {
                   <h2>Paramètres</h2>
                   <p>Configuration de votre programme de fidélité</p>
                 </div>
+              </div>
+
+              {/* ── GPS & Notifications ── */}
+              <div className="cfg-section" style={{ marginBottom: '0' }}>
+                <div className="cfg-section-label">
+                  <Globe size={13} /> GPS &amp; Notifications Push
+                </div>
+
+                <div className="prox-section">
+                  <div className="prox-section-label">
+                    <RotateCw size={13} className="pro-spin-on-hover" />
+                    Notification Push
+                  </div>
+                  <div>
+                    <label className="prox-label">Texte de la promotion</label>
+                    <textarea
+                      className="prox-textarea"
+                      name="relevant_text"
+                      value={proxConfig.relevant_text}
+                      onChange={handleProxChange}
+                      placeholder="Ex: -20% sur tout le magasin ce week-end !"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="prox-hint">
+                    💡 La modification de ce champ déclenche une notification Push immédiate chez vos clients Apple.
+                  </div>
+                </div>
+
+                <div className="prox-section">
+                  <div className="prox-section-header">
+                    <div className="prox-section-label">Géolocalisation &amp; Proximité</div>
+                    <button type="button" className="prox-btn-add" onClick={addProxLocation} disabled={(proxConfig.locations || []).length >= 10}>
+                      + Ajouter un lieu
+                    </button>
+                  </div>
+                  <div className="prox-section-title">
+                    Affichez la carte sur l'écran verrouillé près de vos établissements
+                    <span className="prox-section-sub"> (max 10)</span>
+                  </div>
+                  <div className="prox-locs-list">
+                    {(proxConfig.locations || []).map((loc, index) => (
+                      <div key={index} className="prox-loc-card">
+                        <div className="prox-loc-header">
+                          <span className="prox-loc-num">Lieu #{index + 1}</span>
+                          <button className="prox-loc-del" onClick={() => removeProxLocation(index)}>Retirer</button>
+                        </div>
+                        <div className="prox-coord-row">
+                          <div className="prox-coord-field">
+                            <label className="prox-label">Latitude</label>
+                            <input className="prox-input" type="number" step="any" value={loc.latitude ?? ''} onChange={(e) => handleProxLocationChange(index, 'latitude', e.target.value)} placeholder="Ex: 48.8566" />
+                          </div>
+                          <div className="prox-coord-field">
+                            <label className="prox-label">Longitude</label>
+                            <input className="prox-input" type="number" step="any" value={loc.longitude ?? ''} onChange={(e) => handleProxLocationChange(index, 'longitude', e.target.value)} placeholder="Ex: 2.3522" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="prox-label">Texte sur l'écran verrouillé</label>
+                          <input className="prox-input" type="text" value={loc.relevantText || ''} onChange={(e) => handleProxLocationChange(index, 'relevantText', e.target.value)} placeholder="Ex: Bienvenue ! N'oubliez pas votre carte." />
+                        </div>
+                      </div>
+                    ))}
+                    {(!proxConfig.locations || proxConfig.locations.length === 0) && (
+                      <div className="prox-empty">Aucun lieu configuré.<br />Vos clients ne recevront pas de notification à proximité.</div>
+                    )}
+                  </div>
+                  <div className="prox-alert">
+                    💡 <span><strong>Astuce :</strong> Trouvez vos coordonnées sur Google Maps avec un clic droit. La notification s'affiche à environ 100m du lieu.</span>
+                  </div>
+                </div>
+
+                <button type="button" className="cfg-save-btn" onClick={handleSaveProx} disabled={proxSaving}>
+                  {proxSaving ? <Loader2 size={14} className="pro-spin" /> : <Save size={14} />}
+                  Enregistrer
+                </button>
               </div>
 
               <div className="cfg-wrap">

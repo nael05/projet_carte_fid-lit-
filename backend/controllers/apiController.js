@@ -1244,6 +1244,9 @@ export const updateCardCustomization = async (req, res) => {
     // Push visible si l'offre en cours vient d'être créée ou modifiée
     const prevOffer = existing[0]?.prev_relevant_text || '';
     if (relevant_text && relevant_text.trim() !== prevOffer) {
+      const offerText = relevant_text.trim();
+
+      // Apple Wallet — alert push
       const [pushRegs] = await pool.query(
         `SELECT DISTINCT r.push_token
          FROM apple_pass_registrations r
@@ -1255,8 +1258,22 @@ export const updateCardCustomization = async (req, res) => {
         apnService.sendBulkAlertNotifications(
           pushRegs.map(r => r.push_token),
           'Nouvelle offre !',
-          relevant_text.trim()
-        ).catch(err => logger.error('Offer push failed', err.message));
+          offerText
+        ).catch(err => logger.error('Offer push Apple failed', err.message));
+      }
+
+      // Google Wallet — addMessageToObject (TEXT_AND_NOTIFY → notif système)
+      const [googleWallets] = await pool.query(
+        `SELECT client_id FROM wallet_cards WHERE company_id = ? AND pass_serial_number LIKE 'GOOGLE_%'`,
+        [empresaId]
+      );
+      if (googleWallets.length > 0) {
+        Promise.all(
+          googleWallets.map(w =>
+            googleWalletGenerator.addMessageToObject(w.client_id, 'Nouvelle offre !', offerText)
+              .catch(err => logger.error(`Offer push Google client ${w.client_id} failed`, err.message))
+          )
+        ).catch(() => {});
       }
     }
 

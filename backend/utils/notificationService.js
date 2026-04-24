@@ -1,5 +1,4 @@
 import pool from '../db.js';
-import apnService from './apnService.js';
 import googleWalletGenerator from './googleWalletGenerator.js';
 import logger from './logger.js';
 
@@ -46,38 +45,30 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
         ? `${Math.abs(pointsChange)} points utilisés.${nextTierMessage}`
         : `${pointsChange} points ajoutés ! Nouveau solde : ${newPoints} pts.${nextTierMessage}`;
 
-    // 4. Récupérer les tokens push Apple et les cartes Google en simultané
-    const [[registrations], [googleCards]] = await Promise.all([
-      pool.query(
-        `SELECT r.push_token
-         FROM apple_pass_registrations r
-         JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
-         WHERE w.client_id = ?`,
-        [clientId]
-      ),
-      pool.query(
-        `SELECT 1 FROM wallet_cards WHERE client_id = ? AND pass_serial_number LIKE 'GOOGLE_%' LIMIT 1`,
-        [clientId]
-      )
-    ]);
-
-    // 5. Lancer tout en parallèle (Apple et Google) - SANS ATTENDRE (Un-await pour dashboard instantané)
-    const walletSyncModule = await import('./walletSyncService.js');
-    const walletSyncService = walletSyncModule.default;
-    const pushTokens = registrations.map(r => r.push_token);
+    // 4. Vérifier si le client a un wallet Google
+    const [googleCards] = await pool.query(
+      `SELECT 1 FROM wallet_cards WHERE client_id = ? AND pass_serial_number LIKE 'GOOGLE_%' LIMIT 1`,
+      [clientId]
+    );
     const hasGoogleWallet = googleCards.length > 0;
 
-    // On lance en arrière-plan pour ne pas faire attendre le commerçant sur son dashboard.
-    // Google : le message part APRÈS le sync pour que le solde affiché sur le pass soit déjà à jour.
+    // 5. Lancer tout en arrière-plan sans bloquer le dashboard.
+    //
+    // Apple : la notification visible vient uniquement du changeMessage dans le pass
+    // (secondaryField). Envoyer un alert push à un token passbook ferait afficher
+    // "carte de fidélité modifiée" par iOS en écrasant le changeMessage.
+    // walletSyncService envoie déjà le push silencieux qui déclenche le refresh du pass.
+    //
+    // Google : addMessageToObject part APRÈS le sync pour que le solde soit déjà à jour.
+    const walletSyncModule = await import('./walletSyncService.js');
+    const walletSyncService = walletSyncModule.default;
+
     const googleNotifAfterSync = hasGoogleWallet
       ? walletSyncService.syncClientWallet(clientId, empresaId)
           .then(() => googleWalletGenerator.addMessageToObject(clientId, title, body))
       : walletSyncService.syncClientWallet(clientId, empresaId);
 
-    Promise.all([
-      googleNotifAfterSync,
-      registrations.length > 0 ? apnService.sendBulkAlertNotifications(pushTokens, title, body) : Promise.resolve()
-    ]).catch(err => logger.error('Notification parallel error', err));
+    googleNotifAfterSync.catch(err => logger.error('Notification parallel error', err));
 
     logger.info(`✅ Flux de notification lancé en tâche de fond pour ${clientId}`);
 

@@ -367,10 +367,21 @@ export class PassGenerator {
         value: (clientData.firstName || 'Client').toUpperCase()
       });
 
+      // Champ dynamique : affiche la progression vers le prochain palier.
+      // secondaryFields est le seul type de champ où changeMessage déclenche
+      // la notification lock screen sur iOS (headerFields ne le fait pas).
+      const hintValue = nextTierForMsg
+        ? `Encore ${nextTierForMsg.points_required - currentBalance} pts pour "${nextTierForMsg.title}"`
+        : 'Voir récompenses au dos';
+      const hintChangeMessage = nextTierForMsg
+        ? `Points mis à jour → %@`
+        : 'Bravo, vous avez atteint tous vos paliers !';
+
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
-        label: 'DÉTAILS DES RÉCOMPENSES',
-        value: 'Au dos'
+        label: nextTierForMsg ? 'PROCHAIN PALIER' : 'RÉCOMPENSES',
+        value: hintValue,
+        changeMessage: hintChangeMessage
       });
 
       // 4. Barcode

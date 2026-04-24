@@ -348,9 +348,6 @@ export class PassGenerator {
 
       // 1. Points (Header)
       const currentBalance = clientData.balance || 0;
-      const lastChange = clientData.lastPointsChange || 0;
-      const isRedemptionPass = lastChange < 0;
-      const nextTierForMsg = (clientData.rewardTiers || []).find(t => t.points_required > currentBalance);
 
       this.safeAddField(pass.headerFields, {
         key: 'points_header',
@@ -365,37 +362,10 @@ export class PassGenerator {
         value: (clientData.firstName || 'Client').toUpperCase()
       });
 
-      // Champ dynamique (secondaryField) — seul type où changeMessage déclenche
-      // la notification lock screen sur iOS. %@ est remplacé par la valeur du champ.
-      let hintValue, hintLabel, hintChangeMessage;
-
-      if (isRedemptionPass) {
-        const usedPoints = Math.abs(lastChange);
-        const redeemedTier = (clientData.rewardTiers || []).find(t => t.points_required === usedPoints);
-        const rewardName = redeemedTier ? redeemedTier.title : 'votre récompense';
-        hintValue = `"${rewardName}"`;
-        hintLabel = 'RÉCOMPENSE UTILISÉE';
-        hintChangeMessage = `Vous avez utilisé ${usedPoints} points pour cette récompense : %@`;
-      } else if (nextTierForMsg) {
-        const missing = nextTierForMsg.points_required - currentBalance;
-        hintValue = `Encore ${missing} pts pour obtenir cette récompense "${nextTierForMsg.title}"`;
-        hintLabel = 'PROCHAIN PALIER';
-        hintChangeMessage = lastChange > 0
-          ? `+ ${lastChange} points : %@`
-          : 'Objectif mis à jour : %@';
-      } else {
-        hintValue = `${currentBalance} points`;
-        hintLabel = 'VOS POINTS';
-        hintChangeMessage = lastChange > 0
-          ? `+ ${lastChange} points : Bravo, vous avez %@ et avez atteint tous vos paliers !`
-          : 'Solde mis à jour : %@';
-      }
-
       this.safeAddField(pass.secondaryFields, {
         key: 'reward_hint',
-        label: hintLabel,
-        value: hintValue,
-        changeMessage: hintChangeMessage
+        label: 'DÉTAILS DES RÉCOMPENSES',
+        value: 'Au dos'
       });
 
       // 4. Barcode

@@ -790,7 +790,10 @@ function ProDashboard() {
                 <div className="gn-card">
                   <div className="gn-card-header">
                     <div className="gn-card-label"><Bell size={13} /> Notification Push</div>
-                    <span className="gn-badge gn-badge--apple">🍎 Apple Wallet</span>
+                    <div className="gn-badges">
+                      <span className="gn-badge gn-badge--apple">🍎 Push direct</span>
+                      <span className="gn-badge gn-badge--google">🤖 Mise à jour</span>
+                    </div>
                   </div>
 
                   <div className="gn-field">
@@ -820,9 +823,15 @@ function ProDashboard() {
                     </div>
                   )}
 
-                  <div className="gn-info">
-                    <AlertCircle size={13} />
-                    <span>Sauvegarder ce champ envoie une notification Push immédiate à tous vos clients Apple Wallet.</span>
+                  <div className="gn-platform-grid">
+                    <div className="gn-platform-row">
+                      <span className="gn-platform-icon">🍎</span>
+                      <span className="gn-platform-text"><strong>Apple Wallet</strong> — notification push personnalisée sur l'écran verrouillé</span>
+                    </div>
+                    <div className="gn-platform-row">
+                      <span className="gn-platform-icon">🤖</span>
+                      <span className="gn-platform-text"><strong>Google Wallet</strong> — notification de mise à jour générée par Android au changement de solde ou d'offre</span>
+                    </div>
                   </div>
                 </div>
 
@@ -843,8 +852,15 @@ function ProDashboard() {
                     </div>
                   </div>
 
-                  <div className="gn-desc">
-                    Affichez automatiquement la carte sur l'écran verrouillé lorsqu'un client passe près de vos établissements <span className="gn-desc-muted">(rayon ~100 m)</span>.
+                  <div className="gn-platform-grid">
+                    <div className="gn-platform-row">
+                      <span className="gn-platform-icon">🍎</span>
+                      <span className="gn-platform-text"><strong>Apple Wallet</strong> — notification sur l'écran verrouillé à ~100 m du lieu</span>
+                    </div>
+                    <div className="gn-platform-row">
+                      <span className="gn-platform-icon">🤖</span>
+                      <span className="gn-platform-text"><strong>Google Wallet</strong> — geofencing natif Android, notification de proximité sans app dédiée</span>
+                    </div>
                   </div>
 
                   <div className="gn-locs">

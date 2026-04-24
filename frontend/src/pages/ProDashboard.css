@@ -2611,6 +2611,11 @@ button:active {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+.gn-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
 .gn-badge--apple {
   background: rgba(0, 0, 0, 0.07);
   color: var(--text-secondary);
@@ -2618,6 +2623,35 @@ button:active {
 .dark-mode .gn-badge--apple {
   background: rgba(255, 255, 255, 0.1);
 }
+.gn-badge--google {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+.dark-mode .gn-badge--google {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+/* Grille plateforme */
+.gn-platform-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.gn-platform-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.gn-platform-icon { flex-shrink: 0; font-size: 14px; line-height: 1.4; }
+.gn-platform-text strong { color: var(--text-primary); font-weight: 700; }
 
 /* Compteur lieux */
 .gn-loc-count {

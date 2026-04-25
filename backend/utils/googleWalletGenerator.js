@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import logger from './logger.js';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -302,28 +303,60 @@ class GoogleWalletGenerator {
     }
   }
 
-  async addMessageToObject(clientId, title, body, messageType = 'TEXT_AND_NOTIFY') {
-    if (!this.client) return;
+  async addMessageToObject(clientId, header, body) {
+    if (!this.client || !this.credentials) return;
+
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
+    const now = Date.now();
+    const windowMs = 24 * 60 * 60 * 1000;
+
+    if (!this._msgRateLimit) this._msgRateLimit = new Map();
+    const history = (this._msgRateLimit.get(objectId) || []).filter(t => now - t < windowMs);
+
+    if (history.length >= 3) {
+      logger.warn(`⚠️ [GOOGLE MSG] Quota 3/24h atteint pour ${objectId}`);
+      return;
+    }
+
+    history.push(now);
+    this._msgRateLimit.set(objectId, history);
+
     try {
-      await this.client.loyaltyobject.addmessage({
-        resourceId: objectId,
-        requestBody: {
+      const auth = new GoogleAuth({
+        credentials: this.credentials,
+        scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
+      });
+      const accessToken = await auth.getAccessToken();
+
+      await axios.post(
+        `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(objectId)}/addMessage`,
+        {
           message: {
-            header: title,
-            body: body,
-            id: `msg_${Date.now()}`,
-            messageType
+            header,
+            body,
+            id: `msg_${now}`,
+            messageType: 'TEXT_AND_NOTIFY'
+          }
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
           }
         }
-      });
+      );
+
       logger.info(`✅ [GOOGLE MSG] Notification envoyée à ${objectId}`);
     } catch (err) {
-      if (err.code === 404) {
+      history.pop();
+      this._msgRateLimit.set(objectId, history);
+
+      if (err.response?.status === 404) {
         logger.warn(`⚠️ [GOOGLE MSG] Object ${objectId} introuvable`);
         return;
       }
       logger.error(`❌ [GOOGLE MSG] Erreur addMessage ${objectId}: ${err.message}`);
+      throw err;
     }
   }
 

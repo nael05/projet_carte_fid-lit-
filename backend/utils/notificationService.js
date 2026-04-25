@@ -70,7 +70,7 @@ export const sendLoyaltyUpdateNotification = async (clientId, empresaId, pointsC
 
     const googleNotifAfterSync = hasGoogleWallet
       ? walletSyncService.syncClientWallet(clientId, empresaId, pointsChange)
-          .then(() => googleWalletGenerator.addMessageToObject(clientId, title, body))
+          .then(() => googleWalletGenerator.addMessageToObject(clientId, title, body, 'TEXT'))
       : walletSyncService.syncClientWallet(clientId, empresaId, pointsChange);
 
     googleNotifAfterSync.catch(err => logger.error('Notification parallel error', err));

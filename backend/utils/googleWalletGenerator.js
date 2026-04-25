@@ -302,7 +302,7 @@ class GoogleWalletGenerator {
     }
   }
 
-  async addMessageToObject(clientId, title, body) {
+  async addMessageToObject(clientId, title, body, messageType = 'TEXT_AND_NOTIFY') {
     if (!this.client) return;
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
     try {
@@ -313,7 +313,7 @@ class GoogleWalletGenerator {
             header: title,
             body: body,
             id: `msg_${Date.now()}`,
-            messageType: 'TEXT_AND_NOTIFY'
+            messageType
           }
         }
       });

@@ -207,7 +207,10 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Optional: client-side validation for type/size
+    if (file.size > 20 * 1024 * 1024) {
+      setStatus({ type: 'error', message: 'Image trop grande (max 20 Mo)' });
+      return;
+    }
     const formData = new FormData();
     formData.append('logo', file); // API expects key 'logo' even for icons/strips, let's keep it simple or change it
 

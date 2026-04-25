@@ -1201,7 +1201,7 @@ export const updateCardCustomization = async (req, res) => {
           google_back_phone || null, google_back_website || null, google_back_address || null,
           google_back_instagram || null, google_back_facebook || null, google_back_tiktok || null,
           apple_review_url || null, google_review_url || null,
-          locations ? JSON.stringify(locations) : null
+          Array.isArray(locations) ? JSON.stringify(locations.slice(0, 50)) : null
         ]
       );
     } else {
@@ -1267,7 +1267,7 @@ export const updateCardCustomization = async (req, res) => {
           google_back_tiktok || null,
           apple_review_url || null,
           google_review_url || null,
-          locations ? JSON.stringify(locations) : null,
+          Array.isArray(locations) ? JSON.stringify(locations.slice(0, 50)) : null,
           empresaId,
           loyaltyType
         ]

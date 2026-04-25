@@ -102,17 +102,15 @@ export class PassGenerator {
       // Détection plus robuste des fichiers locaux dans le dossier 'uploads'
       const isLocalUpload = urlOrPath.includes('uploads/');
       if (isLocalUpload) {
-        // Enlever tout ce qui précède 'uploads/' pour avoir un chemin propre
         const cleanPath = urlOrPath.substring(urlOrPath.indexOf('uploads/'));
-
-        // Résolution du chemin ABSOLU par rapport à ce script (backend/utils/passGenerator.js)
-        // uploads est dans backend/uploads soit ../uploads par rapport à ce script
         const fullPath = path.resolve(__dirname, '..', cleanPath);
-
+        const uploadsDir = path.resolve(__dirname, '..', 'uploads');
+        if (!fullPath.startsWith(uploadsDir + path.sep)) {
+          return null;
+        }
         if (fs.existsSync(fullPath)) {
           return fs.readFileSync(fullPath);
         }
-
         logger.error(`⚠️ Image Apple Wallet introuvable au chemin absolu: ${fullPath}`);
       }
 

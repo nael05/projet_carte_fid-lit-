@@ -57,8 +57,10 @@ class GoogleWalletGenerator {
     const bgColor = config.google_primary_color || '#1f2937';
 
     // Détection des fichiers locaux avant d'envoyer l'URL à Google pour éviter les erreurs 400
-    const localLogoPath = logoUrl ? path.resolve(__dirname, '..', logoUrl.replace(/^api\/uploads\//, 'uploads/')) : null;
-    const hasLocalLogo = localLogoPath && fs.existsSync(localLogoPath);
+    const resolvedLogoPath = logoUrl ? path.resolve(__dirname, '..', logoUrl.replace(/^api\/uploads\//, 'uploads/')) : null;
+    const uploadsBase = path.resolve(__dirname, '..', 'uploads');
+    const localLogoPath = (resolvedLogoPath && resolvedLogoPath.startsWith(uploadsBase + path.sep)) ? resolvedLogoPath : null;
+    const hasLocalLogo = localLogoPath !== null && fs.existsSync(localLogoPath);
 
     let locationsArray = [];
     if (config.locations) {
@@ -311,25 +313,33 @@ class GoogleWalletGenerator {
     const now = Date.now();
     const cutoff = now - 24 * 60 * 60 * 1000;
 
-    await db.query(
-      'DELETE FROM google_wallet_message_log WHERE object_id = ? AND sent_at <= ?',
-      [objectId, cutoff]
-    );
-
-    const [[{ count }]] = await db.query(
-      'SELECT COUNT(*) AS count FROM google_wallet_message_log WHERE object_id = ? AND sent_at > ?',
-      [objectId, cutoff]
-    );
-
-    if (count >= 3) {
-      logger.warn(`⚠️ [GOOGLE MSG] Quota 3/24h atteint pour ${objectId}`);
-      return;
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.query(
+        'DELETE FROM google_wallet_message_log WHERE object_id = ? AND sent_at <= ?',
+        [objectId, cutoff]
+      );
+      const [[{ count }]] = await conn.query(
+        'SELECT COUNT(*) AS count FROM google_wallet_message_log WHERE object_id = ? AND sent_at > ? FOR UPDATE',
+        [objectId, cutoff]
+      );
+      if (count >= 3) {
+        await conn.rollback();
+        logger.warn(`⚠️ [GOOGLE MSG] Quota 3/24h atteint pour ${objectId}`);
+        return;
+      }
+      await conn.query(
+        'INSERT INTO google_wallet_message_log (object_id, sent_at) VALUES (?, ?)',
+        [objectId, now]
+      );
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
     }
-
-    await db.query(
-      'INSERT INTO google_wallet_message_log (object_id, sent_at) VALUES (?, ?)',
-      [objectId, now]
-    );
 
     try {
       const auth = new GoogleAuth({

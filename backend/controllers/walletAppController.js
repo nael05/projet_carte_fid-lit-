@@ -234,7 +234,7 @@ export const addPointsToWallet = async (req, res) => {
   try {
     const { clientId, pointsToAdd, reason } = req.body;
 
-    if (!clientId || !pointsToAdd) {
+    if (!clientId || !pointsToAdd || pointsToAdd <= 0) {
       return res.status(400).json({ error: 'clientId et pointsToAdd requis' });
     }
 

@@ -456,8 +456,8 @@ export const logAppleWalletErrors = async (req, res) => {
     }
 
     // Enregistrer les logs
-    logs.forEach((log) => {
-      logger.warn(`🍎 [APPLE WALLET DEVICE LOG]: ${log}`);
+    logs.slice(0, 50).forEach((log) => {
+      logger.warn(`🍎 [APPLE WALLET DEVICE LOG]: ${String(log).substring(0, 500)}`);
     });
 
     res.status(200).json({ success: true });

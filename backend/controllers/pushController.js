@@ -52,8 +52,8 @@ export const sendNotification = async (req, res) => {
 
     // Vérifier aussi les clients Google avant de rejeter
     const [googleCheck] = await pool.query(
-      `SELECT 1 FROM wallet_cards WHERE client_id IN (?) AND pass_serial_number LIKE 'GOOGLE_%' LIMIT 1`,
-      [clientIds]
+      `SELECT 1 FROM wallet_cards WHERE client_id IN (?) AND pass_serial_number LIKE 'GOOGLE_%' AND company_id = ? LIMIT 1`,
+      [clientIds, empresaId]
     );
 
     if (registrations.length === 0 && googleCheck.length === 0) {
@@ -85,8 +85,8 @@ export const sendNotification = async (req, res) => {
     const [googleCards] = await pool.query(
       `SELECT DISTINCT w.client_id
        FROM wallet_cards w
-       WHERE w.client_id IN (?) AND w.pass_serial_number LIKE 'GOOGLE_%'`,
-      [clientIds]
+       WHERE w.client_id IN (?) AND w.pass_serial_number LIKE 'GOOGLE_%' AND w.company_id = ?`,
+      [clientIds, empresaId]
     );
     const googleResults = await Promise.allSettled(
       googleCards.map(c => googleWalletGenerator.addMessageToObject(c.client_id, title, message))

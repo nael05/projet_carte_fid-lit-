@@ -26,7 +26,7 @@ export const createSession = async (empresaId, deviceId, deviceName, token, expi
     const sessionId = randomUUID()
     
     // Parser l'expiration (ex: '24h' -> millisecondes)
-    const expiresMs = expiresIn === '24h' ? 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+    const expiresMs = expiresIn === '7d' ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
     const expiresAt = new Date(Date.now() + expiresMs)
     
     // Hash du token pour sécurité

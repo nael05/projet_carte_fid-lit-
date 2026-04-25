@@ -372,12 +372,10 @@ export const changePassword = async (req, res) => {
     // 🔐 Vérification 3: Hash du nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 🔐 Vérification 4: Invalider toutes les sessions existantes (sauf le token courant)
-    // Optionnel: DELETE des sessions ou ajouter une version de session
-    // await pool.query(
-    //   'DELETE FROM sessions WHERE entreprise_id = ? AND token != ?',
-    //   [empresaId, req.headers.authorization.split(' ')[1]]
-    // );
+    await pool.query(
+      'DELETE FROM sessions WHERE entreprise_id = ? AND device_id != ?',
+      [empresaId, req.user.deviceId]
+    );
 
     // UPDATE: changer le mot de passe, effacer le mdp temporaire et désactiver le flag
     const [updateResult] = await pool.query(

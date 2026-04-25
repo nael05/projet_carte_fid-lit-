@@ -716,19 +716,25 @@ export const handleScan = async (req, res) => {
       pointsToAdd = Math.max(0, maxBalance - currentPoints);
     }
 
-    await pool.query(
-      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
-      [newPoints, clientId, empresaId]
-    );
+    const scanConn = await pool.getConnection();
+    try {
+      await scanConn.beginTransaction();
+      await scanConn.query(
+        'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
+        [newPoints, clientId, empresaId]
+      );
+      await scanConn.query(
+        "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
+        [randomUUID(), clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
+      );
+      await scanConn.commit();
+    } catch (txErr) {
+      await scanConn.rollback();
+      throw txErr;
+    } finally {
+      scanConn.release();
+    }
 
-    const transactionId = randomUUID();
-    await pool.query(
-      "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
-      [transactionId, clientId, empresaId, pointsToAdd, pointsToAdd + ' point(s) ajouté(s)']
-    );
-
-    // 🔄 Sync via le service de notification (Apple + Google)
-    // OPTIMISATION : Non-bloquant pour une réponse instantanée au marchand
     sendLoyaltyUpdateNotification(clientId, empresaId, pointsToAdd, false).catch(e =>
       logger.warn('Push scan notification failed', e.message)
     );
@@ -819,7 +825,8 @@ export const finalizeFullTransaction = async (req, res) => {
     );
     const maxBalance = cfgRows.length > 0 ? cfgRows[0].max_points_balance : null;
 
-    // 2. Gérer le cadeau en premier (si présent)
+    const pendingWrites = [];
+
     if (rewardTierId) {
       const [tierRows] = await pool.query(
         'SELECT id, title, points_required FROM reward_tiers WHERE id = ? AND entreprise_id = ?',
@@ -831,19 +838,16 @@ export const finalizeFullTransaction = async (req, res) => {
           currentPoints -= tier.points_required;
           totalChange -= tier.points_required;
           descriptionParts.push(`Cadeau "${tier.title}" utilisé (-${tier.points_required} pts)`);
-
-          // Log transaction cadeau
-          await pool.query(
+          pendingWrites.push([
             "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'redeem_reward', ?, ?)",
             [randomUUID(), clientId, empresaId, -tier.points_required, `Utilisation : ${tier.title}`]
-          );
+          ]);
         } else {
           return res.status(400).json({ error: 'Points insuffisants pour ce cadeau' });
         }
       }
     }
 
-    // 3. Ajouter les points du jour (avec plafond de solde si configuré)
     let ptsToAdd = Number(pointsToAdd) || 0;
     if (maxBalance !== null && maxBalance !== undefined && ptsToAdd > 0) {
       const roomLeft = Math.max(0, maxBalance - currentPoints);
@@ -853,21 +857,31 @@ export const finalizeFullTransaction = async (req, res) => {
       currentPoints += ptsToAdd;
       totalChange += ptsToAdd;
       descriptionParts.push(`${ptsToAdd} points ajoutés pour l'achat`);
-
-      // Log transaction ajout
-      await pool.query(
+      pendingWrites.push([
         "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
         [randomUUID(), clientId, empresaId, ptsToAdd, `${ptsToAdd} points ajoutés`]
-      );
+      ]);
     }
 
-    // 4. Mettre à jour le solde final
-    await pool.query(
+    pendingWrites.push([
       'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
       [currentPoints, clientId, empresaId]
-    );
+    ]);
 
-    // 5. Notification de synchronisation
+    const ftConn = await pool.getConnection();
+    try {
+      await ftConn.beginTransaction();
+      for (const [sql, params] of pendingWrites) {
+        await ftConn.query(sql, params);
+      }
+      await ftConn.commit();
+    } catch (txErr) {
+      await ftConn.rollback();
+      throw txErr;
+    } finally {
+      ftConn.release();
+    }
+
     const { sendLoyaltyUpdateNotification } = await import('../utils/notificationService.js');
     sendLoyaltyUpdateNotification(clientId, empresaId, totalChange, rewardTierId ? true : false).catch(e =>
       logger.warn('Push transaction notification failed', e.message)
@@ -907,20 +921,29 @@ export const adjustPoints = async (req, res) => {
     const { points } = clientRows[0];
     const newPoints = Math.max(0, Number(points || 0) + Number(adjustment));
 
-    await pool.query(
-      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
-      [newPoints, clientId, empresaId]
-    );
-
     const adj = Number(adjustment);
-    await pool.query(
-      "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, ?, ?, ?)",
-      [randomUUID(), clientId, empresaId,
-       adj >= 0 ? 'add_points' : 'remove_points',
-       adj,
-       adj >= 0 ? `${adj} point(s) ajouté(s) manuellement` : `${Math.abs(adj)} point(s) retiré(s)`
-      ]
-    );
+    const adjConn = await pool.getConnection();
+    try {
+      await adjConn.beginTransaction();
+      await adjConn.query(
+        'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
+        [newPoints, clientId, empresaId]
+      );
+      await adjConn.query(
+        "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, ?, ?, ?)",
+        [randomUUID(), clientId, empresaId,
+         adj >= 0 ? 'add_points' : 'remove_points',
+         adj,
+         adj >= 0 ? `${adj} point(s) ajouté(s) manuellement` : `${Math.abs(adj)} point(s) retiré(s)`
+        ]
+      );
+      await adjConn.commit();
+    } catch (txErr) {
+      await adjConn.rollback();
+      throw txErr;
+    } finally {
+      adjConn.release();
+    }
 
     sendLoyaltyUpdateNotification(clientId, empresaId, adjustment, false).catch(e =>
       logger.warn('Push adjust notification failed', e.message)
@@ -1129,6 +1152,10 @@ export const updateCardCustomization = async (req, res) => {
   } = req.body;
 
   try {
+    if (empresaId !== req.user.id) {
+      return res.status(403).json({ error: 'Accès non autorisé' });
+    }
+
     if (!loyaltyType || !['points', 'stamps'].includes(loyaltyType)) {
       return res.status(400).json({ error: 'loyaltyType invalide' });
     }
@@ -1363,22 +1390,29 @@ export const redeemReward = async (req, res) => {
 
     const newPoints = currentPoints - tier.points_required;
 
-    // 1. Mise à jour DB clients
-    await pool.query('UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?', [newPoints, clientId, empresaId]);
-
-    await pool.query(
-      "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'redeem_reward', ?, ?)",
-      [randomUUID(), clientId, empresaId, -tier.points_required, `Utilisation : ${tier.title}`]
-    );
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.query('UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?', [newPoints, clientId, empresaId]);
+      await conn.query(
+        "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'redeem_reward', ?, ?)",
+        [randomUUID(), clientId, empresaId, -tier.points_required, `Utilisation : ${tier.title}`]
+      );
+      await conn.commit();
+    } catch (txErr) {
+      await conn.rollback();
+      throw txErr;
+    } finally {
+      conn.release();
+    }
 
     sendLoyaltyUpdateNotification(clientId, empresaId, -tier.points_required, true).catch(pushErr =>
       logger.warn('Push redeem notification failed', pushErr.message)
     );
 
-
     res.json({ success: true, message: 'Cadeau validé ! (-' + tier.points_required + ' pts)', newPoints });
   } catch (err) {
-    console.error(err);
+    logger.error('Redeem reward error', { error: err.message });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -1459,7 +1493,11 @@ export const resetPassword = async (req, res) => {
 
     const email = resetRows[0].email;
 
-    // 2. Hacher le nouveau mot de passe
+    const complexityCheck = validatePassword(newPassword);
+    if (!complexityCheck.isValid) {
+      return res.status(400).json({ error: 'Exigences du mot de passe non respectées', details: complexityCheck.errors });
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // 3. Mettre à jour l'entreprise

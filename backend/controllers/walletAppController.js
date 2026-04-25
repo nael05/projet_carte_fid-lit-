@@ -241,13 +241,13 @@ export const addPointsToWallet = async (req, res) => {
     logger.info(`➕ Ajout de ${pointsToAdd} point(s) au client ${clientId}`);
 
     const [walletRows] = await db.query(
-      `SELECT wc.id, wc.pass_serial_number, wc.points_balance, wc.stamps_balance,
+      `SELECT wc.id, wc.client_id, wc.pass_serial_number, wc.points_balance, wc.stamps_balance,
               c.entreprise_id, e.loyalty_type
        FROM wallet_cards wc
        JOIN clients c ON wc.client_id = c.id
        JOIN entreprises e ON c.entreprise_id = e.id
-       WHERE wc.client_id = ? OR wc.pass_serial_number = ?`,
-      [clientId, clientId]
+       WHERE (wc.client_id = ? OR wc.pass_serial_number = ?) AND c.entreprise_id = ?`,
+      [clientId, clientId, req.user.id]
     );
 
     if (!walletRows || walletRows.length === 0) {
@@ -274,6 +274,7 @@ export const addPointsToWallet = async (req, res) => {
     const newBalance = oldBalance + cappedPoints;
 
     await db.query(`UPDATE wallet_cards SET ${isStamps ? 'stamps_balance' : 'points_balance'} = ?, last_updated = NOW() WHERE id = ?`, [newBalance, walletId]);
+    await db.query('UPDATE clients SET points = ? WHERE id = ?', [newBalance, wallet.client_id]);
 
     await db.query(
       `INSERT INTO pass_update_logs (

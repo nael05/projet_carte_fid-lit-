@@ -266,10 +266,11 @@ export const sendPushNotification = async (req, res) => {
       status: 'pending'
     }));
 
-    for (const notification of pushNotifications) {
+    if (pushNotifications.length > 0) {
+      const values = pushNotifications.map(n => [n.id, n.client_id, n.notification_id, n.status]);
       await pool.query(
-        `INSERT INTO client_push_notifications (id, client_id, notification_id, status) VALUES (?, ?, ?, ?)`,
-        [notification.id, notification.client_id, notification.notification_id, notification.status]
+        `INSERT INTO client_push_notifications (id, client_id, notification_id, status) VALUES ?`,
+        [values]
       );
     }
 
@@ -294,11 +295,13 @@ export const sendPushNotification = async (req, res) => {
 export const getPushNotificationHistory = async (req, res) => {
   const empresaId = req.user.id;
   const { limit = 20, offset = 0 } = req.query;
+  const safeLimit = Math.min(Math.max(1, parseInt(limit) || 20), 200);
+  const safeOffset = Math.max(0, parseInt(offset) || 0);
 
   try {
     const [notifications] = await pool.query(
       `SELECT * FROM push_notifications_sent WHERE entreprise_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [empresaId, parseInt(limit), parseInt(offset)]
+      [empresaId, safeLimit, safeOffset]
     );
 
     const [totalCount] = await pool.query(
@@ -309,8 +312,8 @@ export const getPushNotificationHistory = async (req, res) => {
     res.json({
       notifications,
       total: totalCount[0].count,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      limit: safeLimit,
+      offset: safeOffset
     });
   } catch (err) {
     logger.error('Get push notification history error', { error: err.message });

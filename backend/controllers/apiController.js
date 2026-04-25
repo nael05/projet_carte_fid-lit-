@@ -802,34 +802,43 @@ export const finalizeFullTransaction = async (req, res) => {
   const empresaId = req.user.id;
 
   try {
-    // 1. Récupérer le client
-    const [clientRows] = await pool.query(
-      'SELECT points, nom, prenom FROM clients WHERE id = ? AND entreprise_id = ?',
+    const [clientCheck] = await pool.query(
+      'SELECT id FROM clients WHERE id = ? AND entreprise_id = ?',
       [clientId, empresaId]
     );
+    if (clientCheck.length === 0) return res.status(404).json({ error: 'Client non trouvé' });
 
-    if (clientRows.length === 0) return res.status(404).json({ error: 'Client non trouvé' });
-    const client = clientRows[0];
-    let currentPoints = Number(client.points) || 0;
-    let totalChange = 0;
-    let descriptionParts = [];
-
-    // Charger le plafond de solde
     const [cfgRows] = await pool.query(
       'SELECT max_points_balance FROM loyalty_config WHERE entreprise_id = ?',
       [empresaId]
     );
     const maxBalance = cfgRows.length > 0 ? cfgRows[0].max_points_balance : null;
 
-    const pendingWrites = [];
-
+    let tier = null;
     if (rewardTierId) {
       const [tierRows] = await pool.query(
         'SELECT id, title, points_required FROM reward_tiers WHERE id = ? AND entreprise_id = ?',
         [rewardTierId, empresaId]
       );
-      if (tierRows.length > 0) {
-        const tier = tierRows[0];
+      if (tierRows.length > 0) tier = tierRows[0];
+    }
+
+    let currentPoints;
+    let totalChange = 0;
+    const descriptionParts = [];
+    const pendingWrites = [];
+
+    const ftConn = await pool.getConnection();
+    try {
+      await ftConn.beginTransaction();
+
+      const [[freshClient]] = await ftConn.query(
+        'SELECT points FROM clients WHERE id = ? AND entreprise_id = ? FOR UPDATE',
+        [clientId, empresaId]
+      );
+      currentPoints = Number(freshClient.points) || 0;
+
+      if (tier) {
         if (currentPoints >= tier.points_required) {
           currentPoints -= tier.points_required;
           totalChange -= tier.points_required;
@@ -839,34 +848,31 @@ export const finalizeFullTransaction = async (req, res) => {
             [randomUUID(), clientId, empresaId, -tier.points_required, `Utilisation : ${tier.title}`]
           ]);
         } else {
+          await ftConn.rollback();
           return res.status(400).json({ error: 'Points insuffisants pour ce cadeau' });
         }
       }
-    }
 
-    let ptsToAdd = Number(pointsToAdd) || 0;
-    if (maxBalance !== null && maxBalance !== undefined && ptsToAdd > 0) {
-      const roomLeft = Math.max(0, maxBalance - currentPoints);
-      ptsToAdd = Math.min(ptsToAdd, roomLeft);
-    }
-    if (ptsToAdd > 0) {
-      currentPoints += ptsToAdd;
-      totalChange += ptsToAdd;
-      descriptionParts.push(`${ptsToAdd} points ajoutés pour l'achat`);
+      let ptsToAdd = Number(pointsToAdd) || 0;
+      if (maxBalance !== null && maxBalance !== undefined && ptsToAdd > 0) {
+        const roomLeft = Math.max(0, maxBalance - currentPoints);
+        ptsToAdd = Math.min(ptsToAdd, roomLeft);
+      }
+      if (ptsToAdd > 0) {
+        currentPoints += ptsToAdd;
+        totalChange += ptsToAdd;
+        descriptionParts.push(`${ptsToAdd} points ajoutés pour l'achat`);
+        pendingWrites.push([
+          "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
+          [randomUUID(), clientId, empresaId, ptsToAdd, `${ptsToAdd} points ajoutés`]
+        ]);
+      }
+
       pendingWrites.push([
-        "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'add_points', ?, ?)",
-        [randomUUID(), clientId, empresaId, ptsToAdd, `${ptsToAdd} points ajoutés`]
+        'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
+        [currentPoints, clientId, empresaId]
       ]);
-    }
 
-    pendingWrites.push([
-      'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
-      [currentPoints, clientId, empresaId]
-    ]);
-
-    const ftConn = await pool.getConnection();
-    try {
-      await ftConn.beginTransaction();
       for (const [sql, params] of pendingWrites) {
         await ftConn.query(sql, params);
       }

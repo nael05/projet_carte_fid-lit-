@@ -60,29 +60,28 @@ export const sendNotification = async (req, res) => {
       return res.status(404).json({ error: 'Aucun appareil enregistré trouvé pour les clients sélectionnés' });
     }
 
-    // 2. Créer l'entrée dans push_notifications_sent
     const notificationId = randomUUID();
     await pool.query(
       `INSERT INTO push_notifications_sent (id, entreprise_id, title, message, target_type, recipients_count, status)
-       VALUES (?, ?, ?, ?, 'specific', ?, 'sent')`,
-      [notificationId, empresaId, title, message, registrations.length]
+       VALUES (?, ?, ?, ?, 'specific', 0, 'sent')`,
+      [notificationId, empresaId, title, message]
     );
 
-    // 3. Envoyer les notifications Apple
     const pushTokens = registrations.map(r => r.push_token);
     const results = await apnService.sendBulkAlertNotifications(pushTokens, title, message);
 
-    // 4. Enregistrer les résultats Apple
-    for (const reg of registrations) {
-      const result = results.results.find(res => res.token === reg.push_token);
+    if (registrations.length > 0) {
+      const now = new Date();
+      const logValues = registrations.map(reg => {
+        const result = results.results.find(r => r.token === reg.push_token);
+        return [randomUUID(), reg.client_id, notificationId, reg.push_token, result?.sent ? 'sent' : 'failed', now];
+      });
       await pool.query(
-        `INSERT INTO client_push_notifications (id, client_id, notification_id, push_token, status, sent_at)
-         VALUES (?, ?, ?, ?, ?, NOW())`,
-        [randomUUID(), reg.client_id, notificationId, reg.push_token, result?.sent ? 'sent' : 'failed']
+        `INSERT INTO client_push_notifications (id, client_id, notification_id, push_token, status, sent_at) VALUES ?`,
+        [logValues]
       );
     }
 
-    // 5. Envoyer les notifications Google aux clients qui ont un wallet Google
     const [googleCards] = await pool.query(
       `SELECT DISTINCT w.client_id
        FROM wallet_cards w
@@ -94,10 +93,9 @@ export const sendNotification = async (req, res) => {
     );
     const googleSent = googleResults.filter(r => r.status === 'fulfilled').length;
 
-    // Mettre à jour le statut final
     await pool.query(
-      'UPDATE push_notifications_sent SET sent_at = NOW() WHERE id = ?',
-      [notificationId]
+      'UPDATE push_notifications_sent SET sent_at = NOW(), recipients_count = ? WHERE id = ?',
+      [registrations.length + googleCards.length, notificationId]
     );
 
     res.json({

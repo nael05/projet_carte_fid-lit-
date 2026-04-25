@@ -256,33 +256,51 @@ export const addPointsToWallet = async (req, res) => {
 
     const wallet = walletRows[0];
     const { id: walletId, pass_serial_number, loyalty_type } = wallet;
-
     const isStamps = loyalty_type === 'stamps';
-    const oldBalance = isStamps ? wallet.stamps_balance : wallet.points_balance;
 
-    // Plafonner le solde total si configuré
-    let cappedPoints = pointsToAdd;
     const [cfgRows] = await db.query(
       'SELECT max_points_balance FROM loyalty_config WHERE entreprise_id = ?',
       [wallet.entreprise_id]
     );
-    if (cfgRows.length > 0 && cfgRows[0].max_points_balance !== null) {
-      const roomLeft = Math.max(0, cfgRows[0].max_points_balance - oldBalance);
-      cappedPoints = Math.min(cappedPoints, roomLeft);
+    const maxPoints = cfgRows.length > 0 ? cfgRows[0].max_points_balance : null;
+
+    let oldBalance, newBalance, cappedPoints;
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const [[freshWallet]] = await conn.query(
+        'SELECT points_balance, stamps_balance FROM wallet_cards WHERE id = ? FOR UPDATE',
+        [walletId]
+      );
+      oldBalance = isStamps ? freshWallet.stamps_balance : freshWallet.points_balance;
+      cappedPoints = pointsToAdd;
+      if (maxPoints !== null) {
+        const roomLeft = Math.max(0, maxPoints - oldBalance);
+        cappedPoints = Math.min(cappedPoints, roomLeft);
+      }
+      newBalance = oldBalance + cappedPoints;
+
+      await conn.query(
+        `UPDATE wallet_cards SET ${isStamps ? 'stamps_balance' : 'points_balance'} = ?, last_updated = NOW() WHERE id = ?`,
+        [newBalance, walletId]
+      );
+      await conn.query(
+        'UPDATE clients SET points = ? WHERE id = ?',
+        [newBalance, wallet.client_id]
+      );
+      await conn.query(
+        `INSERT INTO pass_update_logs (wallet_card_id, pass_serial_number, action, value, old_balance, new_balance, description, triggered_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [walletId, pass_serial_number, isStamps ? 'add_stamps' : 'add_points', cappedPoints, oldBalance, newBalance, reason || 'API update', 'admin_api']
+      );
+
+      await conn.commit();
+    } catch (txErr) {
+      await conn.rollback();
+      throw txErr;
+    } finally {
+      conn.release();
     }
-
-    const newBalance = oldBalance + cappedPoints;
-
-    await db.query(`UPDATE wallet_cards SET ${isStamps ? 'stamps_balance' : 'points_balance'} = ?, last_updated = NOW() WHERE id = ?`, [newBalance, walletId]);
-    await db.query('UPDATE clients SET points = ? WHERE id = ?', [newBalance, wallet.client_id]);
-
-    await db.query(
-      `INSERT INTO pass_update_logs (
-        wallet_card_id, pass_serial_number, action, value, old_balance, new_balance,
-        description, triggered_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [walletId, pass_serial_number, isStamps ? 'add_stamps' : 'add_points', cappedPoints, oldBalance, newBalance, reason || 'API update', 'admin_api']
-    );
 
     sendLoyaltyUpdateNotification(clientId, wallet.entreprise_id, cappedPoints, false).catch(err =>
       logger.warn('Push loyalty notification failed in walletApp', err.message)
@@ -397,8 +415,8 @@ export const downloadClientPass = async (req, res) => {
         LEFT JOIN entreprises e ON c.entreprise_id = e.id
         LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
         LEFT JOIN card_customization cc ON e.id = cc.company_id
-        WHERE c.id = ?`,
-      [clientId]
+        WHERE c.id = ? AND c.entreprise_id = ?`,
+      [clientId, req.user.id]
     );
 
     if (!clientRows || clientRows.length === 0) {

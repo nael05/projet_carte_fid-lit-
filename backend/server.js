@@ -5,6 +5,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cron from 'node-cron';
 import apiRoutes from './routes/apiRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -156,11 +157,13 @@ app.listen(PORT, () => {
   }, 100);
 });
 
-setInterval(async () => {
-  try {
-    await pool.query('DELETE FROM transaction_history WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)');
-    logger.info('Transaction history purge completed');
-  } catch (err) {
-    logger.error('Transaction history purge failed', { error: err.message });
-  }
-}, 24 * 60 * 60 * 1000);
+if (process.env.NODE_APP_INSTANCE === '0') {
+  cron.schedule('0 3 * * *', async () => {
+    try {
+      await pool.query('DELETE FROM transaction_history WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)');
+      logger.info('Transaction history purge completed');
+    } catch (err) {
+      logger.error('Transaction history purge failed', { error: err.message });
+    }
+  });
+}

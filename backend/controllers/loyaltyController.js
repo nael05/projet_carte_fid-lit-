@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import pool from '../db.js';
 import logger from '../utils/logger.js';
 import apnService from '../utils/apnService.js';
+import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import walletSyncService from '../utils/walletSyncService.js';
 
 // ===== LOYALTY CONFIGURATION CONTROLLERS =====
@@ -164,8 +165,8 @@ export const createRewardTier = async (req, res) => {
   const empresaId = req.user.id;
   const { points_required, title, description } = req.body;
 
-  if (!points_required || !title) {
-    return res.status(400).json({ error: 'points_required et title sont obligatoires' });
+  if (!title || !Number.isInteger(Number(points_required)) || Number(points_required) <= 0) {
+    return res.status(400).json({ error: 'points_required doit être un entier positif et title est obligatoire' });
   }
 
   try {
@@ -189,6 +190,10 @@ export const updateRewardTier = async (req, res) => {
   const empresaId = req.user.id;
   const tierId = req.params.id;
   const { points_required, title, description } = req.body;
+
+  if (points_required !== undefined && (!Number.isInteger(Number(points_required)) || Number(points_required) <= 0)) {
+    return res.status(400).json({ error: 'points_required doit être un entier positif' });
+  }
 
   try {
     await pool.query(
@@ -230,7 +235,7 @@ export const deleteRewardTier = async (req, res) => {
 
 export const sendPushNotification = async (req, res) => {
   const empresaId = req.user.id;
-  const { title, message, target_type = 'all', target_segment = null, schedule_for = null } = req.body;
+  const { title, message, target_type = 'all', target_segment = null } = req.body;
 
   if (!title || !message) {
     return res.status(400).json({ error: 'Titre et message requis' });
@@ -238,18 +243,17 @@ export const sendPushNotification = async (req, res) => {
 
   try {
     const notificationId = randomUUID();
-    const status = schedule_for ? 'scheduled' : 'sent';
-    const sentAt = schedule_for ? null : new Date();
+    const sentAt = new Date();
 
     await pool.query(
-      `INSERT INTO push_notifications_sent 
-       (id, entreprise_id, title, message, target_type, target_segment, status, sent_at, scheduled_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [notificationId, empresaId, title, message, target_type, target_segment, status, sentAt, schedule_for ? new Date(schedule_for) : null]
+      `INSERT INTO push_notifications_sent
+       (id, entreprise_id, title, message, target_type, target_segment, status, sent_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'sent', ?)`,
+      [notificationId, empresaId, title, message, target_type, target_segment, sentAt]
     );
 
-    let clientQuery = `SELECT id, points FROM clients WHERE entreprise_id = ?`;
-    let params = [empresaId];
+    let clientQuery = `SELECT id FROM clients WHERE entreprise_id = ?`;
+    const params = [empresaId];
 
     if (target_segment === 'active') {
       clientQuery += ' AND points > 0';
@@ -258,33 +262,55 @@ export const sendPushNotification = async (req, res) => {
     }
 
     const [clients] = await pool.query(clientQuery, params);
+    const clientIds = clients.map(c => c.id);
 
-    const pushNotifications = clients.map(client => ({
-      id: randomUUID(),
-      client_id: client.id,
-      notification_id: notificationId,
-      status: 'pending'
-    }));
-
-    if (pushNotifications.length > 0) {
-      const values = pushNotifications.map(n => [n.id, n.client_id, n.notification_id, n.status]);
+    if (clientIds.length > 0) {
+      const values = clientIds.map(cid => [randomUUID(), cid, notificationId, 'pending']);
       await pool.query(
         `INSERT INTO client_push_notifications (id, client_id, notification_id, status) VALUES ?`,
         [values]
+      );
+
+      // Apple push notifications
+      const [appleRegs] = await pool.query(
+        `SELECT DISTINCT r.push_token
+         FROM apple_pass_registrations r
+         JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
+         WHERE w.client_id IN (?) AND w.company_id = ?`,
+        [clientIds, empresaId]
+      );
+      if (appleRegs.length > 0) {
+        const pushTokens = appleRegs.map(r => r.push_token);
+        apnService.sendBulkAlertNotifications(pushTokens, title, message).catch(err =>
+          logger.error('Broadcast Apple push failed', { error: err.message })
+        );
+      }
+
+      // Google Wallet messages
+      const [googleCards] = await pool.query(
+        `SELECT DISTINCT w.client_id
+         FROM wallet_cards w
+         WHERE w.client_id IN (?) AND w.pass_serial_number LIKE 'GOOGLE_%'`,
+        [clientIds]
+      );
+      googleCards.forEach(c =>
+        googleWalletGenerator.addMessageToObject(c.client_id, title, message).catch(err =>
+          logger.error('Broadcast Google push failed', { error: err.message })
+        )
       );
     }
 
     await pool.query(
       'UPDATE push_notifications_sent SET recipients_count = ? WHERE id = ?',
-      [pushNotifications.length, notificationId]
+      [clientIds.length, notificationId]
     );
 
     res.json({
       success: true,
       notificationId,
-      recipientsCount: pushNotifications.length,
-      status,
-      message: `Notification ${schedule_for ? 'programmée' : 'envoyée'} à ${pushNotifications.length} client(s)`
+      recipientsCount: clientIds.length,
+      status: 'sent',
+      message: `Notification envoyée à ${clientIds.length} client(s)`
     });
   } catch (err) {
     logger.error('Send push notification error', { error: err.message });

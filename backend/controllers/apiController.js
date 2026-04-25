@@ -586,12 +586,6 @@ export const getTransactionHistory = async (req, res) => {
   const offset = (parseInt(page) - 1) * limit;
 
   try {
-    // Auto-purge des entrées de plus de 6 mois
-    await pool.query(
-      'DELETE FROM transaction_history WHERE entreprise_id = ? AND created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)',
-      [empresaId]
-    );
-
     let where = 'WHERE th.entreprise_id = ?';
     const params = [empresaId];
 
@@ -706,19 +700,21 @@ export const handleScan = async (req, res) => {
       pointsToAdd = 0; // Sécurité pour le mode manuel
     }
 
-    const currentPoints = Number(clientRows[0].points) || 0;
-    let newPoints = currentPoints + pointsToAdd;
-
-    // Plafonner le solde total si configuré
     const maxBalance = loyaltyConfig.max_points_balance;
-    if (maxBalance !== null && maxBalance !== undefined && newPoints > maxBalance) {
-      newPoints = maxBalance;
-      pointsToAdd = Math.max(0, maxBalance - currentPoints);
-    }
-
+    let newPoints;
     const scanConn = await pool.getConnection();
     try {
       await scanConn.beginTransaction();
+      const [[freshClient]] = await scanConn.query(
+        'SELECT points FROM clients WHERE id = ? AND entreprise_id = ? FOR UPDATE',
+        [clientId, empresaId]
+      );
+      const currentPoints = Number(freshClient.points) || 0;
+      newPoints = currentPoints + pointsToAdd;
+      if (maxBalance !== null && maxBalance !== undefined && newPoints > maxBalance) {
+        newPoints = maxBalance;
+        pointsToAdd = Math.max(0, maxBalance - currentPoints);
+      }
       await scanConn.query(
         'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
         [newPoints, clientId, empresaId]
@@ -918,13 +914,16 @@ export const adjustPoints = async (req, res) => {
       return res.status(404).json({ error: 'Client non trouvé ou non autorisé' });
     }
 
-    const { points } = clientRows[0];
-    const newPoints = Math.max(0, Number(points || 0) + Number(adjustment));
-
     const adj = Number(adjustment);
+    let newPoints;
     const adjConn = await pool.getConnection();
     try {
       await adjConn.beginTransaction();
+      const [[freshClient]] = await adjConn.query(
+        'SELECT points FROM clients WHERE id = ? AND entreprise_id = ? FOR UPDATE',
+        [clientId, empresaId]
+      );
+      newPoints = Math.max(0, Number(freshClient.points || 0) + adj);
       await adjConn.query(
         'UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?',
         [newPoints, clientId, empresaId]
@@ -1383,16 +1382,24 @@ export const redeemReward = async (req, res) => {
     const [tiers] = await pool.query('SELECT * FROM reward_tiers WHERE id = ? AND entreprise_id = ?', [rewardTierId, empresaId]);
     if (tiers.length === 0) return res.status(404).json({ error: 'Récompense invalide' });
     const tier = tiers[0];
-    const [clientRows] = await pool.query('SELECT points FROM clients WHERE id = ? AND entreprise_id = ?', [clientId, empresaId]);
-    if (clientRows.length === 0) return res.status(404).json({ error: 'Client introuvable' });
-    const currentPoints = clientRows[0].points || 0;
-    if (currentPoints < tier.points_required) return res.status(400).json({ error: 'Points insuffisants' });
-
-    const newPoints = currentPoints - tier.points_required;
-
+    let newPoints;
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
+      const [[clientRow]] = await conn.query(
+        'SELECT points FROM clients WHERE id = ? AND entreprise_id = ? FOR UPDATE',
+        [clientId, empresaId]
+      );
+      if (!clientRow) {
+        await conn.rollback();
+        return res.status(404).json({ error: 'Client introuvable' });
+      }
+      const currentPoints = clientRow.points || 0;
+      if (currentPoints < tier.points_required) {
+        await conn.rollback();
+        return res.status(400).json({ error: 'Points insuffisants' });
+      }
+      newPoints = currentPoints - tier.points_required;
       await conn.query('UPDATE clients SET points = ? WHERE id = ? AND entreprise_id = ?', [newPoints, clientId, empresaId]);
       await conn.query(
         "INSERT INTO transaction_history (id, client_id, entreprise_id, type, points_change, description) VALUES (?, ?, ?, 'redeem_reward', ?, ?)",

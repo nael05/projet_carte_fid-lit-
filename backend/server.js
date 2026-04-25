@@ -155,3 +155,12 @@ app.listen(PORT, () => {
     }
   }, 100);
 });
+
+setInterval(async () => {
+  try {
+    await pool.query('DELETE FROM transaction_history WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH)');
+    logger.info('Transaction history purge completed');
+  } catch (err) {
+    logger.error('Transaction history purge failed', { error: err.message });
+  }
+}, 24 * 60 * 60 * 1000);

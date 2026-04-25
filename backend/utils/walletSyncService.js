@@ -78,7 +78,25 @@ class WalletSyncService {
           // SYNCHRO GOOGLE WALLET
           if (serial && serial.startsWith('GOOGLE_')) {
             logger.info(`   🤖 [SYNC] Mise à jour Google Wallet`);
-            return googleWalletGenerator.updateLoyaltyObject(clientId, companyId, newBalance, tiers, clientCustomization);
+            await googleWalletGenerator.updateLoyaltyObject(clientId, companyId, newBalance, tiers, clientCustomization);
+
+            const delta = lastPointsChange || 0;
+            if (delta !== 0) {
+              let title, msgBody;
+              if (delta < 0) {
+                const usedPoints = Math.abs(delta);
+                const redeemedTier = tiers.find(t => t.points_required === usedPoints);
+                title = 'Récompense utilisée';
+                msgBody = `Vous avez utilisé ${usedPoints} points pour cette récompense : "${redeemedTier ? redeemedTier.title : 'votre récompense'}"`;
+              } else {
+                const nextTier = tiers.find(t => t.points_required > newBalance);
+                title = `+ ${delta} points`;
+                msgBody = nextTier
+                  ? `Encore ${nextTier.points_required - newBalance} pts pour obtenir cette récompense "${nextTier.title}"`
+                  : `Bravo, vous avez ${newBalance} points et avez atteint tous vos paliers !`;
+              }
+              await googleWalletGenerator.addMessageToObject(clientId, title, msgBody);
+            }
           }
         });
 

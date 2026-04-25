@@ -1491,7 +1491,6 @@ export const resetPassword = async (req, res) => {
   }
 
   try {
-    // 1. Vérifier la validité du jeton
     const [resetRows] = await pool.query(
       'SELECT email FROM password_resets WHERE token = ? AND expires_at > NOW()',
       [token]
@@ -1503,6 +1502,15 @@ export const resetPassword = async (req, res) => {
 
     const email = resetRows[0].email;
 
+    const [deleteResult] = await pool.query(
+      'DELETE FROM password_resets WHERE token = ? AND expires_at > NOW()',
+      [token]
+    );
+
+    if (deleteResult.affectedRows === 0) {
+      return res.status(400).json({ error: 'Jeton invalide ou expiré' });
+    }
+
     const complexityCheck = validatePassword(newPassword);
     if (!complexityCheck.isValid) {
       return res.status(400).json({ error: 'Exigences du mot de passe non respectées', details: complexityCheck.errors });
@@ -1510,14 +1518,15 @@ export const resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 3. Mettre à jour l'entreprise
     await pool.query(
       'UPDATE entreprises SET mot_de_passe = ?, updated_at = NOW() WHERE email = ?',
       [hashedPassword, email]
     );
 
-    // 4. Supprimer le jeton utilisé
-    await pool.query('DELETE FROM password_resets WHERE token = ?', [token]);
+    await pool.query(
+      'DELETE FROM sessions WHERE entreprise_id = (SELECT id FROM entreprises WHERE email = ?)',
+      [email]
+    );
 
     logger.info(`✅ Mot de passe réinitialisé avec succès pour ${email}`);
 

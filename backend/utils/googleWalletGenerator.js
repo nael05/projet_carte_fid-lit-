@@ -7,6 +7,7 @@ import logger from './logger.js';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import axios from 'axios';
+import db from '../db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -308,18 +309,22 @@ class GoogleWalletGenerator {
 
     const objectId = `${this.issuerId}.${clientId}_loyalty_object`;
     const now = Date.now();
-    const windowMs = 24 * 60 * 60 * 1000;
+    const cutoff = now - 24 * 60 * 60 * 1000;
 
-    if (!this._msgRateLimit) this._msgRateLimit = new Map();
-    const history = (this._msgRateLimit.get(objectId) || []).filter(t => now - t < windowMs);
+    const [[{ count }]] = await db.query(
+      'SELECT COUNT(*) AS count FROM google_wallet_message_log WHERE object_id = ? AND sent_at > ?',
+      [objectId, cutoff]
+    );
 
-    if (history.length >= 3) {
+    if (count >= 3) {
       logger.warn(`⚠️ [GOOGLE MSG] Quota 3/24h atteint pour ${objectId}`);
       return;
     }
 
-    history.push(now);
-    this._msgRateLimit.set(objectId, history);
+    await db.query(
+      'INSERT INTO google_wallet_message_log (object_id, sent_at) VALUES (?, ?)',
+      [objectId, now]
+    );
 
     try {
       const auth = new GoogleAuth({
@@ -348,8 +353,10 @@ class GoogleWalletGenerator {
 
       logger.info(`✅ [GOOGLE MSG] Notification envoyée à ${objectId}`);
     } catch (err) {
-      history.pop();
-      this._msgRateLimit.set(objectId, history);
+      await db.query(
+        'DELETE FROM google_wallet_message_log WHERE object_id = ? AND sent_at = ? LIMIT 1',
+        [objectId, now]
+      );
 
       if (err.response?.status === 404) {
         logger.warn(`⚠️ [GOOGLE MSG] Object ${objectId} introuvable`);

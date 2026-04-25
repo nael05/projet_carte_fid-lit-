@@ -8,7 +8,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'loyalty_saas',
   socketPath: process.env.DB_SOCKET_PATH || undefined,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 50,
   queueLimit: 0
 });
 

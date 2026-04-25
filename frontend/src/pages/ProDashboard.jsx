@@ -791,8 +791,8 @@ function ProDashboard() {
                   <div className="gn-card-header">
                     <div className="gn-card-label"><Bell size={13} /> Notification Push</div>
                     <div className="gn-badges">
-                      <span className="gn-badge gn-badge--apple">🍎 Push direct</span>
-                      <span className="gn-badge gn-badge--google">🤖 Mise à jour</span>
+                      <span className="gn-badge gn-badge--apple">Apple — Push direct</span>
+                      <span className="gn-badge gn-badge--google">Google — Mise à jour</span>
                     </div>
                   </div>
 
@@ -825,11 +825,11 @@ function ProDashboard() {
 
                   <div className="gn-platform-grid">
                     <div className="gn-platform-row">
-                      <span className="gn-platform-icon">🍎</span>
+                      <span className="gn-platform-icon">iOS</span>
                       <span className="gn-platform-text"><strong>Apple Wallet</strong> — notification push personnalisée sur l'écran verrouillé</span>
                     </div>
                     <div className="gn-platform-row">
-                      <span className="gn-platform-icon">🤖</span>
+                      <span className="gn-platform-icon">And.</span>
                       <span className="gn-platform-text"><strong>Google Wallet</strong> — notification de mise à jour générée par Android au changement de solde ou d'offre</span>
                     </div>
                   </div>
@@ -854,11 +854,11 @@ function ProDashboard() {
 
                   <div className="gn-platform-grid">
                     <div className="gn-platform-row">
-                      <span className="gn-platform-icon">🍎</span>
+                      <span className="gn-platform-icon">iOS</span>
                       <span className="gn-platform-text"><strong>Apple Wallet</strong> — notification sur l'écran verrouillé à ~100 m du lieu</span>
                     </div>
                     <div className="gn-platform-row">
-                      <span className="gn-platform-icon">🤖</span>
+                      <span className="gn-platform-icon">And.</span>
                       <span className="gn-platform-text"><strong>Google Wallet</strong> — geofencing natif Android, notification de proximité sans app dédiée</span>
                     </div>
                   </div>

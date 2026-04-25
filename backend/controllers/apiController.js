@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
@@ -104,7 +104,7 @@ export const createCompany = async (req, res) => {
   }
 
   const companyId = randomUUID();
-  const tempPassword = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+  const tempPassword = randomBytes(12).toString('base64url').substring(0, 16);
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
   const connection = await pool.getConnection();
   try {
@@ -372,12 +372,6 @@ export const changePassword = async (req, res) => {
     // 🔐 Vérification 3: Hash du nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await pool.query(
-      'DELETE FROM sessions WHERE entreprise_id = ? AND device_id != ?',
-      [empresaId, req.user.deviceId]
-    );
-
-    // UPDATE: changer le mot de passe, effacer le mdp temporaire et désactiver le flag
     const [updateResult] = await pool.query(
       'UPDATE entreprises SET mot_de_passe = ?, must_change_password = FALSE, temporary_password = NULL WHERE id = ?',
       [hashedPassword, empresaId]
@@ -386,6 +380,11 @@ export const changePassword = async (req, res) => {
     if (updateResult.affectedRows === 0) {
       return res.status(500).json({ error: 'Impossible de mettre à jour le mot de passe' });
     }
+
+    await pool.query(
+      'DELETE FROM sessions WHERE entreprise_id = ? AND device_id != ?',
+      [empresaId, req.user.deviceId]
+    );
 
     logger.info('Password changed successfully');
 

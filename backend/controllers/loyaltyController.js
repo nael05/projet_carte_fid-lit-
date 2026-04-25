@@ -314,7 +314,7 @@ export const sendPushNotification = async (req, res) => {
     });
   } catch (err) {
     logger.error('Send push notification error', { error: err.message });
-    res.status(500).json({ error: 'Erreur serveur: ' + err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 

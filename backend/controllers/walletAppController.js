@@ -415,8 +415,8 @@ export const downloadClientPass = async (req, res) => {
         LEFT JOIN entreprises e ON c.entreprise_id = e.id
         LEFT JOIN loyalty_config lc ON e.id = lc.entreprise_id
         LEFT JOIN card_customization cc ON e.id = cc.company_id
-        WHERE c.id = ? AND c.entreprise_id = ?`,
-      [clientId, req.user.id]
+        WHERE c.id = ?`,
+      [clientId]
     );
 
     if (!clientRows || clientRows.length === 0) {

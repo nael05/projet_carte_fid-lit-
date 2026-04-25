@@ -1042,7 +1042,7 @@ export const registerClientAndGeneratePass = async (req, res) => {
 // ===== CARD CUSTOMIZATION CONTROLLERS =====
 
 export const getCardCustomization = async (req, res) => {
-  const { empresaId } = req.params;
+  const companyId = req.params.companyId ?? req.params.empresaId;
   const { loyaltyType } = req.query;
 
   try {
@@ -1052,7 +1052,7 @@ export const getCardCustomization = async (req, res) => {
 
     const [customization] = await pool.query(
       'SELECT * FROM card_customization WHERE company_id = ? AND loyalty_type = ?',
-      [empresaId, loyaltyType]
+      [companyId, loyaltyType]
     );
 
     if (customization.length === 0) {

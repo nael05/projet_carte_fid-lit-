@@ -24,20 +24,17 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     req.user = decoded;
     
-    // Pour les Pro: vérifier la session de l'appareil
     if (decoded.role === 'pro') {
       const deviceId = req.headers['x-device-id'];
-      
-      if (deviceId) {
-        // Si un deviceId est fourni, vérifier la session
-        const sessionValid = await verifySessionValidity(decoded.id, deviceId);
-        if (!sessionValid) {
-          logger.warn('Session expired or invalid for pro', { userId: decoded.id, deviceId });
-          return res.status(401).json({ error: 'Session expirée' });
-        }
-        // Stocker le deviceId pour les logs
-        req.user.deviceId = deviceId;
+      if (!deviceId) {
+        return res.status(401).json({ error: 'Session expirée' });
       }
+      const sessionValid = await verifySessionValidity(decoded.id, deviceId);
+      if (!sessionValid) {
+        logger.warn('Session expired or invalid for pro', { userId: decoded.id, deviceId });
+        return res.status(401).json({ error: 'Session expirée' });
+      }
+      req.user.deviceId = deviceId;
     }
     
     next();

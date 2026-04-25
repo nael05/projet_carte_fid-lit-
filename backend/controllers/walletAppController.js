@@ -9,7 +9,6 @@ import passGenerator from '../utils/passGenerator.js';
 import googleWalletGenerator from '../utils/googleWalletGenerator.js';
 import { apnService } from '../utils/apnService.js';
 import { sendLoyaltyUpdateNotification } from '../utils/notificationService.js';
-import walletSyncService from '../utils/walletSyncService.js';
 import db from '../db.js';
 import logger from '../utils/logger.js';
 
@@ -284,23 +283,14 @@ export const addPointsToWallet = async (req, res) => {
       [walletId, pass_serial_number, isStamps ? 'add_stamps' : 'add_points', cappedPoints, oldBalance, newBalance, reason || 'API update', 'admin_api']
     );
 
-    // 🔄 Synchronisation Centralisée (Apple & Google)
-    // IMPORTANT: AWAIT pour garantir l'ordre SQL -> Push
-    await walletSyncService.syncClientWallet(clientId, wallet.entreprise_id, cappedPoints).catch(err =>
-      logger.error(`❌ Sync failed in addPointsToWallet: ${err.message}`)
+    sendLoyaltyUpdateNotification(clientId, wallet.entreprise_id, cappedPoints, false).catch(err =>
+      logger.warn('Push loyalty notification failed in walletApp', err.message)
     );
-
-    // Envoi notification Visuelle
-    try {
-      await sendLoyaltyUpdateNotification(clientId, wallet.entreprise_id, cappedPoints, false);
-    } catch (pushErr) {
-      logger.warn('Push loyalty notification failed in walletApp', pushErr.message);
-    }
 
     res.json({
       success: true,
       oldBalance,
-      newBalance: wallet.points,
+      newBalance,
       message: `${pointsToAdd} point(s) ajouté(s)`,
     });
   } catch (error) {

@@ -1367,13 +1367,6 @@ export const redeemReward = async (req, res) => {
       [randomUUID(), clientId, empresaId, -tier.points_required, `Utilisation : ${tier.title}`]
     );
 
-    // 🔄 Sync TOUS les Wallets (Apple et Google)
-    // OPTIMISATION : Non-bloquant
-    walletSyncService.syncClientWallet(clientId, empresaId).catch(e =>
-      logger.error('Wallet sync failed in redeemReward', e.message)
-    );
-
-    // 4. Envoi notification visuelle (+ silencieuse auto)
     sendLoyaltyUpdateNotification(clientId, empresaId, -tier.points_required, true).catch(pushErr =>
       logger.warn('Push redeem notification failed', pushErr.message)
     );

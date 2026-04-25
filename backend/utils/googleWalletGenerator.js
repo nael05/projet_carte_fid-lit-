@@ -311,6 +311,11 @@ class GoogleWalletGenerator {
     const now = Date.now();
     const cutoff = now - 24 * 60 * 60 * 1000;
 
+    await db.query(
+      'DELETE FROM google_wallet_message_log WHERE object_id = ? AND sent_at <= ?',
+      [objectId, cutoff]
+    );
+
     const [[{ count }]] = await db.query(
       'SELECT COUNT(*) AS count FROM google_wallet_message_log WHERE object_id = ? AND sent_at > ?',
       [objectId, cutoff]

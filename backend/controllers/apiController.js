@@ -103,21 +103,22 @@ export const createCompany = async (req, res) => {
     return res.status(400).json({ error: 'Type de fidélité invalide (points ou stamps)' });
   }
 
+  const companyId = randomUUID();
+  const tempPassword = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+  const hashedPassword = await bcrypt.hash(tempPassword, 10);
+  const connection = await pool.getConnection();
   try {
-    const companyId = randomUUID();
-    const tempPassword = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    await connection.beginTransaction();
 
-    await pool.query(
+    await connection.query(
       'INSERT INTO entreprises (id, nom, email, prenom, telephone, mot_de_passe, temporary_password, must_change_password, statut, loyalty_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [companyId, nom, email, prenom || null, telephone || null, hashedPassword, tempPassword, true, 'actif', loyalty_type]
     );
 
-    // Créer la configuration de fidélité initiale avec des valeurs par défaut robustes
     const configId = randomUUID();
-    await pool.query(
+    await connection.query(
       `INSERT INTO loyalty_config (
-        id, entreprise_id, loyalty_type, reward_title, reward_description, 
+        id, entreprise_id, loyalty_type, reward_title, reward_description,
         points_per_purchase, points_for_reward, points_adding_mode
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -130,16 +131,16 @@ export const createCompany = async (req, res) => {
       ]
     );
 
-    // 🎨 Initialiser la personnalisation de carte par défaut (pour éviter les erreurs d'enregistrement plus tard)
     const customizationId = randomUUID();
-    await pool.query(
-      `INSERT INTO card_customization 
+    await connection.query(
+      `INSERT INTO card_customization
        (id, company_id, loyalty_type, primary_color, text_color, accent_color, secondary_color)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [customizationId, companyId, loyalty_type, '#1f2937', '#ffffff', '#3b82f6', '#374151']
     );
 
-    // Envoi de l'email de bienvenue (non bloquant)
+    await connection.commit();
+
     emailService.sendWelcomeEmail({
       email,
       nom,
@@ -161,11 +162,14 @@ export const createCompany = async (req, res) => {
       message: `Entreprise créée avec succès (Mode: ${loyalty_type})`
     });
   } catch (err) {
+    await connection.rollback();
     logger.error('Create company error', { error: err.message });
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ error: 'Email déjà utilisé' });
     }
     res.status(500).json({ error: 'Erreur serveur' });
+  } finally {
+    connection.release();
   }
 };
 

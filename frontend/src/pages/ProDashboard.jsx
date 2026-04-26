@@ -56,6 +56,7 @@ function ProDashboard() {
   const [savingSettings, setSavingSettings] = useState(false)
   const [proxConfig, setProxConfig] = useState({ relevant_text: '', locations: [] })
   const [proxSaving, setProxSaving] = useState(false)
+  const [settingsPage, setSettingsPage] = useState(null)
   const navigate = useNavigate()
   const scannerRef = useRef(null)
   const scannerInstance = useRef(null)
@@ -766,353 +767,340 @@ function ProDashboard() {
           {/* ====== RÉGLAGES ====== */}
           {activeTab === 'settings' && (
             <div className="pro-section">
-              <div className="pro-section-header">
-                <Settings size={22} />
-                <div>
-                  <h2>Paramètres</h2>
-                  <p>Configuration de votre programme de fidélité</p>
-                </div>
-              </div>
 
-              {/* ── GPS & Notifications ── */}
-              <div className="gn-wrap">
-
-                {/* En-tête section */}
-                <div className="gn-section-head">
-                  <div className="gn-section-icon"><Bell size={16} /></div>
-                  <div>
-                    <div className="gn-section-title">GPS &amp; Notifications Push</div>
-                    <div className="gn-section-sub">Alertes de proximité et promotions en temps réel</div>
-                  </div>
-                </div>
-
-                {/* Card : Notification Push */}
-                <div className="gn-card">
-                  <div className="gn-card-header">
-                    <div className="gn-card-label"><Bell size={13} /> Notification Push</div>
-                    <div className="gn-badges">
-                      <span className="gn-badge gn-badge--apple">Apple — Push direct</span>
-                      <span className="gn-badge gn-badge--google">Google — Mise à jour</span>
+              {/* ── HUB ── */}
+              {!settingsPage && (
+                <>
+                  <div className="pro-section-header">
+                    <Settings size={22} />
+                    <div>
+                      <h2>Paramètres</h2>
+                      <p>Configuration de votre programme</p>
                     </div>
                   </div>
+                  <nav className="stg-hub">
+                    <button className="stg-hub-item" onClick={() => setSettingsPage('programme')}>
+                      <span className="stg-hub-icon stg-hub-icon--blue"><Award size={18} /></span>
+                      <span className="stg-hub-text">
+                        <span className="stg-hub-title">Programme de fidélité</span>
+                        <span className="stg-hub-desc">Points par scan, paliers, solde maximum</span>
+                      </span>
+                      <ChevronRight size={16} className="stg-hub-chevron" />
+                    </button>
+                    <button className="stg-hub-item" onClick={() => setSettingsPage('notifications')}>
+                      <span className="stg-hub-icon stg-hub-icon--purple"><Bell size={18} /></span>
+                      <span className="stg-hub-text">
+                        <span className="stg-hub-title">Notifications Push</span>
+                        <span className="stg-hub-desc">Texte promotionnel et alertes instantanées</span>
+                      </span>
+                      <ChevronRight size={16} className="stg-hub-chevron" />
+                    </button>
+                    <button className="stg-hub-item" onClick={() => setSettingsPage('geolocalisation')}>
+                      <span className="stg-hub-icon stg-hub-icon--green"><MapPin size={18} /></span>
+                      <span className="stg-hub-text">
+                        <span className="stg-hub-title">Géolocalisation</span>
+                        <span className="stg-hub-desc">Lieux de proximité et notifications locales</span>
+                      </span>
+                      <ChevronRight size={16} className="stg-hub-chevron" />
+                    </button>
+                    <button className="stg-hub-item" onClick={() => setShowHistory(true)}>
+                      <span className="stg-hub-icon stg-hub-icon--orange"><History size={18} /></span>
+                      <span className="stg-hub-text">
+                        <span className="stg-hub-title">Historique</span>
+                        <span className="stg-hub-desc">Points ajoutés, cadeaux utilisés, retraits</span>
+                      </span>
+                      <ChevronRight size={16} className="stg-hub-chevron" />
+                    </button>
+                  </nav>
+                </>
+              )}
 
-                  <div className="gn-field">
-                    <label className="gn-label">Texte de la promotion</label>
-                    <textarea
-                      className="gn-textarea"
-                      name="relevant_text"
-                      value={proxConfig.relevant_text}
-                      onChange={handleProxChange}
-                      placeholder="Ex : -20% sur tout le magasin ce week-end !"
-                      rows={3}
-                      maxLength={100}
-                    />
-                    <div className="gn-char-count">{(proxConfig.relevant_text || '').length}/100</div>
-                  </div>
-
-                  {proxConfig.relevant_text && (
-                    <div className="gn-preview">
-                      <div className="gn-preview-label">Aperçu de la notification</div>
-                      <div className="gn-preview-notif">
-                        <div className="gn-preview-icon"><Bell size={12} /></div>
-                        <div className="gn-preview-body">
-                          <div className="gn-preview-app">Carte de fidélité</div>
-                          <div className="gn-preview-text">{proxConfig.relevant_text}</div>
-                        </div>
+              {/* ── SOUS-PAGE : Programme de fidélité ── */}
+              {settingsPage === 'programme' && (
+                <>
+                  <div className="stg-subpage-head">
+                    <button className="stg-back" onClick={() => setSettingsPage(null)}>
+                      <ChevronRight size={15} className="stg-back-arrow" /> Paramètres
+                    </button>
+                    <div className="stg-subpage-title-row">
+                      <span className="stg-hub-icon stg-hub-icon--blue"><Award size={18} /></span>
+                      <div>
+                        <h2>Programme de fidélité</h2>
+                        <p>Attribution des points et paliers de récompenses</p>
                       </div>
                     </div>
-                  )}
-
-                  <div className="gn-platform-grid">
-                    <div className="gn-platform-row">
-                      <span className="gn-platform-icon">iOS</span>
-                      <span className="gn-platform-text"><strong>Apple Wallet</strong> — notification push personnalisée sur l'écran verrouillé</span>
-                    </div>
-                    <div className="gn-platform-row">
-                      <span className="gn-platform-icon">And.</span>
-                      <span className="gn-platform-text"><strong>Google Wallet</strong> — notification de mise à jour générée par Android au changement de solde ou d'offre</span>
-                    </div>
                   </div>
-                </div>
 
-                {/* Card : Géolocalisation */}
-                <div className="gn-card">
-                  <div className="gn-card-header">
-                    <div className="gn-card-label"><MapPin size={13} /> Géolocalisation &amp; Proximité</div>
-                    <div className="gn-card-header-right">
-                      <span className="gn-loc-count">{(proxConfig.locations || []).length}/10</span>
-                      <button
-                        type="button"
-                        className="gn-add-btn"
-                        onClick={addProxLocation}
-                        disabled={(proxConfig.locations || []).length >= 10}
-                      >
-                        <Plus size={13} /> Ajouter
+                  <div className="cfg-wrap">
+                    <form onSubmit={handleSaveLoyaltyConfig} className="cfg-section">
+                      <div className="cfg-section-label"><Award size={13} /> Attribution des points</div>
+
+                      <div className="cfg-mode-toggle">
+                        <button type="button"
+                          className={`cfg-mode-btn ${loyaltyConfig.points_adding_mode === 'automatic' ? 'cfg-mode-btn--on' : ''}`}
+                          onClick={() => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: 'automatic'})}>
+                          <span className="cfg-mode-title">Automatique</span>
+                          <span className="cfg-mode-desc">Points fixes à chaque scan</span>
+                        </button>
+                        <button type="button"
+                          className={`cfg-mode-btn ${loyaltyConfig.points_adding_mode === 'manual' ? 'cfg-mode-btn--on' : ''}`}
+                          onClick={() => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: 'manual'})}>
+                          <span className="cfg-mode-title">Manuel</span>
+                          <span className="cfg-mode-desc">Saisie libre à chaque scan</span>
+                        </button>
+                      </div>
+
+                      {loyaltyConfig.points_adding_mode === 'automatic' && (
+                        <div className="cfg-field">
+                          <label className="cfg-label">Points par passage</label>
+                          <div className="cfg-input-row">
+                            <input className="cfg-input cfg-input-num" type="number" min="1"
+                              value={loyaltyConfig.points_per_purchase}
+                              onChange={e => setLoyaltyConfig({...loyaltyConfig, points_per_purchase: parseInt(e.target.value)})} />
+                            <span className="cfg-unit">pts / scan</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {loyaltyConfig.points_adding_mode === 'manual' && (
+                        <div className="cfg-field">
+                          <label className="cfg-label">Raccourcis de points <span className="cfg-label-hint">— boutons rapides au scan</span></label>
+                          <div className="cfg-chips">
+                            {(loyaltyConfig.points_shortcuts?.length > 0 ? loyaltyConfig.points_shortcuts : []).map((v, i) => (
+                              <span key={i} className="cfg-chip">
+                                +{v}
+                                <button type="button" className="cfg-chip-x"
+                                  onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: prev.points_shortcuts.filter((_, j) => j !== i) }))}>×</button>
+                              </span>
+                            ))}
+                            {!loyaltyConfig.points_shortcuts?.length && (
+                              <span className="cfg-chips-default">Par défaut : +5, +10, +20, +50</span>
+                            )}
+                          </div>
+                          <div className="cfg-input-row">
+                            <input className="cfg-input cfg-input-num" type="number" min="1" placeholder="25"
+                              value={shortcutInput} onChange={e => setShortcutInput(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const v = parseInt(shortcutInput);
+                                  if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
+                                    setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a,b) => a-b) }));
+                                    setShortcutInput('');
+                                  }
+                                }
+                              }} />
+                            <button type="button" className="cfg-btn-add"
+                              onClick={() => {
+                                const v = parseInt(shortcutInput);
+                                if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
+                                  setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a,b) => a-b) }));
+                                  setShortcutInput('');
+                                }
+                              }}><Plus size={14} /> Ajouter</button>
+                            {loyaltyConfig.points_shortcuts?.length > 0 && (
+                              <button type="button" className="cfg-btn-ghost"
+                                onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [] }))}>Réinitialiser</button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="cfg-field cfg-field--sep">
+                        <div className="cfg-field-header">
+                          <label className="cfg-label">Solde maximum par client</label>
+                          {loyaltyConfig.max_points_balance
+                            ? <span className="cfg-pill cfg-pill--blue">{loyaltyConfig.max_points_balance} pts max</span>
+                            : <span className="cfg-pill cfg-pill--gray">Illimité</span>}
+                        </div>
+                        <div className="cfg-input-row">
+                          <input className="cfg-input cfg-input-num" type="number" min="1" placeholder="500"
+                            value={loyaltyConfig.max_points_balance ?? ''}
+                            onChange={e => setLoyaltyConfig({
+                              ...loyaltyConfig,
+                              max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
+                            })} />
+                          <span className="cfg-unit">pts</span>
+                          {loyaltyConfig.max_points_balance != null && (
+                            <button type="button" className="cfg-btn-ghost"
+                              onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}>Désactiver</button>
+                          )}
+                        </div>
+                        <p className="cfg-hint">Laissez vide pour aucune limite.</p>
+                      </div>
+
+                      <button type="submit" className="cfg-save-btn" disabled={savingSettings}>
+                        {savingSettings ? <Loader2 size={14} className="pro-spin" /> : <Save size={14} />}
+                        Enregistrer
                       </button>
-                    </div>
-                  </div>
+                    </form>
 
-                  <div className="gn-platform-grid">
-                    <div className="gn-platform-row">
-                      <span className="gn-platform-icon">iOS</span>
-                      <span className="gn-platform-text"><strong>Apple Wallet</strong> — notification sur l'écran verrouillé à ~100 m du lieu</span>
-                    </div>
-                    <div className="gn-platform-row">
-                      <span className="gn-platform-icon">And.</span>
-                      <span className="gn-platform-text"><strong>Google Wallet</strong> — geofencing natif Android, notification de proximité sans app dédiée</span>
-                    </div>
-                  </div>
-
-                  <div className="gn-locs">
-                    {(proxConfig.locations || []).length === 0 ? (
-                      <div className="gn-empty">
-                        <Navigation size={28} />
-                        <div>Aucun lieu configuré</div>
-                        <div className="gn-empty-sub">Cliquez sur « Ajouter » pour configurer un lieu</div>
-                      </div>
-                    ) : (
-                      (proxConfig.locations || []).map((loc, index) => (
-                        <div key={index} className="gn-loc">
-                          <div className="gn-loc-top">
-                            <div className="gn-loc-badge">{index + 1}</div>
-                            <div className="gn-loc-coords">
-                              <div className="gn-loc-coord-field">
-                                <label className="gn-label">Latitude</label>
-                                <input
-                                  className="gn-input"
-                                  type="number" step="any"
-                                  value={loc.latitude ?? ''}
-                                  onChange={(e) => handleProxLocationChange(index, 'latitude', e.target.value)}
-                                  placeholder="48.8566"
-                                />
-                              </div>
-                              <div className="gn-loc-coord-field">
-                                <label className="gn-label">Longitude</label>
-                                <input
-                                  className="gn-input"
-                                  type="number" step="any"
-                                  value={loc.longitude ?? ''}
-                                  onChange={(e) => handleProxLocationChange(index, 'longitude', e.target.value)}
-                                  placeholder="2.3522"
-                                />
-                              </div>
+                    <div className="cfg-section">
+                      <div className="cfg-section-label"><Gift size={13} /> Paliers de récompenses</div>
+                      {loyaltyConfig.reward_tiers.length === 0 ? (
+                        <div className="cfg-empty"><Gift size={20} /><span>Aucun palier défini</span></div>
+                      ) : (
+                        <div className="cfg-tiers">
+                          {loyaltyConfig.reward_tiers.map(tier => (
+                            <div key={tier.id} className="cfg-tier-row">
+                              <div className="cfg-tier-pts">{tier.points_required}<span>pts</span></div>
+                              <span className="cfg-tier-title">{tier.title}</span>
+                              <button className="cfg-tier-del" onClick={() => handleDeleteTier(tier.id)}><Trash2 size={15} /></button>
                             </div>
-                            <button className="gn-del-btn" onClick={() => removeProxLocation(index)} title="Supprimer ce lieu">
-                              <X size={14} />
-                            </button>
-                          </div>
-                          <div className="gn-loc-text-field">
-                            <label className="gn-label">Message sur l'écran verrouillé</label>
-                            <input
-                              className="gn-input"
-                              type="text"
-                              value={loc.relevantText || ''}
-                              onChange={(e) => handleProxLocationChange(index, 'relevantText', e.target.value)}
-                              placeholder="Ex : Bienvenue ! N'oubliez pas votre carte."
-                            />
-                          </div>
+                          ))}
                         </div>
-                      ))
-                    )}
-                  </div>
-
-                  <div className="gn-tip">
-                    <Globe size={13} />
-                    <span>Coordonnées disponibles sur <strong>Google Maps</strong> via clic droit → « Plus d'infos sur cet endroit ».</span>
-                  </div>
-                </div>
-
-                {/* Bouton save */}
-                <button type="button" className="gn-save-btn" onClick={handleSaveProx} disabled={proxSaving}>
-                  {proxSaving ? <Loader2 size={15} className="pro-spin" /> : <Save size={15} />}
-                  {proxSaving ? 'Enregistrement…' : 'Enregistrer les modifications'}
-                </button>
-
-              </div>
-
-              <div className="cfg-wrap">
-
-                {/* ── Section 1 : Mode d'attribution ── */}
-                <form onSubmit={handleSaveLoyaltyConfig} className="cfg-section">
-                  <div className="cfg-section-label">
-                    <Award size={13} /> Attribution des points
-                  </div>
-
-                  {/* Mode toggle */}
-                  <div className="cfg-mode-toggle">
-                    <button
-                      type="button"
-                      className={`cfg-mode-btn ${loyaltyConfig.points_adding_mode === 'automatic' ? 'cfg-mode-btn--on' : ''}`}
-                      onClick={() => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: 'automatic'})}
-                    >
-                      <span className="cfg-mode-title">Automatique</span>
-                      <span className="cfg-mode-desc">Points fixes à chaque scan</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`cfg-mode-btn ${loyaltyConfig.points_adding_mode === 'manual' ? 'cfg-mode-btn--on' : ''}`}
-                      onClick={() => setLoyaltyConfig({...loyaltyConfig, points_adding_mode: 'manual'})}
-                    >
-                      <span className="cfg-mode-title">Manuel</span>
-                      <span className="cfg-mode-desc">Saisie libre à chaque scan</span>
-                    </button>
-                  </div>
-
-                  {/* Points fixes (mode auto) */}
-                  {loyaltyConfig.points_adding_mode === 'automatic' && (
-                    <div className="cfg-field">
-                      <label className="cfg-label">Points par passage</label>
-                      <div className="cfg-input-row">
-                        <input
-                          className="cfg-input cfg-input-num"
-                          type="number" min="1"
-                          value={loyaltyConfig.points_per_purchase}
-                          onChange={e => setLoyaltyConfig({...loyaltyConfig, points_per_purchase: parseInt(e.target.value)})}
-                        />
-                        <span className="cfg-unit">pts / scan</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Raccourcis (mode manuel) */}
-                  {loyaltyConfig.points_adding_mode === 'manual' && (
-                    <div className="cfg-field">
-                      <label className="cfg-label">Raccourcis de points <span className="cfg-label-hint">— boutons rapides au scan</span></label>
-                      <div className="cfg-chips">
-                        {(loyaltyConfig.points_shortcuts?.length > 0
-                          ? loyaltyConfig.points_shortcuts
-                          : []
-                        ).map((v, i) => (
-                          <span key={i} className="cfg-chip">
-                            +{v}
-                            <button type="button" className="cfg-chip-x"
-                              onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: prev.points_shortcuts.filter((_, j) => j !== i) }))}>
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                        {!loyaltyConfig.points_shortcuts?.length && (
-                          <span className="cfg-chips-default">Par défaut : +5, +10, +20, +50</span>
-                        )}
-                      </div>
-                      <div className="cfg-input-row">
-                        <input
-                          className="cfg-input cfg-input-num"
-                          type="number" min="1" placeholder="25"
-                          value={shortcutInput}
-                          onChange={e => setShortcutInput(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const v = parseInt(shortcutInput);
-                              if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
-                                setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a,b) => a-b) }));
-                                setShortcutInput('');
-                              }
-                            }
-                          }}
-                        />
-                        <button type="button" className="cfg-btn-add"
-                          onClick={() => {
-                            const v = parseInt(shortcutInput);
-                            if (v > 0 && !(loyaltyConfig.points_shortcuts || []).includes(v)) {
-                              setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [...(prev.points_shortcuts || []), v].sort((a,b) => a-b) }));
-                              setShortcutInput('');
-                            }
-                          }}>
+                      )}
+                      <div className="cfg-tier-add">
+                        <input className="cfg-input cfg-input-num" type="number" placeholder="pts"
+                          value={newTier.points_required} onChange={e => setNewTier({...newTier, points_required: e.target.value})} />
+                        <input className="cfg-input cfg-input-flex" type="text" placeholder="Nom de l'offre (ex : Café offert)"
+                          value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} />
+                        <button className="cfg-btn-add" onClick={handleAddTier} disabled={savingSettings}>
                           <Plus size={14} /> Ajouter
                         </button>
-                        {loyaltyConfig.points_shortcuts?.length > 0 && (
-                          <button type="button" className="cfg-btn-ghost"
-                            onClick={() => setLoyaltyConfig(prev => ({ ...prev, points_shortcuts: [] }))}>
-                            Réinitialiser
-                          </button>
-                        )}
                       </div>
                     </div>
-                  )}
+                  </div>
+                </>
+              )}
 
-                  {/* Solde max */}
-                  <div className="cfg-field cfg-field--sep">
-                    <div className="cfg-field-header">
-                      <label className="cfg-label">Solde maximum par client</label>
-                      {loyaltyConfig.max_points_balance
-                        ? <span className="cfg-pill cfg-pill--blue">{loyaltyConfig.max_points_balance} pts max</span>
-                        : <span className="cfg-pill cfg-pill--gray">Illimité</span>
-                      }
+              {/* ── SOUS-PAGE : Notifications Push ── */}
+              {settingsPage === 'notifications' && (
+                <>
+                  <div className="stg-subpage-head">
+                    <button className="stg-back" onClick={() => setSettingsPage(null)}>
+                      <ChevronRight size={15} className="stg-back-arrow" /> Paramètres
+                    </button>
+                    <div className="stg-subpage-title-row">
+                      <span className="stg-hub-icon stg-hub-icon--purple"><Bell size={18} /></span>
+                      <div>
+                        <h2>Notifications Push</h2>
+                        <p>Texte affiché sur l'écran verrouillé lors d'une promo</p>
+                      </div>
                     </div>
-                    <div className="cfg-input-row">
-                      <input
-                        className="cfg-input cfg-input-num"
-                        type="number" min="1" placeholder="500"
-                        value={loyaltyConfig.max_points_balance ?? ''}
-                        onChange={e => setLoyaltyConfig({
-                          ...loyaltyConfig,
-                          max_points_balance: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value) || 1)
-                        })}
-                      />
-                      <span className="cfg-unit">pts</span>
-                      {loyaltyConfig.max_points_balance != null && (
-                        <button type="button" className="cfg-btn-ghost"
-                          onClick={() => setLoyaltyConfig({ ...loyaltyConfig, max_points_balance: null })}>
-                          Désactiver
-                        </button>
-                      )}
-                    </div>
-                    <p className="cfg-hint">Laissez vide pour aucune limite.</p>
                   </div>
 
-                  <button type="submit" className="cfg-save-btn" disabled={savingSettings}>
-                    {savingSettings ? <Loader2 size={14} className="pro-spin" /> : <Save size={14} />}
-                    Enregistrer
-                  </button>
-                </form>
-
-                {/* ── Section 2 : Paliers ── */}
-                <div className="cfg-section">
-                  <div className="cfg-section-label">
-                    <Gift size={13} /> Paliers de récompenses
-                  </div>
-
-                  {loyaltyConfig.reward_tiers.length === 0 ? (
-                    <div className="cfg-empty">
-                      <Gift size={20} />
-                      <span>Aucun palier défini</span>
+                  <div className="stg-content">
+                    <div className="gn-field">
+                      <label className="gn-label">Texte de la promotion</label>
+                      <textarea className="gn-textarea" name="relevant_text"
+                        value={proxConfig.relevant_text} onChange={handleProxChange}
+                        placeholder="Ex : -20% sur tout le magasin ce week-end !"
+                        rows={3} maxLength={100} />
+                      <div className="gn-char-count">{(proxConfig.relevant_text || '').length}/100</div>
                     </div>
-                  ) : (
-                    <div className="cfg-tiers">
-                      {loyaltyConfig.reward_tiers.map(tier => (
-                        <div key={tier.id} className="cfg-tier-row">
-                          <div className="cfg-tier-pts">{tier.points_required}<span>pts</span></div>
-                          <span className="cfg-tier-title">{tier.title}</span>
-                          <button className="cfg-tier-del" onClick={() => handleDeleteTier(tier.id)}>
-                            <Trash2 size={15} />
-                          </button>
+
+                    {proxConfig.relevant_text && (
+                      <div className="gn-preview">
+                        <div className="gn-preview-label">Aperçu</div>
+                        <div className="gn-preview-notif">
+                          <div className="gn-preview-icon"><Bell size={12} /></div>
+                          <div className="gn-preview-body">
+                            <div className="gn-preview-app">Carte de fidélité</div>
+                            <div className="gn-preview-text">{proxConfig.relevant_text}</div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  <div className="cfg-tier-add">
-                    <input className="cfg-input cfg-input-num" type="number" placeholder="pts" value={newTier.points_required} onChange={e => setNewTier({...newTier, points_required: e.target.value})} />
-                    <input className="cfg-input cfg-input-flex" type="text" placeholder="Nom de l'offre (ex : Café offert)" value={newTier.title} onChange={e => setNewTier({...newTier, title: e.target.value})} />
-                    <button className="cfg-btn-add" onClick={handleAddTier} disabled={savingSettings}>
-                      <Plus size={14} /> Ajouter
+                    <p className="stg-platform-note">
+                      <strong>Apple Wallet</strong> — push direct sur l'écran verrouillé &nbsp;·&nbsp;
+                      <strong>Google Wallet</strong> — notification de mise à jour Android
+                    </p>
+
+                    <button type="button" className="gn-save-btn" onClick={handleSaveProx} disabled={proxSaving}>
+                      {proxSaving ? <Loader2 size={15} className="pro-spin" /> : <Save size={15} />}
+                      {proxSaving ? 'Enregistrement…' : 'Enregistrer'}
                     </button>
                   </div>
-                </div>
+                </>
+              )}
 
-                {/* ── Section 3 : Historique ── */}
-                <button className="hist-open-btn" onClick={() => setShowHistory(true)}>
-                  <div className="hist-open-btn-icon"><History size={18} /></div>
-                  <div className="hist-open-btn-text">
-                    <strong>Historique des points &amp; cadeaux</strong>
-                    <span>Points ajoutés, cadeaux utilisés, retraits</span>
+              {/* ── SOUS-PAGE : Géolocalisation ── */}
+              {settingsPage === 'geolocalisation' && (
+                <>
+                  <div className="stg-subpage-head">
+                    <button className="stg-back" onClick={() => setSettingsPage(null)}>
+                      <ChevronRight size={15} className="stg-back-arrow" /> Paramètres
+                    </button>
+                    <div className="stg-subpage-title-row">
+                      <span className="stg-hub-icon stg-hub-icon--green"><MapPin size={18} /></span>
+                      <div>
+                        <h2>Géolocalisation</h2>
+                        <p>Notifications déclenchées à proximité de vos lieux</p>
+                      </div>
+                    </div>
                   </div>
-                  <ChevronRight size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                </button>
 
-              </div>
+                  <div className="stg-content">
+                    <div className="gn-card-header" style={{ marginBottom: 12 }}>
+                      <div className="gn-card-label"><MapPin size={13} /> Lieux configurés</div>
+                      <div className="gn-card-header-right">
+                        <span className="gn-loc-count">{(proxConfig.locations || []).length}/10</span>
+                        <button type="button" className="gn-add-btn" onClick={addProxLocation}
+                          disabled={(proxConfig.locations || []).length >= 10}>
+                          <Plus size={13} /> Ajouter
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="gn-locs">
+                      {(proxConfig.locations || []).length === 0 ? (
+                        <div className="gn-empty">
+                          <Navigation size={28} />
+                          <div>Aucun lieu configuré</div>
+                          <div className="gn-empty-sub">Cliquez sur « Ajouter » pour configurer un lieu</div>
+                        </div>
+                      ) : (
+                        (proxConfig.locations || []).map((loc, index) => (
+                          <div key={index} className="gn-loc">
+                            <div className="gn-loc-top">
+                              <div className="gn-loc-badge">{index + 1}</div>
+                              <div className="gn-loc-coords">
+                                <div className="gn-loc-coord-field">
+                                  <label className="gn-label">Latitude</label>
+                                  <input className="gn-input" type="number" step="any"
+                                    value={loc.latitude ?? ''}
+                                    onChange={e => handleProxLocationChange(index, 'latitude', e.target.value)}
+                                    placeholder="48.8566" />
+                                </div>
+                                <div className="gn-loc-coord-field">
+                                  <label className="gn-label">Longitude</label>
+                                  <input className="gn-input" type="number" step="any"
+                                    value={loc.longitude ?? ''}
+                                    onChange={e => handleProxLocationChange(index, 'longitude', e.target.value)}
+                                    placeholder="2.3522" />
+                                </div>
+                              </div>
+                              <button className="gn-del-btn" onClick={() => removeProxLocation(index)} title="Supprimer">
+                                <X size={14} />
+                              </button>
+                            </div>
+                            <div className="gn-loc-text-field">
+                              <label className="gn-label">Message sur l'écran verrouillé</label>
+                              <input className="gn-input" type="text"
+                                value={loc.relevantText || ''}
+                                onChange={e => handleProxLocationChange(index, 'relevantText', e.target.value)}
+                                placeholder="Ex : Bienvenue ! N'oubliez pas votre carte." />
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="gn-tip">
+                      <Globe size={13} />
+                      <span>Coordonnées sur <strong>Google Maps</strong> — clic droit → « Plus d'infos sur cet endroit ».</span>
+                    </div>
+
+                    <button type="button" className="gn-save-btn" onClick={handleSaveProx} disabled={proxSaving}>
+                      {proxSaving ? <Loader2 size={15} className="pro-spin" /> : <Save size={15} />}
+                      {proxSaving ? 'Enregistrement…' : 'Enregistrer'}
+                    </button>
+                  </div>
+                </>
+              )}
+
             </div>
           )}
         </main>

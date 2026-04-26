@@ -122,7 +122,7 @@ const CardCustomizer = ({ proInfo, onSaveSuccess }) => {
         google_primary_color: data.google_primary_color || '#1f2937',
         google_text_color: data.google_text_color || '#ffffff',
         google_card_title: data.google_card_title || 'Carte Fidélité',
-        apple_organization_name: data.apple_organization_name || proInfo.nom || '',
+        apple_organization_name: data.apple_organization_name || '',
         locations: parsedLocs,
         latitude: '', // Clear legacy fields to overwrite DB with null
         longitude: '',

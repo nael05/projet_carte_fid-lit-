@@ -90,6 +90,7 @@ router.get('/pro/loyalty/stats', verifyToken, isPro, loyaltyController.getLoyalt
 // ===== Card Customization Routes =====
 router.get('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.getCardCustomization);
 router.put('/pro/card-customization/:empresaId', verifyToken, isPro, apiController.updateCardCustomization);
+router.patch('/pro/card-customization/:empresaId/gps', verifyToken, isPro, apiController.updateCardCustomizationGPS);
 router.post('/pro/upload-logo', verifyToken, isPro, (req, res, next) => {
   upload.single('logo')(req, res, (err) => {
     if (err?.code === 'LIMIT_FILE_SIZE') {

@@ -437,7 +437,7 @@ function ProDashboard() {
     if (!proInfo?.id) return
     setProxSaving(true)
     try {
-      await api.put(`/pro/card-customization/${proInfo.id}?loyaltyType=${proInfo.loyalty_type || 'points'}`, proxConfig)
+      await api.patch(`/pro/card-customization/${proInfo.id}/gps?loyaltyType=${proInfo.loyalty_type || 'points'}`, proxConfig)
       addToast('GPS & Notifications enregistrés !')
     } catch (err) {
       addToast('Erreur lors de la sauvegarde', 'error')

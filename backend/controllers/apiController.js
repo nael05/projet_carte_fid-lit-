@@ -1325,6 +1325,72 @@ export const updateCardCustomization = async (req, res) => {
   }
 };
 
+export const updateCardCustomizationGPS = async (req, res) => {
+  const empresaId = req.params.empresaId;
+  const { relevant_text, locations } = req.body;
+  const loyaltyType = req.query.loyaltyType || 'points';
+
+  if (empresaId !== req.user.id) {
+    return res.status(403).json({ error: 'Accès non autorisé' });
+  }
+
+  try {
+    const [existing] = await pool.query(
+      'SELECT relevant_text AS prev_relevant_text FROM card_customization WHERE company_id = ? AND loyalty_type = ?',
+      [empresaId, loyaltyType]
+    );
+
+    await pool.query(
+      'UPDATE card_customization SET relevant_text = ?, locations = ?, updated_at = NOW() WHERE company_id = ? AND loyalty_type = ?',
+      [
+        relevant_text || null,
+        Array.isArray(locations) ? JSON.stringify(locations.slice(0, 50)) : null,
+        empresaId,
+        loyaltyType
+      ]
+    );
+
+    const prevOffer = existing[0]?.prev_relevant_text || '';
+    if (relevant_text && relevant_text.trim() !== prevOffer) {
+      const offerText = relevant_text.trim();
+
+      const [pushRegs] = await pool.query(
+        `SELECT DISTINCT r.push_token
+         FROM apple_pass_registrations r
+         JOIN wallet_cards w ON r.pass_serial_number = w.pass_serial_number
+         WHERE w.company_id = ?`,
+        [empresaId]
+      );
+      if (pushRegs.length > 0) {
+        apnService.sendBulkAlertNotifications(pushRegs.map(r => r.push_token), 'Nouvelle offre !', offerText)
+          .catch(err => logger.error('Offer push Apple failed', err.message));
+      }
+
+      const [googleWallets] = await pool.query(
+        `SELECT client_id FROM wallet_cards WHERE company_id = ? AND pass_serial_number LIKE 'GOOGLE_%'`,
+        [empresaId]
+      );
+      if (googleWallets.length > 0) {
+        Promise.all(
+          googleWallets.map(w =>
+            googleWalletGenerator.addMessageToObject(w.client_id, 'Nouvelle offre !', offerText)
+              .catch(err => logger.error(`Offer push Google client ${w.client_id} failed`, err.message))
+          )
+        ).catch(() => {});
+      }
+    }
+
+    walletSyncService.syncCompanyWallets(empresaId).catch(err =>
+      logger.error('Sync failed after GPS update', err)
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Update GPS customization error', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
 export const uploadLogo = async (req, res) => {
   const { imageType, platform } = req.query; // 'logo', 'icon', 'strip', 'hero' + 'apple'/'google'
 
